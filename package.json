@@ -1,0 +1,10 @@
+{
+  "name": "@softistx/pulsarix-widget",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Embeddable client-issue intake widget for pulsarix, rendered in a Shadow DOM",
+  "publishConfig": {
+    "access": "public"
+  }
+}
