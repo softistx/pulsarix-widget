@@ -1,2 +1,6 @@
 [install.scopes]
 "@softistx" = { url = "https://npm.pkg.github.com/", token = "$GITHUB_TOKEN" }
+
+[test]
+# happy-dom for the component specs (tests/setup.ts).
+preload = ["./tests/setup.ts"]

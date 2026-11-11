@@ -1,26 +1,29 @@
 import {
   Button,
   Dialog,
-  DialogBody,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   PortalContainerProvider,
 } from "@softistx/material/components";
-import { useState } from "react";
-import type { Position } from "./config";
+import { useRef, useState } from "react";
+import type { Locale, Position } from "./config";
 import type { Messages } from "./messages";
+import { ReportFlow } from "./report-flow";
 import { THEME_NAME } from "./theme";
 
 export interface AppProps {
   messages: Messages;
+  locale: Locale;
+  projectKey: string | null;
+  apiBase: string | null;
   dark: boolean;
   open: boolean;
   launcher: boolean;
   position: Position;
   onOpenChange: (open: boolean) => void;
+  onSubmitted: (detail: { reportId: string }) => void;
+  onError: (detail: { code: string }) => void;
+  /** Specs only: the API's minimum fill time is waited out otherwise. */
+  minFillMs?: number;
 }
 
 /**
@@ -30,13 +33,22 @@ export interface AppProps {
  */
 export function App({
   messages,
+  locale,
+  projectKey,
+  apiBase,
   dark,
   open,
   launcher,
   position,
   onOpenChange,
+  onSubmitted,
+  onError,
+  minFillMs,
 }: AppProps) {
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  // Radix remembers `document.activeElement`, which a shadow host retargets to the host
+  // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <div
       ref={setRoot}
@@ -53,23 +65,36 @@ export function App({
                   : "fixed right-4 bottom-4 z-40"
               }
             >
-              <Button onClick={() => onOpenChange(true)}>
+              <Button
+                onClick={(event) => {
+                  opener.current = event.currentTarget;
+                  onOpenChange(true);
+                }}
+              >
                 {messages.launcher}
               </Button>
             </div>
           ) : null}
           <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="md">
-              <DialogHeader>
-                <DialogTitle>{messages.title}</DialogTitle>
-                <DialogDescription>{messages.intro}</DialogDescription>
-              </DialogHeader>
-              <DialogBody aria-label={messages.title} className="grid gap-3" />
-              <DialogFooter>
-                <Button variant="outlined" onClick={() => onOpenChange(false)}>
-                  {messages.close}
-                </Button>
-              </DialogFooter>
+            <DialogContent
+              size="md"
+              className="flex flex-col overflow-hidden"
+              onCloseAutoFocus={(event) => {
+                if (!opener.current?.isConnected) return;
+                event.preventDefault();
+                opener.current.focus();
+              }}
+            >
+              <ReportFlow
+                messages={messages}
+                locale={locale}
+                projectKey={projectKey}
+                apiBase={apiBase}
+                onSubmitted={onSubmitted}
+                onError={onError}
+                minFillMs={minFillMs}
+                onClose={() => onOpenChange(false)}
+              />
             </DialogContent>
           </Dialog>
         </PortalContainerProvider>

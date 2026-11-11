@@ -12,6 +12,7 @@ interface InitOptions {
   theme?: string;
   position?: string;
   accentColor?: string;
+  apiBase?: string;
   launcher?: boolean;
 }
 
@@ -35,8 +36,13 @@ function whenReady(fn: (h: Handle) => void) {
   else queue.push(fn);
 }
 
-function init(options: InitOptions): Promise<void> {
+function init(given: InitOptions): Promise<void> {
   if (loading) return loading;
+  // The API is the host that served this loader, unless the integrator says otherwise.
+  const options = {
+    ...given,
+    apiBase: given.apiBase ?? (base ? new URL(base).origin : undefined),
+  };
   loading = import(/* @vite-ignore */ base + __WIDGET_FILE__)
     .then((mod: { mount: (o: InitOptions) => Handle }) => {
       handle = mod.mount(options);
@@ -81,6 +87,7 @@ if (data?.projectKey) {
     theme: data.theme,
     position: data.position,
     accentColor: data.accentColor,
+    apiBase: data.apiBase,
     launcher: data.launcher === "false" ? false : undefined,
   });
 }
