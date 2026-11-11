@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acme Store: host page fixture</title>
+<style>
+  /* A hostile host: every rule below would wreck a widget that shared its styles. */
+  html { font-size: 40px; color-scheme: dark; }
+  body { margin: 0; font-family: "Times New Roman", serif; color: rgb(255, 0, 0); line-height: 3;
+         letter-spacing: 3px; text-transform: uppercase; background: rgb(250, 240, 200); }
+  * { box-sizing: content-box !important; }
+  button, input, textarea, select { background: rgb(255, 0, 0) !important; color: rgb(0, 255, 0) !important;
+    border: 6px dashed rgb(0, 0, 255) !important; border-radius: 0 !important; font: italic 900 30px serif !important; }
+  h1, h2, p, a, div, span, dialog, [role="dialog"], [data-slot] { color: rgb(255, 0, 0) !important;
+    text-decoration: underline !important; border: 2px solid rgb(255, 0, 0) !important; }
+  [role="dialog"], [data-slot], div, span { background: rgb(255, 255, 0) !important; }
+  pulsarix-widget { color: rgb(255, 0, 0); font-size: 90px; }
+  main { max-width: 40rem; margin: 0 auto; padding: 1rem; }
+  /* Host rules that would stay put if the widget leaked a global reset. */
+  h1 { font-size: 2rem; margin: 1.5rem 0; }
+  a { color: rgb(0, 0, 238); }
+  ul { list-style: square; padding-left: 2rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="probe-h1">Acme Store</h1>
+  <p id="probe-p">Free shipping on every order. <a id="probe-a" href="#sale">See the sale</a>.</p>
+  <ul id="probe-ul"><li>Anvils</li><li>Rockets</li></ul>
+  <button id="probe-button" type="button">Add to cart</button>
+  <input id="probe-input" aria-label="Search" value="anvil" />
+</main>
+<!--LOADER-->
+</body>
+</html>

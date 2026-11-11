@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@softistx/material/styles.css";
+@import "./base.css";
+@source "../node_modules/@softistx/material/";
+@source "./";

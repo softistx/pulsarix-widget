@@ -6,5 +6,44 @@
   "description": "Embeddable client-issue intake widget for pulsarix, rendered in a Shadow DOM",
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "dependencies": {
+    "@softistx/material": "^3.179.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@softistx/material-core": "^0.82.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/bun": "^1.4.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@happy-dom/global-registrator": "^21.0.4",
+    "typescript": "^7.0.2",
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "playwright-core": "^1.64.1"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "lint": "biome ci",
+    "fix": "biome check --write",
+    "typecheck": "bun check",
+    "test": "bun test",
+    "size": "bun scripts/check-size.ts",
+    "test:browser": "bun scripts/leak-test.ts",
+    "fixture": "bun scripts/serve-fixture.ts",
+    "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
 }
