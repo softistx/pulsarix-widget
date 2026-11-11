@@ -43,7 +43,8 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#media = window.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#media?.addEventListener("change", this.#onScheme);
     this.#render();
-    this.#emit("pulsarix:ready");
+    // Async: a listener added right after `mount()` returns still hears it.
+    queueMicrotask(() => this.#emit("pulsarix:ready"));
   }
 
   disconnectedCallback() {

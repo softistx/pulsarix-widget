@@ -58,11 +58,18 @@ window.PulsarixWidget = {
     handle?.destroy();
     handle = null;
     loading = null;
+    listeners.length = 0;
+    queue.length = 0;
   },
   on(name, cb) {
-    listeners.push([name, cb]);
-    if (handle) return handle.on(name, cb);
-    return () => {};
+    const entry: [string, (e: CustomEvent) => void] = [name, cb];
+    listeners.push(entry);
+    const off = handle?.on(name, cb);
+    return () => {
+      const i = listeners.indexOf(entry);
+      if (i >= 0) listeners.splice(i, 1);
+      off?.();
+    };
   },
 };
 

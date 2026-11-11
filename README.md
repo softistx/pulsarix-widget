@@ -24,6 +24,8 @@ widget.on("pulsarix:open", () => console.log("opened"));
 widget.open();
 ```
 
+A second `init` while loaded is ignored.
+
 Status: W0 foundation. The element, the shadow root, the theme and the loader work; the
 report form and the submit arrive with W1.
 
