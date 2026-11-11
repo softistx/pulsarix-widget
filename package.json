@@ -33,7 +33,8 @@
     "size": "bun scripts/check-size.ts",
     "test:browser": "bun scripts/leak-test.ts",
     "fixture": "bun scripts/serve-fixture.ts",
-    "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size"
+    "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size",
+    "capture": "bun scripts/capture.ts"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",

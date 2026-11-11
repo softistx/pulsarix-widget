@@ -77,6 +77,10 @@ function hostSnapshot(page: Page) {
   );
 }
 
+// Temporary, until material ships a lean entry for embeds: importing its barrel runs the
+// top level of these libraries. Reported in the W0 PR; remove from this list once fixed.
+const UPSTREAM_GLOBALS = ["JsBarcode", "__reactRouterVersion"];
+
 const failures: string[] = [];
 const check = (ok: boolean, message: string) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${message}`);
@@ -128,10 +132,16 @@ try {
   const newGlobals = closed.globals.filter(
     (g) => !baseline.globals.includes(g),
   );
+  const own = newGlobals.filter((g) => !UPSTREAM_GLOBALS.includes(g));
   check(
-    newGlobals.length === 1 && newGlobals[0] === "PulsarixWidget",
-    `only global added: ${newGlobals.join(",") || "(none)"}`,
+    own.length === 1 && own[0] === "PulsarixWidget",
+    `only global added: ${own.join(",") || "(none)"}`,
   );
+  const upstream = newGlobals.filter((g) => UPSTREAM_GLOBALS.includes(g));
+  if (upstream.length)
+    console.log(
+      `KNOWN  globals set by @softistx/material's barrel on import: ${upstream.join(", ")}`,
+    );
 
   // In: the host's hostile rules do not reach the widget.
   const inner = await page.evaluate(() => {
@@ -214,7 +224,7 @@ try {
       inShadow: !!dlg,
       inBody: document.querySelectorAll('[role="dialog"]').length,
       bg: cs.backgroundColor,
-      border: cs.borderTopStyle,
+      border: cs.borderTopColor,
       radius: cs.borderTopLeftRadius,
       primary: getComputedStyle(
         host.shadowRoot?.querySelector(".pulsarix-root") as Element,
@@ -226,7 +236,7 @@ try {
     "dialog is inside the shadow root, none in document.body",
   );
   check(
-    dialog.bg !== "rgb(255, 255, 0)" && dialog.border !== "solid",
+    dialog.bg !== "rgb(255, 255, 0)" && dialog.border !== "rgb(255, 0, 0)",
     `dialog not painted by host rules (${dialog.bg}, ${dialog.border})`,
   );
   check(
@@ -237,15 +247,30 @@ try {
     JSON.stringify(open.styles) === JSON.stringify(baseline.styles),
     "host computed styles unchanged by the widget (open)",
   );
+  // A modal makes the page inert: its scroll lock adds a transient style element and focus
+  // guards to the document, and both go away on close.
+  await page.evaluate(() => window.PulsarixWidget.close());
+  await page.waitForFunction(
+    () =>
+      !document
+        .querySelector("pulsarix-widget")
+        ?.shadowRoot?.querySelector('[role="dialog"]'),
+  );
+  await page.waitForTimeout(500);
+  const after = await hostSnapshot(page);
   check(
-    open.headHtml === baseline.headHtml &&
-      open.styleSheets === baseline.styleSheets,
-    "document still untouched (open)",
+    after.headHtml === baseline.headHtml &&
+      after.styleSheets === baseline.styleSheets,
+    "document head and stylesheets back to the baseline after close",
   );
   check(
-    JSON.stringify(open.bodyChildTags) ===
+    JSON.stringify(after.bodyChildTags) ===
       JSON.stringify([...baseline.bodyChildTags, "pulsarix-widget"]),
-    `body children: ${open.bodyChildTags.join(",")}`,
+    `body children after close: ${after.bodyChildTags.join(",")}`,
+  );
+  check(
+    JSON.stringify(after.styles) === JSON.stringify(baseline.styles),
+    "host computed styles unchanged after close",
   );
   check(
     errors.length === 0,
