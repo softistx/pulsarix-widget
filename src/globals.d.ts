@@ -7,6 +7,7 @@ interface Window {
       theme?: string;
       position?: string;
       accentColor?: string;
+      apiBase?: string;
       launcher?: boolean;
     }): Promise<void>;
     open(): void;

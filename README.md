@@ -26,8 +26,32 @@ widget.open();
 
 A second `init` while loaded is ignored.
 
-Status: W0 foundation. The element, the shadow root, the theme and the loader work; the
-report form and the submit arrive with W1.
+## The report form
+
+The launcher opens a dialog with a title, a description and an optional e-mail. With an e-mail,
+the reporter is mailed a link to follow the report. The dialog traps focus, closes on Escape
+and returns focus to the launcher (or to whatever opened it).
+
+- The form posts the persisted `submitClientReport` operation to `<apiBase>/public/graphql`.
+  The script tag fills `apiBase` with the origin that served the loader; override it with
+  `data-api-base` (or `apiBase` in `init` / `mount`, `api-base` on the element). Without one
+  (an npm `mount` that gives none), the form reports a configuration error instead of sending.
+- The project key must allow the page's origin (plain `http` only on `localhost`). A form sent
+  faster than 3 seconds after it opened waits out the difference, because the API refuses it.
+- Failures are shown in the dialog and the text is kept: the service busy (503), a rejected key
+  or origin (404, 403: sending stops), a rate limit (429, with the wait), a refused report
+  (400), a network failure, a missing key or base.
+- Locales: English (default) and French, from `locale`. The page address, the browser and the
+  e-mail (if given) are sent with the report; the form says so.
+
+Events, on the element and through `on(name, cb)`: `pulsarix:ready`, `pulsarix:open`,
+`pulsarix:close`, `pulsarix:submit` (`detail: { reportId }`) and `pulsarix:error`
+(`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
+
+```ts
+widget.on("pulsarix:submit", (event) => console.log(event.detail.reportId));
+widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
+```
 
 ## How it is isolated
 

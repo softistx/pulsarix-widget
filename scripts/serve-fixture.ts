@@ -3,6 +3,7 @@
  *   /          the host page with the loader script tag
  *   /baseline  the same page without the widget (the reference for the leak test)
  *   /dist/*    the build output
+ *   POST /public/graphql  a stub of the API's intake
  */
 import { join } from "node:path";
 
@@ -13,6 +14,34 @@ export function serveFixture(port = 0) {
     port,
     async fetch(request) {
       const url = new URL(request.url);
+      // A stand-in for the pulsarix API's public intake (same origin as the loader, as in
+      // production): it answers `submitClientReport` and records nothing.
+      if (url.pathname === "/public/graphql" && request.method === "POST") {
+        const body = (await request.json()) as {
+          variables?: { input?: { email?: string; title?: string } };
+        };
+        // A title that says "busy" gets the API's 503, to see the error state.
+        if (body.variables?.input?.title?.includes("busy"))
+          return Response.json(
+            {
+              errors: [
+                {
+                  message: "busy",
+                  extensions: { code: "intake.errors.unavailable" },
+                },
+              ],
+            },
+            { status: 503 },
+          );
+        return Response.json({
+          data: {
+            submitClientReport: {
+              reportId: "fixture-report",
+              tracking: !!body.variables?.input?.email,
+            },
+          },
+        });
+      }
       if (url.pathname === "/" || url.pathname === "/baseline") {
         const html = await Bun.file(join(root, "fixtures/host.html")).text();
         const loader =

@@ -8,7 +8,12 @@ import { themeCssFor } from "./theme";
 
 export const TAG_NAME = "pulsarix-widget";
 
-export type WidgetEvent = "pulsarix:ready" | "pulsarix:open" | "pulsarix:close";
+export type WidgetEvent =
+  | "pulsarix:ready"
+  | "pulsarix:open"
+  | "pulsarix:close"
+  | "pulsarix:submit"
+  | "pulsarix:error";
 
 /**
  * `<pulsarix-widget>`: an open shadow root holding material's stylesheet, the
@@ -78,8 +83,8 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#emit(next ? "pulsarix:open" : "pulsarix:close");
   }
 
-  #emit(name: WidgetEvent) {
-    this.dispatchEvent(new CustomEvent(name, { detail: {}, composed: true }));
+  #emit(name: WidgetEvent, detail: object = {}) {
+    this.dispatchEvent(new CustomEvent(name, { detail, composed: true }));
   }
 
   #render() {
@@ -101,11 +106,16 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#root.render(
       <App
         messages={MESSAGES[config.locale]}
+        locale={config.locale}
+        projectKey={config.projectKey}
+        apiBase={config.apiBase}
         dark={dark}
         open={this.#open}
         launcher={this.getAttribute("launcher") !== "false"}
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
+        onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
+        onError={(detail) => this.#emit("pulsarix:error", detail)}
       />,
     );
   }
@@ -122,6 +132,8 @@ export interface MountOptions {
   theme?: "light" | "dark" | "auto";
   position?: "bottom-left" | "bottom-right";
   accentColor?: string;
+  /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
+  apiBase?: string;
   launcher?: boolean;
   /** Where to append the element; `document.body` by default. */
   target?: Element;
@@ -144,6 +156,7 @@ export function mount(options: MountOptions): WidgetHandle {
   if (options.position) element.setAttribute("position", options.position);
   if (options.accentColor)
     element.setAttribute("accent-color", options.accentColor);
+  if (options.apiBase) element.setAttribute("api-base", options.apiBase);
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   return {
