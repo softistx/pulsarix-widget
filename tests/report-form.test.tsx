@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { App } from "../src/app";
 import type { Locale } from "../src/config";
 import { MESSAGES } from "../src/messages";
+import { MIN_FILL_MS } from "../src/report-flow";
 
 interface Body {
   id: string;
@@ -56,6 +57,7 @@ function setup(
     locale?: Locale;
     projectKey?: string | null;
     apiBase?: string | null;
+    minFillMs?: number;
   } = {},
 ) {
   const locale = options.locale ?? "en";
@@ -81,7 +83,7 @@ function setup(
       onOpenChange={onOpenChange}
       onSubmitted={onSubmitted}
       onError={onError}
-      minFillMs={0}
+      minFillMs={options.minFillMs ?? 0}
     />,
   );
   return { user: userEvent.setup(), onSubmitted, onError, onOpenChange };
@@ -290,9 +292,65 @@ describe("the report form", () => {
     setup();
     await screen.findByRole("dialog");
     const trap = document.querySelector<HTMLInputElement>(
-      "input[name=website]",
+      "input[name=url_confirm]",
     );
     expect(trap?.getAttribute("aria-hidden")).toBe("true");
     expect(trap?.tabIndex).toBe(-1);
+  });
+
+  test("the API's minimum fill time is 3 s, and a quick submit waits it out", async () => {
+    expect(MIN_FILL_MS).toBe(3000);
+    const { user } = setup({ minFillMs: 200 });
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    const sent = calls[0]?.body.variables.input.filledInMs ?? 0;
+    expect(sent).toBeGreaterThanOrEqual(200);
+  });
+
+  test("closing during the wait sends nothing", async () => {
+    const { user, onOpenChange } = setup({ minFillMs: 600 });
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+
+  test("the request is the persisted JSON operation, without credentials", async () => {
+    const seen: RequestInit[] = [];
+    globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
+      seen.push(init);
+      return ok(false);
+    }) as unknown as typeof fetch;
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    expect(seen[0]?.method).toBe("POST");
+    expect(seen[0]?.credentials).toBe("omit");
+    expect(new Headers(seen[0]?.headers).get("content-type")).toBe(
+      "application/json",
+    );
+  });
+
+  test("a failure is announced in a live region", async () => {
+    handler = () => refusal(503, "intake.errors.unavailable");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(m.failure.unavailable);
+  });
+
+  test("a stricter e-mail than a@b.c is refused before sending", async () => {
+    const { user } = setup();
+    await fill(user, {
+      title: "Crash",
+      description: "On save",
+      email: "a@b.c",
+    });
+    await send(user);
+    await screen.findByText(m.errors.emailInvalid);
+    expect(calls).toHaveLength(0);
   });
 });

@@ -38,3 +38,41 @@ test("an answer that is not JSON is an unknown failure with its status", async (
   expect(error.kind).toBe("unknown");
   expect(error.code).toBe("http-502");
 });
+
+const refusal = (status: number, code: string, extra: object = {}) =>
+  (async () =>
+    new Response(
+      JSON.stringify({ errors: [{ extensions: { code, ...extra } }] }),
+      { status },
+    )) as unknown as typeof fetch;
+
+test("statuses map to kinds, and a rate limit keeps its retryAfter", async () => {
+  const kinds: Array<[number, string]> = [
+    [404, "rejected"],
+    [403, "rejected"],
+    [503, "unavailable"],
+    [429, "rate-limited"],
+    [400, "invalid"],
+    [415, "invalid"],
+    [413, "invalid"],
+    [500, "unknown"],
+  ];
+  for (const [status, kind] of kinds) {
+    const error = await submitReport({
+      ...base,
+      fetch: refusal(status, "intake.errors.x", { retryAfter: 90 }),
+    }).catch((e) => e);
+    expect(error.kind).toBe(kind);
+    expect(error.retryAfterSeconds).toBe(90);
+  }
+});
+
+test("a fetch that throws is a network failure", async () => {
+  const error = await submitReport({
+    ...base,
+    fetch: (async () => {
+      throw new TypeError("x");
+    }) as unknown as typeof fetch,
+  }).catch((e) => e);
+  expect(error.kind).toBe("network");
+});

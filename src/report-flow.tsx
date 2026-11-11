@@ -6,7 +6,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  EmailFormField,
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/components";
@@ -77,6 +76,13 @@ export function ReportFlow({
   const openedAt = useRef(Date.now());
   const honeypot = useRef<HTMLInputElement>(null);
   const done = useRef<HTMLDivElement>(null);
+  const aborted = useRef(new AbortController());
+  // Closing the dialog unmounts this: nothing is sent, and nothing is reported, after it.
+  useEffect(() => {
+    const controller = new AbortController();
+    aborted.current = controller;
+    return () => controller.abort();
+  }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
   const [sent, setSent] = useState<{ tracking: boolean } | null>(null);
   const resolver = useMemo(() => resolverFor(messages.errors), [messages]);
@@ -99,11 +105,13 @@ export function ReportFlow({
       return fail(new IntakeError("config", "config"));
     const wait = minFillMs - (Date.now() - openedAt.current);
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    if (aborted.current.signal.aborted) return;
     const input: ReportInput = {
       title: values.title.trim(),
       description: values.description.trim(),
       email: values.email.trim(),
-      pageUrl: location.href.slice(0, 2_048),
+      // Without the fragment: it can carry a host page's tokens.
+      pageUrl: location.href.split("#")[0]?.slice(0, 2_048),
       locale,
       website: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,
@@ -113,10 +121,12 @@ export function ReportFlow({
         apiBase,
         publicKey: projectKey,
         input,
+        signal: aborted.current.signal,
       });
       setSent({ tracking: report.tracking });
       onSubmitted({ reportId: report.reportId });
     } catch (error) {
+      if (aborted.current.signal.aborted) return;
       fail(
         error instanceof IntakeError
           ? error
@@ -182,9 +192,11 @@ export function ReportFlow({
           maxLength={DESCRIPTION_MAX}
           required
         />
-        <EmailFormField
+        <TextFormField
           control={control}
           name="email"
+          type="email"
+          inputMode="email"
           label={messages.fields.email}
           helperText={messages.fields.emailHint}
           maxLength={EMAIL_MAX}
@@ -193,7 +205,7 @@ export function ReportFlow({
         {/* Honeypot: a person never sees it; a bot that fills every field trips the API's check. */}
         <input
           ref={honeypot}
-          name="website"
+          name="url_confirm"
           type="text"
           tabIndex={-1}
           autoComplete="off"

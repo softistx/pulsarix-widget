@@ -12,7 +12,7 @@ export interface ReportValues {
   email: string;
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)*\.[A-Za-z]{2,}$/;
 
 export function validate(
   values: ReportValues,
