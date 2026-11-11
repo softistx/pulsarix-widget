@@ -15,3 +15,17 @@ test("other units and identifiers are left alone", () => {
     ".c{width:10em;height:50%;--x:rem-token}",
   );
 });
+
+test("an escaped class name keeps its spelling", () => {
+  expect(remToPx(".\\[--btn-px\\:0\\.25rem\\]{--btn-px:.25rem}")).toBe(
+    ".\\[--btn-px\\:0\\.25rem\\]{--btn-px:4px}",
+  );
+});
+
+test("a class name with a comma before its rem is not a declaration", () => {
+  const css =
+    ".gap-\\[var\\(--g\\,0\\.5rem\\)\\]{gap:var(--g,.5rem)}.px-\\[a\\,1rem\\]{top:1rem}";
+  expect(remToPx(css)).toBe(
+    ".gap-\\[var\\(--g\\,0\\.5rem\\)\\]{gap:var(--g,8px)}.px-\\[a\\,1rem\\]{top:16px}",
+  );
+});
