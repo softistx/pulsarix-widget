@@ -55,13 +55,14 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 
 ## How it is isolated
 
-- `<pulsarix-widget>` has an open shadow root. `@softistx/material`'s compiled stylesheet and
-  the theme generated from `accentColor` are adopted into it (`adoptedStyleSheets`): no style
+- `<pulsarix-widget>` has an open shadow root. `@softistx/material/embed` (the lean entry for
+  Shadow DOM widgets: no globals, only the parts the form uses) and its `embed.css`, plus the
+  theme generated from `accentColor`, are adopted into it (`adoptedStyleSheets`): no style
   element, no `style-src 'unsafe-inline'`. Portals (the dialog) target an element inside it.
 - The page's styles do not reach the widget. Only `color-scheme` and the root font size
-  inherit, and both are neutralised: `:host` resets `color-scheme`, and the build converts
-  `rem` to `px` (a shadow root cannot reset `html { font-size }`) and copies `@property`
-  initial values into a lowest-priority layer (a shadow root ignores `@property`).
+  inherit: `:host` resets `color-scheme`, and `embed.css` is already in `px` with its
+  `@property` initial values as plain declarations (a shadow root ignores `@property`). The build
+  adds the utilities the widget's own classes need, with their `@property` values copied the same way.
 - The widget leaves the page as it found it: no global but `window.PulsarixWidget`. While the
   modal is open, the dialog's scroll lock adds a transient style element and focus guards
   to the document; both are removed on close.

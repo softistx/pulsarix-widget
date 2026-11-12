@@ -8,7 +8,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@softistx/material": "^3.179.0",
+    "@softistx/material": "^3.180.0",
     "@softistx/material-core": "^0.82.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
