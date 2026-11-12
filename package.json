@@ -8,8 +8,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@softistx/material": "^3.180.0",
-    "@softistx/material-core": "^0.82.0",
+    "@softistx/material": "^3.185.0",
+    "@softistx/material-core": "^0.83.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hook-form": "^7.92.0"
