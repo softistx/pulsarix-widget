@@ -32,7 +32,7 @@ describe("the launcher", () => {
     expect(launcherBox().hidden).toBe(false);
   });
 
-  test("is hidden, but kept for focus return, while the dialog is open", async () => {
+  test("is hidden while the dialog is open and shown again on close", async () => {
     const { view, props } = renderApp(true);
     await screen.findByRole("dialog");
     expect(launcherBox().hidden).toBe(true);
