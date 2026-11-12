@@ -3,7 +3,7 @@ import {
   Dialog,
   DialogContent,
   PortalContainerProvider,
-} from "@softistx/material/components";
+} from "@softistx/material/embed";
 import { useRef, useState } from "react";
 import type { Locale, Position } from "./config";
 import type { Messages } from "./messages";

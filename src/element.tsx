@@ -1,4 +1,4 @@
-import { adoptStyles } from "@softistx/material/lib";
+import { adoptStyles } from "@softistx/material/embed";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
 import { OBSERVED_ATTRIBUTES, readConfig, type WidgetConfig } from "./config";

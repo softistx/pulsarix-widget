@@ -8,7 +8,7 @@ import {
   DialogTitle,
   TextareaFormField,
   TextFormField,
-} from "@softistx/material/components";
+} from "@softistx/material/embed";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { IntakeError, type ReportInput, submitReport } from "./api";
@@ -63,6 +63,8 @@ function failureText(messages: Messages, error: IntakeError): string {
  * The dialog's content: the report form, then the confirmation. It lives inside the
  * dialog's popup, so closing the dialog unmounts it and the next opening starts blank.
  */
+const FORM_ID = "pulsarix-report-form";
+
 export function ReportFlow({
   messages,
   locale,
@@ -76,6 +78,7 @@ export function ReportFlow({
   const openedAt = useRef(Date.now());
   const honeypot = useRef<HTMLInputElement>(null);
   const done = useRef<HTMLDivElement>(null);
+  const alertBox = useRef<HTMLDivElement>(null);
   const aborted = useRef(new AbortController());
   // Closing the dialog unmounts this: nothing is sent, and nothing is reported, after it.
   useEffect(() => {
@@ -85,6 +88,11 @@ export function ReportFlow({
   }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
   const [sent, setSent] = useState<{ tracking: boolean } | null>(null);
+
+  // A failure shows in the scrolling body, above the sticky footer on a phone.
+  useEffect(() => {
+    if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
+  }, [failure]);
   const resolver = useMemo(() => resolverFor(messages.errors), [messages]);
   const { control, handleSubmit, formState } = useForm<ReportValues>({
     defaultValues: { title: "", description: "", email: "" },
@@ -163,79 +171,83 @@ export function ReportFlow({
 
   const blocked = failure?.kind === "rejected" || failure?.kind === "config";
   return (
-    <form
-      onSubmit={submit}
-      noValidate
-      className="flex min-h-0 flex-1 flex-col gap-4"
-    >
+    <>
       <DialogHeader>
         <DialogTitle>{messages.title}</DialogTitle>
         <DialogDescription>{messages.intro}</DialogDescription>
       </DialogHeader>
-      <DialogBody className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto">
-        <TextFormField
-          control={control}
-          name="title"
-          label={messages.fields.title}
-          helperText={messages.fields.titleHint}
-          maxLength={TITLE_MAX}
-          autoComplete="off"
-          required
-        />
-        <TextareaFormField
-          control={control}
-          name="description"
-          label={messages.fields.description}
-          helperText={messages.fields.descriptionHint}
-          minRows={4}
-          maxRows={10}
-          maxLength={DESCRIPTION_MAX}
-          required
-        />
-        <TextFormField
-          control={control}
-          name="email"
-          type="email"
-          inputMode="email"
-          label={messages.fields.email}
-          helperText={messages.fields.emailHint}
-          maxLength={EMAIL_MAX}
-          autoComplete="email"
-        />
-        {/* Honeypot: a person never sees it; a bot that fills every field trips the API's check. */}
-        <input
-          ref={honeypot}
-          name="url_confirm"
-          type="text"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-          defaultValue=""
-          className="absolute -left-[9999px] h-0 w-0 opacity-0"
-        />
-        <div role="alert">
-          {failure ? (
-            <Alert
-              variant="error"
-              title={messages.failure.summary}
-              description={failureText(messages, failure)}
-            />
-          ) : null}
-        </div>
-        <p className="text-muted-foreground text-xs">{messages.privacy}</p>
+      <DialogBody className="min-h-0 flex-1 overflow-y-auto">
+        <form
+          id={FORM_ID}
+          onSubmit={submit}
+          noValidate
+          className="grid content-start gap-4"
+        >
+          <TextFormField
+            control={control}
+            name="title"
+            label={messages.fields.title}
+            helperText={messages.fields.titleHint}
+            maxLength={TITLE_MAX}
+            autoComplete="off"
+            required
+          />
+          <TextareaFormField
+            control={control}
+            name="description"
+            label={messages.fields.description}
+            helperText={messages.fields.descriptionHint}
+            minRows={4}
+            maxRows={10}
+            maxLength={DESCRIPTION_MAX}
+            required
+          />
+          <TextFormField
+            control={control}
+            name="email"
+            type="email"
+            inputMode="email"
+            label={messages.fields.email}
+            helperText={messages.fields.emailHint}
+            maxLength={EMAIL_MAX}
+            autoComplete="email"
+          />
+          {/* Honeypot: a person never sees it; a bot that fills every field trips the API's check. */}
+          <input
+            ref={honeypot}
+            name="url_confirm"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            defaultValue=""
+            className="absolute -left-[9999px] h-0 w-0 opacity-0"
+          />
+          <div role="alert" ref={alertBox}>
+            {failure ? (
+              <Alert
+                variant="error"
+                title={messages.failure.summary}
+                description={failureText(messages, failure)}
+              />
+            ) : null}
+          </div>
+          <p className="text-muted-foreground text-xs">{messages.privacy}</p>
+        </form>
       </DialogBody>
       <DialogFooter>
-        <Button type="button" variant="outlined" onClick={onClose}>
+        <Button type="button" variant="tonal" onClick={onClose}>
           {messages.close}
         </Button>
         <Button
           type="submit"
+          form={FORM_ID}
           loading={formState.isSubmitting}
           disabled={blocked}
         >
           {formState.isSubmitting ? messages.submitting : messages.submit}
         </Button>
       </DialogFooter>
-    </form>
+    </>
   );
 }

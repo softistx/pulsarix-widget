@@ -77,10 +77,6 @@ function hostSnapshot(page: Page) {
   );
 }
 
-// Temporary, until material ships a lean entry for embeds: importing its barrel runs the
-// top level of these libraries. Reported in the W0 PR; remove from this list once fixed.
-const UPSTREAM_GLOBALS = ["JsBarcode", "__reactRouterVersion"];
-
 const failures: string[] = [];
 const check = (ok: boolean, message: string) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${message}`);
@@ -132,16 +128,10 @@ try {
   const newGlobals = closed.globals.filter(
     (g) => !baseline.globals.includes(g),
   );
-  const own = newGlobals.filter((g) => !UPSTREAM_GLOBALS.includes(g));
   check(
-    own.length === 1 && own[0] === "PulsarixWidget",
-    `only global added: ${own.join(",") || "(none)"}`,
+    newGlobals.length === 1 && newGlobals[0] === "PulsarixWidget",
+    `only global added: ${newGlobals.join(",") || "(none)"}`,
   );
-  const upstream = newGlobals.filter((g) => UPSTREAM_GLOBALS.includes(g));
-  if (upstream.length)
-    console.log(
-      `KNOWN  globals set by @softistx/material's barrel on import: ${upstream.join(", ")}`,
-    );
 
   // In: the host's hostile rules do not reach the widget.
   const inner = await page.evaluate(() => {
