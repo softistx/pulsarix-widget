@@ -51,7 +51,7 @@ export const MESSAGES: Record<Locale, Messages> = {
       title: "Title",
       titleHint: "A short summary",
       description: "What happened?",
-      descriptionHint: "What you did and what you saw",
+      descriptionHint: "What you did and saw",
       email: "Your e-mail (optional)",
       emailHint: "To get a link to your report",
     },
