@@ -7,7 +7,8 @@ Shadow DOM, so your page's styles and the widget's never touch.
 ## Install
 
 The package is published on the GitHub Packages registry (`npm.pkg.github.com`), not on npmjs.
-Point the `@softistx` scope at it in your `.npmrc`, with a token that has `read:packages`:
+Point the `@softistx` scope at it in your `.npmrc`, with a GitHub personal access token (classic)
+with `read:packages`, exported as `GITHUB_TOKEN`:
 
 ```ini
 @softistx:registry=https://npm.pkg.github.com

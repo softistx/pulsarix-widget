@@ -54,7 +54,9 @@
   },
   "files": [
     "dist/index.js",
-    "dist/types"
+    "dist/types/index.d.ts",
+    "dist/types/config.d.ts",
+    "dist/types/element.d.ts"
   ],
   "types": "./dist/types/index.d.ts",
   "sideEffects": true

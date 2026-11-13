@@ -13,10 +13,17 @@ invariants.
 - The package is self-contained: everything `dist/` inlines (React, `@softistx/material`, ...)
   is a `devDependency`, so `dependencies` stays empty and the package itself has no
   runtime dependencies. The npm entry has `.d.ts` files (`tsconfig.build.json`, run by the build).
+- The shipped declarations are only those reachable from `dist/types/index.d.ts` (`index`,
+  `config`, `element`), listed in `files`; they must import nothing but each other (no `react`,
+  no `react-hook-form`, no generated CSS). If `index.d.ts` starts to reach another file, add it to
+  `files` and keep the throwaway-tsconfig check (`skipLibCheck: false`, no react installed) clean.
 - Release (GitHub Packages only, never npmjs; no publish workflow, no npm token): from an
-  up-to-date `develop` worktree, bump `version` in `package.json` (and the changelog if any), merge
-  that PR, run `bun run verify` (the green bar), then `bun run build && bun publish` (registry and access come
-  from `publishConfig`). Afterwards check the version with
+  up-to-date `develop` worktree, bump `version` in `package.json`, merge that PR, then
+  `bun run verify && bun publish`. `bun publish` reads the credential from `bunfig.toml`
+  (`$GITHUB_TOKEN`), which must be a token with `write:packages`, e.g.
+  `GITHUB_TOKEN=$(gh auth token) bun publish` when that token has the scope. Registry and access
+  come from `publishConfig`. Then tag: `git tag v<version> && git push origin v<version>`, and
+  check the version with
   `npm view @softistx/pulsarix-widget version --registry https://npm.pkg.github.com`.
 - `mount()` is a singleton while its element is attached.
 
