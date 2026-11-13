@@ -13,7 +13,7 @@
  */
 import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { propertyDefaults } from "./property-defaults";
+import { withPropertyFallbacks } from "@softistx/material/embed-css";
 
 const root = join(import.meta.dir, "..");
 const dist = join(root, "dist");
@@ -47,10 +47,9 @@ async function build() {
   ]);
   // The widget's utilities go before embed.css: both are `@layer utilities`, and a later
   // plain `.flex-col` would beat embed.css's `sm:flex-row` (same specificity, later wins).
-  // The first line keeps `nxgt-property-initial` the lowest layer.
+  // withPropertyFallbacks declares `nxgt-property-initial` first, the lowest layer.
   const css = [
-    "@layer nxgt-property-initial;",
-    propertyDefaults(await Bun.file(cssFile).text()),
+    withPropertyFallbacks(await Bun.file(cssFile).text()),
     await Bun.file(embedCss).text(),
     await Bun.file(join(root, "src/base.css")).text(),
   ].join("\n");
