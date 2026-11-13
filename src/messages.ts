@@ -51,7 +51,7 @@ export const MESSAGES: Record<Locale, Messages> = {
       title: "Title",
       titleHint: "A short summary",
       description: "What happened?",
-      descriptionHint: "What you did and what you saw",
+      descriptionHint: "What you did and saw",
       email: "Your e-mail (optional)",
       emailHint: "To get a link to your report",
     },
@@ -96,8 +96,7 @@ export const MESSAGES: Record<Locale, Messages> = {
       title: "Titre",
       titleHint: "Un bref résumé",
       description: "Que s'est-il passé ?",
-      descriptionHint:
-        "Ce que vous avez fait, ce que vous attendiez, ce que vous avez vu",
+      descriptionHint: "Ce que vous avez fait et vu",
       email: "Votre e-mail (facultatif)",
       emailHint: "Ajoutez-le pour recevoir un lien de suivi",
     },

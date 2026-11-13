@@ -59,6 +59,10 @@ export function App({
         <PortalContainerProvider container={root}>
           {launcher ? (
             <div
+              // Hidden, not unmounted, while the dialog is open: on a phone the dialog
+              // covers the screen and a sliver of the launcher showed behind it, and the
+              // button must stay so that focus can return to it on close.
+              hidden={open}
               className={
                 position === "bottom-left"
                   ? "fixed bottom-4 left-4 z-40"
