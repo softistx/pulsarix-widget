@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    # develop only: slices land on feat/v1 after a local green bar; the effort's one
+    # PR into develop runs this once. No push run, and no browser tests in CI.
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 20
+    env:
+      # @softistx/* comes from GitHub Packages: bunfig.toml reads this token.
+      GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      # lint, build, typecheck (bun check), unit tests, loader size budget
+      - run: bun run verify
