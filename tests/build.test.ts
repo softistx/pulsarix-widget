@@ -35,6 +35,20 @@ test.skipIf(!existsSync(generatedCss))(
   },
 );
 
+// A shadow root ignores `@property`: the initial values must be plain declarations in the lowest
+// layer, declared first so that every other rule overrides it.
+test.skipIf(!existsSync(generatedCss))(
+  "the built stylesheet starts with the property-initial layer and fills it",
+  async () => {
+    const { default: css } = (await import(generatedCss)) as {
+      default: string;
+    };
+    expect(css.startsWith("@layer nxgt-property-initial;")).toBe(true);
+    const layer = css.match(/@layer nxgt-property-initial\{[^{]*\{([^}]*)\}/);
+    expect(layer?.[1]).toContain("--tw-ring-offset-width:");
+  },
+);
+
 // A consumer's TypeScript must not need react, react-dom or react-hook-form (devDependencies
 // here): no declaration reachable from the entry may import them.
 test.skipIf(!existsSync(join(dist, "types/index.d.ts")))(
