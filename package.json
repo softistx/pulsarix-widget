@@ -49,7 +49,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/types"
   ],
-  "types": "./dist/types/index.d.ts"
+  "types": "./dist/types/index.d.ts",
+  "sideEffects": true
 }

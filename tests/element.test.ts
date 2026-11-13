@@ -27,14 +27,16 @@ describe("mount", () => {
     const second = mount({ projectKey: "pk_live_other" });
     expect(second).toBe(handle);
     expect(document.querySelectorAll("pulsarix-widget").length).toBe(1);
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
 
   test("mounts again after destroy", () => {
     handle = mount({ projectKey: "pk_live_abc" });
+    const first = handle;
     handle.destroy();
     handle = mount({ projectKey: "pk_live_abc" });
+    expect(handle).not.toBe(first);
     expect(document.querySelectorAll("pulsarix-widget").length).toBe(1);
   });
 
