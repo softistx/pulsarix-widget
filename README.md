@@ -4,6 +4,16 @@ An intake widget that lets your users report a problem to your pulsarix project:
 a title, a description and an optional e-mail, with no account. It renders inside a
 Shadow DOM, so your page's styles and the widget's never touch.
 
+## Install
+
+```sh
+npm install @softistx/pulsarix-widget
+```
+
+The package is self-contained: React and the UI kit are bundled into `dist/`, so it has no
+dependencies, needs no private registry and ships its own types (`dist/types`). Most
+integrations use the script tag below instead and install nothing.
+
 ## Usage
 
 ```html
@@ -24,7 +34,9 @@ widget.on("pulsarix:open", () => console.log("opened"));
 widget.open();
 ```
 
-A second `init` while loaded is ignored.
+A second `init` while loaded is ignored, and so is a second `mount` while a widget is attached
+(it warns and returns the first handle; `destroy()` allows a new one). A `mount` without a
+`projectKey` emits `pulsarix:error` with `code: "config"` and sends nothing.
 
 ## The report form
 
