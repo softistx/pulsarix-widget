@@ -28,6 +28,8 @@ const base = script?.src ? new URL(".", script.src).href : "";
 
 let handle: Handle | null = null;
 let loading: Promise<void> | null = null;
+// Bumped by `destroy`: a bundle that resolves after it must not mount.
+let generation = 0;
 const queue: Array<(h: Handle) => void> = [];
 const listeners: Array<[string, (e: CustomEvent) => void]> = [];
 
@@ -43,14 +45,16 @@ function init(given: InitOptions): Promise<void> {
     ...given,
     apiBase: given.apiBase ?? (base ? new URL(base).origin : undefined),
   };
+  const mine = generation;
   loading = import(/* @vite-ignore */ base + __WIDGET_FILE__)
     .then((mod: { mount: (o: InitOptions) => Handle }) => {
+      if (mine !== generation) return;
       handle = mod.mount(options);
       for (const [name, cb] of listeners) handle.on(name, cb);
       for (const fn of queue.splice(0)) fn(handle);
     })
     .catch((error: unknown) => {
-      loading = null;
+      if (mine === generation) loading = null;
       console.warn("[pulsarix] the widget could not be loaded", error);
     });
   return loading;
@@ -61,6 +65,7 @@ window.PulsarixWidget = {
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
   destroy: () => {
+    generation++;
     handle?.destroy();
     handle = null;
     loading = null;
