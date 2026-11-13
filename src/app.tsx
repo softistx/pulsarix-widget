@@ -54,6 +54,7 @@ export function App({
       ref={setRoot}
       className={dark ? "pulsarix-root dark" : "pulsarix-root"}
       data-nxgt-theme={THEME_NAME}
+      lang={locale}
     >
       {root ? (
         <PortalContainerProvider container={root}>

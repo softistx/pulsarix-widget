@@ -79,8 +79,8 @@ export function ReportFlow({
       title: values.title.trim(),
       description: values.description.trim(),
       email: values.email.trim(),
-      // Without the fragment: it can carry a host page's tokens.
-      pageUrl: location.href.split("#")[0]?.slice(0, 2_048),
+      // Origin and path only: the query string and the fragment can carry a host page's tokens.
+      pageUrl: (location.origin + location.pathname).slice(0, 2_048),
       locale,
       website: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,

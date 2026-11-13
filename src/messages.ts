@@ -77,7 +77,7 @@ export const MESSAGES: Record<Locale, Messages> = {
         `Too many reports from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       invalid: "The report was refused. Check what you wrote and try again.",
       network:
-        "We could not reach the service. Check your connection and try again.",
+        "Couldn't reach the server. Check your connection, or ask the site owner whether reports are enabled here.",
       unknown: "Something went wrong. Try again in a moment.",
     },
     done: {
@@ -124,7 +124,7 @@ export const MESSAGES: Record<Locale, Messages> = {
       invalid:
         "Le signalement a été refusé. Vérifiez votre texte et réessayez.",
       network:
-        "Le service est injoignable. Vérifiez votre connexion et réessayez.",
+        "Le serveur est injoignable. Vérifiez votre connexion, ou demandez au responsable du site si les signalements y sont activés.",
       unknown: "Une erreur est survenue. Réessayez dans un instant.",
     },
     done: {

@@ -1,3 +1,4 @@
+// Temporary, until @softistx/material#4622: the transform will come from the material export.
 /**
  * A shadow root's stylesheet ignores `@property` rules, and with them the
  * `initial-value` every Tailwind and material custom property relies on (a button's

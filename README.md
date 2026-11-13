@@ -39,10 +39,14 @@ and returns focus to the launcher (or to whatever opened it).
 - The project key must allow the page's origin (plain `http` only on `localhost`). A form sent
   faster than 3 seconds after it opened waits out the difference, because the API refuses it.
 - Failures are shown in the dialog and the text is kept: the service busy (503), a rejected key
-  or origin (404, 403: sending stops), a rate limit (429, with the wait), a refused report
-  (400), a network failure, a missing key or base.
-- Locales: English (default) and French, from `locale`. The page address, the browser and the
-  e-mail (if given) are sent with the report; the form says so.
+  (404, or a readable 403: sending stops), a rate limit (429, with the wait), a refused report
+  (400), a network failure, a missing key or base. A page whose origin the key does not allow
+  gets an answer without CORS headers, which the browser hides from the widget: it shows as a
+  network failure (`pulsarix:error` with `network`), and the text tells the reader to ask the
+  site owner whether reports are enabled there.
+- Locales: English (default) and French, from `locale`. The page address (origin and path only,
+  never the query string or the fragment), the browser and the e-mail (if given) are sent with
+  the report; the form says so.
 
 Events, on the element and through `on(name, cb)`: `pulsarix:ready`, `pulsarix:open`,
 `pulsarix:close`, `pulsarix:submit` (`detail: { reportId }`) and `pulsarix:error`
@@ -84,4 +88,3 @@ bun run test:browser  # the host-fixture leak test in Chromium (local only, not 
 bun run capture <dir> # 360 and 1440 px, light and dark, widget open
 ```
 
-The contract (config, events, Shadow DOM, CSP) is in [../docs/plan.md](../docs/plan.md) section 10.

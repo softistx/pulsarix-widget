@@ -218,12 +218,39 @@ describe("the report form", () => {
     ).toBe(true);
   });
 
-  test("a refused origin and a disabled key are rejected alike (403)", async () => {
+  test("a refused origin reaches the widget as a network failure (no CORS headers)", async () => {
+    globalThis.fetch = mock(async () => {
+      throw new TypeError("Failed to fetch");
+    }) as unknown as typeof fetch;
+    const { user, onError } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.failure.network);
+    expect(onError).toHaveBeenCalledWith({ code: "network" });
+  });
+
+  // Not delivered by browsers (they hide a response without CORS headers), but the code
+  // handles a readable 403, for example from a non-browser host.
+  test("a readable 403 is rejected like an unknown key", async () => {
     handler = () => refusal(403, "intake.errors.origin-not-allowed");
     const { user } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
     await screen.findByText(m.failure.rejected);
+  });
+
+  test("the page address is sent without its query and fragment", async () => {
+    window.history.pushState({}, "", "/cart?token=secret&x=1#access=abc");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.body, {
+      selector: "[data-slot=dialog-description], *",
+    });
+    const sent = String(calls[0]?.body.variables.input.pageUrl);
+    expect(sent).toBe(`${location.origin}/cart`);
+    expect(sent).not.toContain("secret");
+    window.history.pushState({}, "", "/");
   });
 
   test("a rate limit tells how long to wait", async () => {
@@ -271,6 +298,15 @@ describe("the report form", () => {
     expect(calls[0]?.headers.get("accept-language")).toBe("fr");
     expect(calls[0]?.body.variables.input.locale).toBe("fr");
   });
+
+  test.each(["en", "fr"] as const)(
+    "the dialog's language is %s",
+    async (locale) => {
+      setup({ locale });
+      const dialog = await screen.findByRole("dialog");
+      expect(dialog.closest("[lang]")?.getAttribute("lang")).toBe(locale);
+    },
+  );
 
   test("the confirmation closes the dialog", async () => {
     const { user, onOpenChange } = setup();
