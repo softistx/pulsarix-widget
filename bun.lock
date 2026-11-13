@@ -4,16 +4,11 @@
   "workspaces": {
     "": {
       "name": "@softistx/pulsarix-widget",
-      "dependencies": {
-        "@softistx/material": "^3.197.0",
-        "@softistx/material-core": "^0.85.0",
-        "react": "^19.3.1",
-        "react-dom": "^19.3.1",
-        "react-hook-form": "^7.92.0",
-      },
       "devDependencies": {
         "@biomejs/biome": "2.5.15",
         "@happy-dom/global-registrator": "^21.0.4",
+        "@softistx/material": "^3.197.0",
+        "@softistx/material-core": "^0.85.0",
         "@tailwindcss/cli": "^4.3.3",
         "@testing-library/dom": "^10.4.2",
         "@testing-library/react": "^16.3.3",
@@ -22,6 +17,9 @@
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "playwright-core": "^1.64.1",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
+        "react-hook-form": "^7.92.0",
         "tailwindcss": "^4.3.3",
         "typescript": "^7.0.2",
       },

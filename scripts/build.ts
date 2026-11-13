@@ -5,7 +5,8 @@
  *      material's embed.css (already px, @property values as plain declarations, tokens on
  *      :host), then the widget base (src/base.css).
  *   2. Bun bundles the custom element to a hashed ESM file: dist/widget.<hash>.js.
- *   3. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
+ *   3. tsc emits the declarations of the npm entry to dist/types.
+ *   4. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
  *      hashed file name baked in.
  * dist/manifest.json names both; the UI serves the hashed file with a long cache and
  * loader.js with a short one (plan section 13).
@@ -85,6 +86,9 @@ async function build() {
     define: { __WIDGET_FILE__: JSON.stringify(widgetFile) },
   });
   if (!loader.success) throw new Error(loader.logs.join("\n"));
+
+  // Declarations for the npm entry (`bun check` emits nothing): dist/types/index.d.ts.
+  await run([join(root, "node_modules/.bin/tsc"), "-p", "tsconfig.build.json"]);
 
   await writeFile(
     join(dist, "manifest.json"),

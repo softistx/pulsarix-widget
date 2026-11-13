@@ -34,3 +34,37 @@ test.skipIf(!existsSync(generatedCss))(
     expect(withRem).toEqual([]);
   },
 );
+
+// A consumer's TypeScript must not need react, react-dom or react-hook-form (devDependencies
+// here): no declaration reachable from the entry may import them.
+test.skipIf(!existsSync(join(dist, "types/index.d.ts")))(
+  "the declarations reachable from the entry import no bundled package",
+  async () => {
+    const seen = new Set<string>();
+    const queue = [join(dist, "types/index.d.ts")];
+    const bad: string[] = [];
+    while (queue.length) {
+      const file = queue.pop() as string;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      const text = await Bun.file(file).text();
+      for (const m of text.matchAll(/from\s+"([^"]+)"/g)) {
+        const spec = m[1] as string;
+        if (spec.startsWith(".")) {
+          const base = join(file, "..", spec);
+          queue.push(
+            existsSync(`${base}.d.ts`)
+              ? `${base}.d.ts`
+              : join(base, "index.d.ts"),
+          );
+        } else if (
+          /^(react|react-dom|react-hook-form|@softistx)(\/|$)/.test(spec)
+        ) {
+          bad.push(`${file}: ${spec}`);
+        }
+      }
+    }
+    expect(seen.size).toBeGreaterThan(1);
+    expect(bad).toEqual([]);
+  },
+);

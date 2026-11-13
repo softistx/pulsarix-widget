@@ -2,9 +2,15 @@
 const state = globalThis as unknown as {
   __stubGate: Promise<void>;
   __stubMounts: number;
+  __stubOpened?: string[];
 };
 await state.__stubGate;
 export function mount() {
   state.__stubMounts++;
-  return { open() {}, close() {}, destroy() {}, on: () => () => {} };
+  return {
+    open: () => state.__stubOpened?.push("open"),
+    close: () => state.__stubOpened?.push("close"),
+    destroy() {},
+    on: () => () => {},
+  };
 }

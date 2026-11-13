@@ -49,7 +49,11 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#media?.addEventListener("change", this.#onScheme);
     this.#render();
     // Async: a listener added right after `mount()` returns still hears it.
-    queueMicrotask(() => this.#emit("pulsarix:ready"));
+    queueMicrotask(() => {
+      this.#emit("pulsarix:ready");
+      if (!this.config.projectKey)
+        this.#emit("pulsarix:error", { code: "config" });
+    });
   }
 
   disconnectedCallback() {
@@ -147,7 +151,19 @@ export interface WidgetHandle {
   on(name: WidgetEvent, callback: (event: CustomEvent) => void): () => void;
 }
 
+let current: WidgetHandle | null = null;
+
+/**
+ * Mounts the widget. One widget per page: while a mounted one is still attached, a second call
+ * returns its handle (and warns) instead of adding another element.
+ */
 export function mount(options: MountOptions): WidgetHandle {
+  if (current?.element.isConnected) {
+    console.warn(
+      "[pulsarix] the widget is already mounted; the second mount is ignored",
+    );
+    return current;
+  }
   defineWidget();
   const element = document.createElement(TAG_NAME) as PulsarixWidgetElement;
   element.setAttribute("project-key", options.projectKey);
@@ -159,7 +175,7 @@ export function mount(options: MountOptions): WidgetHandle {
   if (options.apiBase) element.setAttribute("api-base", options.apiBase);
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
-  return {
+  const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
@@ -170,6 +186,8 @@ export function mount(options: MountOptions): WidgetHandle {
       return () => element.removeEventListener(name, listener);
     },
   };
+  current = handle;
+  return handle;
 }
 
 defineWidget();

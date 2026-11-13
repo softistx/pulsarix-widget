@@ -4,7 +4,20 @@ An intake widget that lets your users report a problem to your pulsarix project:
 a title, a description and an optional e-mail, with no account. It renders inside a
 Shadow DOM, so your page's styles and the widget's never touch.
 
+## Install
+
+```sh
+npm install @softistx/pulsarix-widget
+```
+
+The package has no dependencies, needs no private registry and ships its own types. The bundle
+is about 1 MB un-gzipped (about 270 KB gzipped): React is inlined and isolated in the widget's
+shadow root, so it never clashes with the page's own React. Most integrations use the script tag
+below instead and install nothing.
+
 ## Usage
+
+### Script tag
 
 ```html
 <script src="https://<pulsarix-host>/widget/v1/loader.js" async
@@ -13,18 +26,74 @@ Shadow DOM, so your page's styles and the widget's never touch.
 
 Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data-theme`
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
-`data-accent-color` (a hex seed for the theme, `#4f46e5` by default), `data-launcher="false"`
-(no floating button; open it with `window.PulsarixWidget.open()`).
+`data-accent-color` (a hex seed for the theme, `#4f46e5` by default), `data-api-base` (the
+pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
+floating button; open it with `window.PulsarixWidget.open()`).
+
+Without the attributes, drive it from script. Calls made before the bundle has loaded are queued, and a second `init` while loaded is ignored:
+
+```js
+PulsarixWidget.init({ projectKey: "pk_live_xxx", locale: "fr" });
+const off = PulsarixWidget.on("pulsarix:submit", (e) => console.log(e.detail.reportId));
+PulsarixWidget.open();
+// later
+off();
+PulsarixWidget.destroy();
+```
+
+### npm
 
 ```ts
 import { mount } from "@softistx/pulsarix-widget";
 
-const widget = mount({ projectKey: "pk_live_xxx", accentColor: "#0b7a75" });
+const widget = mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://<pulsarix-host>", // required on the npm route
+  accentColor: "#0b7a75",
+});
 widget.on("pulsarix:open", () => console.log("opened"));
 widget.open();
 ```
 
-A second `init` while loaded is ignored.
+`apiBase` is required here: only the script tag can infer it (from where the loader was
+served). Without it the form reports a configuration error instead of sending.
+
+The module is browser-only. Importing it registers `<pulsarix-widget>` and needs `HTMLElement`
+and `customElements`, so in an SSR framework import it on the client only:
+
+```ts
+const { mount } = await import("@softistx/pulsarix-widget"); // inside an effect, never at module top level
+```
+
+One widget per page: a second `mount` while one is attached warns and returns the first
+handle. To mount again, destroy first:
+
+```ts
+widget.destroy();
+const next = mount({ projectKey: "pk_live_xxx", apiBase: "https://<pulsarix-host>", locale: "fr" });
+```
+
+A script-tag loader and an npm import are two separate instances: use one route per page.
+
+### Exports
+
+`mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
+`TAG_NAME` (`"pulsarix-widget"`), `DEFAULT_ACCENT`, and the types `MountOptions`,
+`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
+
+| `MountOptions` | Type | Default |
+| --- | --- | --- |
+| `projectKey` | `string` | required; missing reports `pulsarix:error` `config` |
+| `apiBase` | `string` | none; required on the npm route |
+| `locale` | `"en" \| "fr"` | `"en"` |
+| `theme` | `"light" \| "dark" \| "auto"` | `"auto"` |
+| `position` | `"bottom-right" \| "bottom-left"` | `"bottom-right"` |
+| `accentColor` | hex string | `#4f46e5` |
+| `launcher` | `boolean` | `true` (`false` hides the floating button) |
+| `target` | `Element` | `document.body` |
+
+`WidgetHandle`: `open()`, `close()`, `destroy()`, `on(name, callback)` (returns the function that
+unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
 
 ## The report form
 
@@ -48,7 +117,9 @@ and returns focus to the launcher (or to whatever opened it).
   never the query string or the fragment), the browser and the e-mail (if given) are sent with
   the report; the form says so.
 
-Events, on the element and through `on(name, cb)`: `pulsarix:ready`, `pulsarix:open`,
+Events, on the element and through `on(name, cb)`: `pulsarix:ready` (asynchronous, in a microtask,
+so a listener added right after `mount()` hears it; it fires even when the key is missing, then
+`pulsarix:error` with `config` follows), `pulsarix:open`,
 `pulsarix:close`, `pulsarix:submit` (`detail: { reportId }`) and `pulsarix:error`
 (`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
 
@@ -72,19 +143,8 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
   to the document; both are removed on close.
 - Fonts: `@font-face` is ignored in a shadow root. The widget uses the system font stack.
 
-## Serving
+## Serving (script-tag integrators)
 
-`bun run build` writes `dist/loader.js` (short cache), `dist/widget.<hash>.js` (long cache,
-immutable) and `dist/manifest.json`. The loader imports the hashed file from its own
-directory with `import()`, so the host serving `/widget/v1/` must send
-`Access-Control-Allow-Origin: *` on the bundle. Integrators need `script-src` and `connect-src`
-for the pulsarix host.
-
-## Develop
-
-```sh
-bun run verify        # lint, build, typecheck, unit tests, loader size (at most 5 KB gzipped)
-bun run test:browser  # the host-fixture leak test in Chromium (local only, not in CI)
-bun run capture <dir> # 360 and 1440 px, light and dark, widget open
-```
-
+The pulsarix host serves `/widget/v1/loader.js` (short cache) and the hashed bundle it imports
+(long cache). The bundle needs `Access-Control-Allow-Origin: *`. Your CSP needs `script-src` and
+`connect-src` for the pulsarix host.
