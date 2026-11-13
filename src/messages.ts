@@ -77,7 +77,7 @@ export const MESSAGES: Record<Locale, Messages> = {
         `Too many reports from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       invalid: "The report was refused. Check what you wrote and try again.",
       network:
-        "Couldn't reach the server. Check your connection, or ask the site owner whether reports are enabled here.",
+        "Could not reach the server. Check your connection, or ask the site owner whether reports are enabled here.",
       unknown: "Something went wrong. Try again in a moment.",
     },
     done: {

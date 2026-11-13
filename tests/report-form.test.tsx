@@ -239,18 +239,35 @@ describe("the report form", () => {
     await screen.findByText(m.failure.rejected);
   });
 
-  test("the page address is sent without its query and fragment", async () => {
-    window.history.pushState({}, "", "/cart?token=secret&x=1#access=abc");
-    const { user } = setup();
-    await fill(user, { title: "Crash", description: "On save" });
-    await send(user);
-    await screen.findByText(m.done.body, {
-      selector: "[data-slot=dialog-description], *",
+  describe("the page address", () => {
+    afterEach(() => window.history.pushState({}, "", "/"));
+
+    test("is sent without its query and fragment", async () => {
+      window.history.pushState({}, "", "/cart?token=secret&x=1#access=abc");
+      const { user } = setup();
+      await fill(user, { title: "Crash", description: "On save" });
+      await send(user);
+      await screen.findByRole("status");
+      const sent = String(calls[0]?.body.variables.input.pageUrl);
+      expect(sent).toBe(`${location.origin}/cart`);
+      expect(sent).not.toContain("secret");
     });
-    const sent = String(calls[0]?.body.variables.input.pageUrl);
-    expect(sent).toBe(`${location.origin}/cart`);
-    expect(sent).not.toContain("secret");
-    window.history.pushState({}, "", "/");
+
+    test("is left out when the origin is opaque (file:// or a sandboxed frame)", async () => {
+      Object.defineProperty(window.location, "origin", {
+        value: "null",
+        configurable: true,
+      });
+      try {
+        const { user } = setup();
+        await fill(user, { title: "Crash", description: "On save" });
+        await send(user);
+        await screen.findByRole("status");
+        expect(calls[0]?.body.variables.input.pageUrl).toBeUndefined();
+      } finally {
+        Reflect.deleteProperty(window.location, "origin");
+      }
+    });
   });
 
   test("a rate limit tells how long to wait", async () => {

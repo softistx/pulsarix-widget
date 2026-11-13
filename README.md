@@ -72,7 +72,7 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
   to the document; both are removed on close.
 - Fonts: `@font-face` is ignored in a shadow root. The widget uses the system font stack.
 
-## Serving (plan section 13)
+## Serving
 
 `bun run build` writes `dist/loader.js` (short cache), `dist/widget.<hash>.js` (long cache,
 immutable) and `dist/manifest.json`. The loader imports the hashed file from its own
