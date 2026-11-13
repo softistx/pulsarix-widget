@@ -1,12 +1,16 @@
 {
   "name": "@softistx/pulsarix-widget",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "description": "Embeddable client-issue intake widget for pulsarix, rendered in a Shadow DOM",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/softistx/pulsarix-widget.git"
+  },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

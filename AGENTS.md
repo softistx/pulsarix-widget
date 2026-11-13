@@ -11,9 +11,13 @@ invariants.
 - Requests use `credentials: "omit"`.
 - The page URL is sent without its query or fragment (`location.origin + location.pathname`).
 - The package is self-contained: everything `dist/` inlines (React, `@softistx/material`, ...)
-  is a `devDependency`, so `dependencies` stays empty and a public install needs no GitHub
-  Packages registry. The npm entry has `.d.ts` files (`tsconfig.build.json`, run by the build).
-- `private: true` stays until the first publish (issue #10 adds the publish workflow).
+  is a `devDependency`, so `dependencies` stays empty and the package itself has no
+  runtime dependencies. The npm entry has `.d.ts` files (`tsconfig.build.json`, run by the build).
+- Release (GitHub Packages only, never npmjs; no publish workflow, no npm token): from an
+  up-to-date `develop` worktree, bump `version` in `package.json` (and the changelog if any), merge
+  that PR, run `bun run verify` (the green bar), then `bun run build && bun publish` (registry and access come
+  from `publishConfig`). Afterwards check the version with
+  `npm view @softistx/pulsarix-widget version --registry https://npm.pkg.github.com`.
 - `mount()` is a singleton while its element is attached.
 
 ## Develop

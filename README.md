@@ -6,14 +6,22 @@ Shadow DOM, so your page's styles and the widget's never touch.
 
 ## Install
 
+The package is published on the GitHub Packages registry (`npm.pkg.github.com`), not on npmjs.
+Point the `@softistx` scope at it in your `.npmrc`, with a token that has `read:packages`:
+
+```ini
+@softistx:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
 ```sh
 npm install @softistx/pulsarix-widget
 ```
 
-The package has no dependencies, needs no private registry and ships its own types. The bundle
-is about 1 MB un-gzipped (about 270 KB gzipped): React is inlined and isolated in the widget's
-shadow root, so it never clashes with the page's own React. Most integrations use the script tag
-below instead and install nothing.
+The `mount()` route below is for apps with access to that registry. Third-party sites use the
+script tag served by the pulsarix host and install nothing. The package has no dependencies and
+ships its own types. The bundle is about 1 MB un-gzipped (about 270 KB gzipped): React is inlined
+and isolated in the widget's shadow root, so it never clashes with the page's own React.
 
 ## Usage
 
