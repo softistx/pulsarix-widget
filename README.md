@@ -6,13 +6,12 @@ Shadow DOM, so your page's styles and the widget's never touch.
 
 ## Install
 
-The package is published on the GitHub Packages registry (`npm.pkg.github.com`), not on npmjs.
-Point the `@softistx` scope at it in your `.npmrc`, with a GitHub personal access token (classic)
-with `read:packages`, exported as `GITHUB_TOKEN`:
+The package is published on the private registry `npm.softistx.com`, not on npmjs. Point the
+`@softistx` scope at it in your `.npmrc`, with a read token exported as `NPM_REGISTRY_TOKEN`:
 
 ```ini
-@softistx:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+@softistx:registry=https://npm.softistx.com/
+//npm.softistx.com/:_authToken=${NPM_REGISTRY_TOKEN}
 ```
 
 ```sh
