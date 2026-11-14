@@ -6,6 +6,7 @@
 //
 // Bun 1.4.4 ignores `--registry` while package.json has `publishConfig.registry`, so the
 // manifest is pointed at each target for the call and restored afterwards.
+import { writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -42,6 +43,25 @@ async function isPublished(registry: string, token: string): Promise<boolean> {
   return doc.versions?.[pkg.version] !== undefined;
 }
 
+// A Ctrl-C or kill during `bun publish` skips `finally`: restore the manifest then too.
+for (const sig of ["SIGINT", "SIGTERM"] as const) {
+  process.on(sig, () => {
+    writeFileSync(manifestPath, original);
+    process.exit(1);
+  });
+}
+
+// Each child sees only the token of its own registry.
+function publishEnv(token: string): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    PUBLISH_AUTH: token,
+  };
+  delete env.NPM_REGISTRY_PUBLISH_TOKEN;
+  delete env.GITHUB_TOKEN;
+  return env;
+}
+
 const dir = await mkdtemp(join(tmpdir(), "pulsarix-widget-publish-"));
 try {
   for (const t of targets) {
@@ -66,10 +86,7 @@ try {
     await Bun.write(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     const flags = dryRun ? ["--dry-run"] : [];
     await $`bun publish --config=${config} --registry=${t.registry} ${flags}`.env(
-      {
-        ...process.env,
-        PUBLISH_AUTH: token,
-      },
+      publishEnv(token),
     );
     console.log(
       `${dryRun ? "dry-run ok" : "published"} ${pkg.name}@${pkg.version} on ${t.registry}`,
