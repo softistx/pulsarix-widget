@@ -6,6 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmailFormField,
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
@@ -76,10 +77,9 @@ export function Form({
             maxLength={DESCRIPTION_MAX}
             required
           />
-          <TextFormField
+          <EmailFormField
             control={control}
             name="email"
-            type="email"
             inputMode="email"
             label={messages.fields.email}
             helperText={messages.fields.emailHint}
