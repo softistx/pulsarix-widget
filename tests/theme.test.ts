@@ -1,18 +1,27 @@
 import { expect, test } from "bun:test";
-import { themeCssFor } from "../src/theme";
+import { themeToCss } from "@softistx/material-core/theme";
+import { lavande } from "@softistx/material-core/theme/presets";
+import { themeCssFor, themeNameFor } from "../src/theme";
 
-test("the seed generates tokens scoped to the widget's theme attribute", () => {
-  const css = themeCssFor("#4f46e5");
-  expect(css).toContain('[data-nxgt-theme="pulsarix"]');
+test("no accent: the built-in lavande tokens, byte for byte", () => {
+  const css = themeCssFor(null);
+  expect(css).toBe(themeToCss(lavande, { header: false }).css);
+  expect(css).toContain('[data-nxgt-theme="lavande"]');
   expect(css).toContain("--primary:");
   expect(css).not.toContain(":root");
+  expect(themeNameFor(null)).toBe("lavande");
 });
 
-test("another accent gives another stylesheet, the same accent the same bytes", () => {
-  expect(themeCssFor("#0b7a75")).not.toBe(themeCssFor("#4f46e5"));
-  expect(themeCssFor("#4f46e5")).toBe(themeCssFor("#4f46e5"));
+test("an accent seeds a theme scoped to the widget's attribute", () => {
+  const css = themeCssFor("#0b7a75");
+  expect(css).toContain('[data-nxgt-theme="pulsarix"]');
+  expect(css).not.toContain(":root");
+  expect(css).not.toBe(themeCssFor(null));
+  expect(themeCssFor("#0b7a75")).toBe(css);
+  expect(themeNameFor("#0b7a75")).toBe("pulsarix");
 });
 
 test("dark tokens exist for the dark class on the scope element", () => {
-  expect(themeCssFor("#4f46e5")).toContain(".dark");
+  expect(themeCssFor(null)).toContain(".dark");
+  expect(themeCssFor("#0b7a75")).toContain(".dark");
 });

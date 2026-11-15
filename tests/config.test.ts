@@ -1,24 +1,18 @@
 import { expect, test } from "bun:test";
-import {
-  apiBaseOf,
-  DEFAULT_ACCENT,
-  isHexColor,
-  readConfig,
-} from "../src/config";
+import { apiBaseOf, isHexColor, readConfig } from "../src/config";
 
 const read = (attrs: Record<string, string>) =>
   readConfig((name) => attrs[name] ?? null);
 
-test("defaults: en, auto, bottom-right, indigo seed", () => {
+test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
   expect(read({})).toEqual({
     projectKey: null,
     locale: "en",
     theme: "auto",
     position: "bottom-right",
-    accentColor: DEFAULT_ACCENT,
+    accentColor: null,
     apiBase: null,
   });
-  expect(DEFAULT_ACCENT).toBe("#4f46e5");
 });
 
 test("valid attributes are taken", () => {
@@ -50,7 +44,7 @@ test("unknown values fall back, nothing throws", () => {
   expect(config.locale).toBe("en");
   expect(config.theme).toBe("auto");
   expect(config.position).toBe("bottom-right");
-  expect(config.accentColor).toBe(DEFAULT_ACCENT);
+  expect(config.accentColor).toBeNull();
 });
 
 test("only hex seeds are accepted", () => {

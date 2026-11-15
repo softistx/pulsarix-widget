@@ -1,5 +1,4 @@
 export type { Locale, Position, ThemeMode, WidgetConfig } from "./config";
-export { DEFAULT_ACCENT } from "./config";
 export {
   defineWidget,
   type MountOptions,
