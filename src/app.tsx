@@ -8,9 +8,11 @@ import { useRef, useState } from "react";
 import type { Locale, Position } from "./config";
 import type { Messages } from "./messages";
 import { ReportFlow } from "./report-flow";
-import { THEME_NAME } from "./theme";
+import { themeNameFor } from "./theme";
 
 export interface AppProps {
+  /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
+  themeName?: string;
   messages: Messages;
   locale: Locale;
   projectKey: string | null;
@@ -32,6 +34,7 @@ export interface AppProps {
  * would sit outside the scope and lose the tokens.
  */
 export function App({
+  themeName = themeNameFor(null),
   messages,
   locale,
   projectKey,
@@ -53,7 +56,7 @@ export function App({
     <div
       ref={setRoot}
       className={dark ? "pulsarix-root dark" : "pulsarix-root"}
-      data-nxgt-theme={THEME_NAME}
+      data-nxgt-theme={themeName}
       lang={locale}
     >
       {root ? (

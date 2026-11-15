@@ -1,7 +1,5 @@
 /** The widget's configuration (plan section 10): read from attributes, validated, defaulted. */
 
-export const DEFAULT_ACCENT = "#4f46e5";
-
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
 export type Position = "bottom-right" | "bottom-left";
@@ -11,7 +9,8 @@ export interface WidgetConfig {
   locale: Locale;
   theme: ThemeMode;
   position: Position;
-  accentColor: string;
+  /** A valid hex seed from the host, or null: the built-in lavande theme then applies. */
+  accentColor: string | null;
   /** Origin of the pulsarix host that serves `/public/graphql`; null until given. */
   apiBase: string | null;
 }
@@ -63,7 +62,7 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
       ["bottom-right", "bottom-left"],
       "bottom-right",
     ),
-    accentColor: isHexColor(accent) ? accent.trim() : DEFAULT_ACCENT,
+    accentColor: isHexColor(accent) ? accent.trim() : null,
     apiBase: apiBaseOf(get("api-base")),
   };
 }

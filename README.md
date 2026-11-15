@@ -34,7 +34,7 @@ and isolated in the widget's shadow root, so it never clashes with the page's ow
 
 Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data-theme`
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
-`data-accent-color` (a hex seed for the theme, `#4f46e5` by default), `data-api-base` (the
+`data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`).
 
@@ -86,7 +86,7 @@ A script-tag loader and an npm import are two separate instances: use one route 
 ### Exports
 
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
-`TAG_NAME` (`"pulsarix-widget"`), `DEFAULT_ACCENT`, and the types `MountOptions`,
+`TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
 `WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
 
 | `MountOptions` | Type | Default |
@@ -96,7 +96,7 @@ A script-tag loader and an npm import are two separate instances: use one route 
 | `locale` | `"en" \| "fr"` | `"en"` |
 | `theme` | `"light" \| "dark" \| "auto"` | `"auto"` |
 | `position` | `"bottom-right" \| "bottom-left"` | `"bottom-right"` |
-| `accentColor` | hex string | `#4f46e5` |
+| `accentColor` | hex string | none: the built-in `lavande` theme |
 | `launcher` | `boolean` | `true` (`false` hides the floating button) |
 | `target` | `Element` | `document.body` |
 
@@ -140,7 +140,7 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 
 - `<pulsarix-widget>` has an open shadow root. `@softistx/material/embed` (the lean entry for
   Shadow DOM widgets: no globals, only the parts the form uses) and its `embed.css`, plus the
-  theme generated from `accentColor`, are adopted into it (`adoptedStyleSheets`): no style
+  theme (the built-in `lavande`, or one generated from `accentColor`), are adopted into it (`adoptedStyleSheets`): no style
   element, no `style-src 'unsafe-inline'`. Portals (the dialog) target an element inside it.
 - The page's styles do not reach the widget. Only `color-scheme` and the root font size
   inherit: `:host` resets `color-scheme`, and `embed.css` is already in `px` with its

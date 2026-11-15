@@ -4,7 +4,7 @@ import { App } from "./app";
 import { OBSERVED_ATTRIBUTES, readConfig, type WidgetConfig } from "./config";
 import widgetCss from "./generated/widget-css";
 import { MESSAGES } from "./messages";
-import { themeCssFor } from "./theme";
+import { themeCssFor, themeNameFor } from "./theme";
 
 export const TAG_NAME = "pulsarix-widget";
 
@@ -94,13 +94,14 @@ export class PulsarixWidgetElement extends HTMLElement {
   #render() {
     if (!this.#root || !this.#shadow) return;
     const config = this.config;
-    if (this.#themeFor !== config.accentColor) {
+    const themeKey = config.accentColor ?? "";
+    if (this.#themeFor !== themeKey) {
       this.#releaseTheme?.();
       this.#releaseTheme = adoptStyles(
         this.#shadow,
         themeCssFor(config.accentColor),
       );
-      this.#themeFor = config.accentColor;
+      this.#themeFor = themeKey;
     }
     const dark =
       config.theme === "dark" ||
@@ -109,6 +110,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
       <App
+        themeName={themeNameFor(config.accentColor)}
         messages={MESSAGES[config.locale]}
         locale={config.locale}
         projectKey={config.projectKey}
