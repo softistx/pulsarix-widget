@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { IntakeError, type ReportInput, submitReport } from "../api";
+import {
+  fetchWidgetConfig,
+  IntakeError,
+  type ReportInput,
+  submitReport,
+} from "../api";
 import type { Locale } from "../config";
 import type { Messages } from "../messages";
 import { type ReportValues, resolverFor } from "../validation";
@@ -18,6 +23,8 @@ export interface ReportFlowProps {
   onSubmitted: (detail: { reportId: string }) => void;
   onError: (detail: { code: string }) => void;
   onClose: () => void;
+  /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
+  onDone?: (done: boolean) => void;
   /** Overridable for specs; the API's own minimum otherwise. */
   minFillMs?: number;
 }
@@ -34,6 +41,7 @@ export function ReportFlow({
   onSubmitted,
   onError,
   onClose,
+  onDone,
   minFillMs = MIN_FILL_MS,
 }: ReportFlowProps) {
   const openedAt = useRef(Date.now());
@@ -48,6 +56,21 @@ export function ReportFlow({
     return () => controller.abort();
   }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!projectKey || !apiBase) return;
+    const controller = new AbortController();
+    void fetchWidgetConfig({
+      apiBase,
+      publicKey: projectKey,
+      locale,
+      signal: controller.signal,
+    }).then((config) => {
+      if (!controller.signal.aborted)
+        setProjectName(config?.projectName ?? null);
+    });
+    return () => controller.abort();
+  }, [apiBase, projectKey, locale]);
   const [sent, setSent] = useState<{ tracking: boolean } | null>(null);
 
   // A failure shows in the scrolling body, above the sticky footer on a phone.
@@ -62,7 +85,10 @@ export function ReportFlow({
 
   useEffect(() => {
     if (sent) done.current?.focus();
-  }, [sent]);
+    onDone?.(!!sent);
+  }, [sent, onDone]);
+  // Closing unmounts the flow: the next opening starts split again.
+  useEffect(() => () => onDone?.(false), [onDone]);
 
   const submit = handleSubmit(async (values) => {
     setFailure(null);
@@ -122,6 +148,7 @@ export function ReportFlow({
   return (
     <Form
       messages={messages}
+      projectName={projectName}
       control={control}
       onSubmit={submit}
       onClose={onClose}

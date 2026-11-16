@@ -4,7 +4,11 @@ export interface Messages {
   launcher: string;
   title: string;
   intro: string;
+  /** The intro once the project's name is known. */
+  introFor: (project: string) => string;
   close: string;
+  sections: { problem: string; contact: string };
+  aside: { title: string; empty: string };
   fields: {
     title: string;
     titleHint: string;
@@ -46,7 +50,14 @@ export const MESSAGES: Record<Locale, Messages> = {
     launcher: "Report a problem",
     title: "Report a problem",
     intro: "Tell us what went wrong and we will look into it.",
+    introFor: (project) =>
+      `Tell us what went wrong in ${project} and we will look into it.`,
     close: "Close",
+    sections: { problem: "The problem", contact: "Follow-up" },
+    aside: {
+      title: "Screenshot",
+      empty: "A screenshot of the page will show here.",
+    },
     fields: {
       title: "Title",
       titleHint: "A short summary",
@@ -91,7 +102,14 @@ export const MESSAGES: Record<Locale, Messages> = {
     launcher: "Signaler un problème",
     title: "Signaler un problème",
     intro: "Dites-nous ce qui ne va pas, nous allons regarder.",
+    introFor: (project) =>
+      `Dites-nous ce qui ne va pas dans ${project}, nous allons regarder.`,
     close: "Fermer",
+    sections: { problem: "Le problème", contact: "Suivi" },
+    aside: {
+      title: "Capture d'écran",
+      empty: "Une capture d'écran de la page s'affichera ici.",
+    },
     fields: {
       title: "Titre",
       titleHint: "Un bref résumé",

@@ -109,3 +109,53 @@ export async function submitReport({
   if (!report) throw new IntakeError("unknown", "empty-response");
   return report;
 }
+
+export interface WidgetProject {
+  /** The project's display name; null when the API did not give one. */
+  projectName: string | null;
+}
+
+/**
+ * The public `widgetConfig` operation: the project a key belongs to. A cosmetic read, so any
+ * failure answers null and the form simply shows no project name.
+ */
+export async function fetchWidgetConfig({
+  apiBase,
+  publicKey,
+  locale,
+  fetch: doFetch = fetch,
+  signal,
+}: {
+  apiBase: string;
+  publicKey: string;
+  locale: string;
+  fetch?: typeof fetch;
+  signal?: AbortSignal;
+}): Promise<WidgetProject | null> {
+  try {
+    const response = await doFetch(
+      `${apiBase.replace(/\/+$/, "")}/public/graphql`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "accept-language": locale,
+        },
+        body: JSON.stringify({ id: "widgetConfig", variables: { publicKey } }),
+        credentials: "omit",
+        signal,
+      },
+    );
+    if (!response.ok) return null;
+    const body = (await response.json()) as {
+      data?: { widgetConfig?: { projectName?: unknown } };
+    };
+    const config = body.data?.widgetConfig;
+    if (!config) return null;
+    const name =
+      typeof config.projectName === "string" ? config.projectName.trim() : "";
+    return { projectName: name ? name.slice(0, 120) : null };
+  } catch {
+    return null;
+  }
+}

@@ -14,6 +14,20 @@ test.skipIf(!existsSync(join(dist, "manifest.json")))(
     expect(loader).toContain(manifest.widget);
     expect(loader).not.toContain("__WIDGET_FILE__");
     expect(existsSync(join(dist, manifest.widget))).toBe(true);
+    // Every lazy chunk the manifest lists is on disk, hashed.
+    for (const chunk of manifest.chunks) {
+      expect(chunk).toMatch(/^[\w-]+\.[a-z0-9]+\.js$/);
+      expect(existsSync(join(dist, chunk))).toBe(true);
+    }
+  },
+);
+
+// The npm entry is one self-contained file: no relative import of a chunk.
+test.skipIf(!existsSync(join(dist, "index.js")))(
+  "the npm entry imports no chunk",
+  async () => {
+    const text = await Bun.file(join(dist, "index.js")).text();
+    expect(text).not.toMatch(/(?:from|import\()\s*["']\.\//);
   },
 );
 

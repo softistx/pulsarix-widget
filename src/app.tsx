@@ -48,6 +48,8 @@ export function App({
   onError,
   minFillMs,
 }: AppProps) {
+  // The confirmation has no screenshot pane: the dialog drops its split layout then.
+  const [done, setDone] = useState(false);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
@@ -85,8 +87,10 @@ export function App({
           ) : null}
           <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-              size="md"
-              className="flex flex-col overflow-hidden"
+              layout={done ? "stack" : "split"}
+              size={done ? "md" : undefined}
+              // About 896 px from 1280 px up (px, not rem: the host owns the root font size).
+              className={done ? undefined : "max-w-[896px]"}
               onCloseAutoFocus={(event) => {
                 if (!opener.current?.isConnected) return;
                 event.preventDefault();
@@ -101,6 +105,7 @@ export function App({
                 onSubmitted={onSubmitted}
                 onError={onError}
                 minFillMs={minFillMs}
+                onDone={setDone}
                 onClose={() => onOpenChange(false)}
               />
             </DialogContent>
