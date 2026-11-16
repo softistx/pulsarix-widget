@@ -46,7 +46,7 @@ export default function Editor({
           saveLabel={saveLabel}
           onSave={({ file }) => onSave(file)}
           onCancel={onCancel}
-          className="h-[600px] w-full md:h-[780px]"
+          className="h-[780px] w-full"
         />
       ) : null}
     </div>

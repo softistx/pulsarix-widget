@@ -105,6 +105,21 @@ try {
         await drag(b.page, [0.4, 0.3], [0.75, 0.85]);
         await b.page.waitForTimeout(300);
         await shot(b.page, "editor-annotated");
+        // The pane scrolls on its own: every tool row is reachable at the bottom.
+        await b.page.evaluate(() => {
+          const aside = document
+            .querySelector("pulsarix-widget")
+            ?.shadowRoot?.querySelector("[data-slot=dialog-aside]");
+          aside?.scrollTo(0, aside.scrollHeight);
+          for (const el of document
+            .querySelector("pulsarix-widget")
+            ?.shadowRoot?.querySelectorAll("[data-slot=dialog-content]") ?? [])
+            el.scrollTo(0, el.scrollHeight);
+        });
+        await b.page.waitForTimeout(300);
+        await b.page.screenshot({
+          path: `${out}/editor-annotated-scrolled-${width}-${scheme}.png`,
+        });
         await b.page.getByRole("button", { name: "Attach" }).click();
         await b.page.getByTestId("screenshot-preview").waitFor();
         await b.page.waitForTimeout(500);
