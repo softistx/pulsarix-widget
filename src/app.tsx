@@ -85,8 +85,9 @@ export function App({
           ) : null}
           <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-              size="md"
-              className="flex flex-col overflow-hidden"
+              layout="split"
+              // About 896 px from 1280 px up (px, not rem: the host owns the root font size).
+              className="max-w-[896px]"
               onCloseAutoFocus={(event) => {
                 if (!opener.current?.isConnected) return;
                 event.preventDefault();

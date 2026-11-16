@@ -17,6 +17,12 @@ console.log(
 console.log(
   `${manifest.widget} ${(widget.length / 1024).toFixed(0)} KB, ${(gzipSync(widget).length / 1024).toFixed(0)} KB gzipped (informational)`,
 );
+for (const chunk of manifest.chunks ?? []) {
+  const bytes = await Bun.file(join(root, chunk)).bytes();
+  console.log(
+    `${chunk} ${(bytes.length / 1024).toFixed(0)} KB, ${(gzipSync(bytes).length / 1024).toFixed(0)} KB gzipped (informational)`,
+  );
+}
 if (gz > LOADER_BUDGET) {
   console.error("the loader is over its gzipped budget");
   process.exit(1);

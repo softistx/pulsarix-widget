@@ -18,8 +18,19 @@ export function serveFixture(port = 0) {
       // production): it answers `submitClientReport` and records nothing.
       if (url.pathname === "/public/graphql" && request.method === "POST") {
         const body = (await request.json()) as {
+          id?: string;
           variables?: { input?: { email?: string; title?: string } };
         };
+        if (body.id === "widgetConfig")
+          return Response.json({
+            data: {
+              widgetConfig: {
+                projectName: "Acme Store",
+                locale: "en",
+                enabled: true,
+              },
+            },
+          });
         // A title that says "busy" gets the API's 503, to see the error state.
         if (body.variables?.input?.title?.includes("busy"))
           return Response.json(

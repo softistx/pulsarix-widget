@@ -4,14 +4,15 @@
  *      classes (src/widget.css; its @property values copied to plain declarations), then
  *      material's embed.css (already px, @property values as plain declarations, tokens on
  *      :host), then the widget base (src/base.css).
- *   2. Bun bundles the custom element to a hashed ESM file: dist/widget.<hash>.js.
+ *   2. Bun bundles the custom element to a hashed ESM file, dist/widget.<hash>.js, with its lazy
+ *      chunks (dist/<name>.<hash>.js, listed in the manifest); dist/index.js is an unsplit copy for npm.
  *   3. tsc emits the declarations of the npm entry to dist/types.
  *   4. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
  *      hashed file name baked in.
  * dist/manifest.json names both; the UI serves the hashed file with a long cache and
  * loader.js with a short one (plan section 13).
  */
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { withPropertyFallbacks } from "@softistx/material/embed-css";
 
@@ -65,15 +66,36 @@ async function build() {
     target: "browser",
     format: "esm",
     minify: true,
-    naming: "widget.[hash].[ext]",
+    // Code splitting: a lazy `import()` becomes a chunk beside the entry, named by hash.
+    splitting: true,
+    naming: {
+      entry: "widget.[hash].[ext]",
+      chunk: "[name].[hash].[ext]",
+      asset: "[name].[hash].[ext]",
+    },
     define: { "process.env.NODE_ENV": '"production"' },
   });
   if (!esm.success) throw new Error(esm.logs.join("\n"));
   const entry = esm.outputs.find((o) => o.kind === "entry-point");
   if (!entry) throw new Error("no ESM entry output");
   const widgetFile = entry.path.split("/").pop() as string;
-  // The npm entry keeps a stable name beside the hashed one.
-  await copyFile(entry.path, join(dist, "index.js"));
+  const chunks = esm.outputs
+    .filter((o) => o.kind === "chunk")
+    .map((o) => o.path.split("/").pop() as string)
+    .sort();
+  // The npm entry is one self-contained file (the package ships `dist/index.js` alone), so it is
+  // a second, unsplit bundle under a stable name.
+  const single = await Bun.build({
+    entrypoints: [join(root, "src/index.ts")],
+    outdir: dist,
+    target: "browser",
+    format: "esm",
+    minify: true,
+    splitting: false,
+    naming: "index.js",
+    define: { "process.env.NODE_ENV": '"production"' },
+  });
+  if (!single.success) throw new Error(single.logs.join("\n"));
 
   const loader = await Bun.build({
     entrypoints: [join(root, "src/loader.ts")],
@@ -91,7 +113,7 @@ async function build() {
 
   await writeFile(
     join(dist, "manifest.json"),
-    `${JSON.stringify({ loader: "loader.js", widget: widgetFile }, null, 2)}\n`,
+    `${JSON.stringify({ loader: "loader.js", widget: widgetFile, chunks }, null, 2)}\n`,
   );
   console.log(`built dist/loader.js and dist/${widgetFile}`);
 }
