@@ -147,7 +147,7 @@ export function ScreenshotPane({
   let body: ReactNode;
   if (source) {
     body = (
-      <div role="region" aria-label={t.editorLabel} className="min-h-0">
+      <section aria-label={t.editorLabel} className="min-h-0">
         <Suspense
           fallback={
             <p role="status" className="text-muted-foreground text-sm">
@@ -169,7 +169,7 @@ export function ScreenshotPane({
             }}
           />
         </Suspense>
-      </div>
+      </section>
     );
   } else if (image) {
     body = (
