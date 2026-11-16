@@ -22,6 +22,15 @@ test.skipIf(!existsSync(join(dist, "manifest.json")))(
   },
 );
 
+// The npm entry is one self-contained file: no relative import of a chunk.
+test.skipIf(!existsSync(join(dist, "index.js")))(
+  "the npm entry imports no chunk",
+  async () => {
+    const text = await Bun.file(join(dist, "index.js")).text();
+    expect(text).not.toMatch(/(?:from|import\()\s*["']\.\//);
+  },
+);
+
 // The host's root font size is the host's to choose: no rem unit may survive in a declaration
 // of the built stylesheet. Not counted: class names (selectors such as `.h-\[calc\(2\.25rem`),
 // the `var()` fallbacks of the utilities (embed.css defines every token, so they are never

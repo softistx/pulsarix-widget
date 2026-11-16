@@ -461,4 +461,17 @@ describe("the split dialog", () => {
     await screen.findByRole("dialog");
     expect(configCalls).toHaveLength(0);
   });
+
+  test("a failing widgetConfig read leaves the plain intro", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
+      if ((JSON.parse(String(init.body)) as Body).id === "widgetConfig")
+        throw new TypeError("Failed to fetch");
+      return ok(false);
+    }) as unknown as typeof fetch;
+    setup();
+    await screen.findByText(m.intro);
+    expect(screen.queryByTestId("project-name")).toBeNull();
+    globalThis.fetch = real;
+  });
 });

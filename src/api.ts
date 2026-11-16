@@ -113,7 +113,6 @@ export async function submitReport({
 export interface WidgetProject {
   /** The project's display name; null when the API did not give one. */
   projectName: string | null;
-  enabled: boolean;
 }
 
 /**
@@ -149,16 +148,13 @@ export async function fetchWidgetConfig({
     );
     if (!response.ok) return null;
     const body = (await response.json()) as {
-      data?: { widgetConfig?: { projectName?: unknown; enabled?: unknown } };
+      data?: { widgetConfig?: { projectName?: unknown } };
     };
     const config = body.data?.widgetConfig;
     if (!config) return null;
     const name =
       typeof config.projectName === "string" ? config.projectName.trim() : "";
-    return {
-      projectName: name ? name.slice(0, 120) : null,
-      enabled: config.enabled !== false,
-    };
+    return { projectName: name ? name.slice(0, 120) : null };
   } catch {
     return null;
   }
