@@ -64,8 +64,9 @@ export function Confirmation({
                     {messages.done.partial(failed.length, uploads.length)}
                   </span>
                   <ul className="mt-2 grid gap-1">
-                    {failed.map((upload) => (
-                      <li key={`${upload.role}-${upload.name}`}>
+                    {failed.map((upload, index) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a static list; two files may share a name
+                      <li key={`${index}-${upload.name}`}>
                         <span className="font-medium">{upload.name}</span>
                         {": "}
                         {messages.files.reasons[upload.reason]}

@@ -41,6 +41,7 @@ function send({
   signal,
 }: PutOptions): Promise<Outcome> {
   return new Promise((resolve) => {
+    if (signal?.aborted) return resolve({ status: 0, code: "aborted" });
     const xhr = new XMLHttpRequest();
     xhr.open(
       "PUT",
@@ -68,7 +69,10 @@ function send({
     };
     xhr.onerror = () => resolve({ status: 0, code: "network" });
     xhr.onabort = () => resolve({ status: 0, code: "aborted" });
-    signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+    const stop = () => xhr.abort();
+    signal?.addEventListener("abort", stop, { once: true });
+    const settle = () => signal?.removeEventListener("abort", stop);
+    xhr.onloadend = settle;
     xhr.send(file);
   });
 }

@@ -7,7 +7,7 @@
  *   POST /public/graphql  a stub of the API's intake (tickets for declared files included)
  *   PUT /public/media/report-files/:slot  a stub of the upload by ticket (a file named
  *              "fail…" gets a 500, so that the retry and the partial failure can be seen, one
- *              named "slow…" is answered after 4 s, to see the progress)
+ *              named "slow…" is answered after 6 s, to see the progress)
  *   GET /__puts  what the stub received: [{ slot, name, bytes, type }]
  */
 import { join } from "node:path";
@@ -45,7 +45,7 @@ export function serveFixture(port = 0) {
           );
         const bytes = (await request.arrayBuffer()).byteLength;
         // A file named "slow…" is answered after a pause: the progress state, to look at.
-        if (name.startsWith("slow")) await Bun.sleep(4_000);
+        if (name.startsWith("slow")) await Bun.sleep(6_000);
         if (name.startsWith("fail"))
           return Response.json(
             { errors: [{ extensions: { code: "intake.errors.unavailable" } }] },

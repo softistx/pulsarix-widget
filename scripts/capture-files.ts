@@ -72,7 +72,7 @@ try {
           png("slow-trace.png", 400_000),
         ]);
         await fillAndSend(b.page);
-        await b.page.waitForTimeout(700);
+        await b.page.waitForTimeout(4200);
         await shot(b.page, "4-uploading", width, scheme);
         await b.context.close();
 
