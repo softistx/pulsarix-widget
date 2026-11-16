@@ -52,8 +52,10 @@ async function build() {
     cssFile,
     "--minify",
   ]);
-  // The widget's utilities go before embed.css: both are `@layer utilities`, and a later
-  // plain `.flex-col` would beat embed.css's `sm:flex-row` (same specificity, later wins).
+  // The widget's utilities are `@layer utilities` (widget.css declares the layer order), so
+  // they no longer beat material's layered rules by being unlayered. They go before embed.css:
+  // within the layer, a later plain `.flex-col` would beat embed.css's `sm:flex-row` (same
+  // specificity, later wins).
   // withPropertyFallbacks declares `nxgt-property-initial` first, the lowest layer.
   const css = [
     withPropertyFallbacks(await Bun.file(cssFile).text()),
