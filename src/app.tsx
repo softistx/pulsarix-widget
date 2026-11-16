@@ -80,7 +80,7 @@ export function App({
         // `/embed` carries its own i18n context (the `AttachmentList` labels); `initialLanguage`
         // keeps it from reading the host page's `localStorage`.
         <I18nProvider
-          // Keyed: the provider reads `initialLanguage` once, a changed `locale` attribute remounts it.
+          // Keyed: the provider reads `initialLanguage` once, a changed `locale` attribute remounts the tree (a rare edge; the host sets it once).
           key={locale}
           initialLanguage={locale}
           supportedLanguages={["en", "fr"]}
