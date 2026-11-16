@@ -136,32 +136,40 @@ export function ScreenshotPane({
 
   const status = (
     <div role="status" aria-live="polite" className="empty:hidden">
-      {notice ? <Alert variant="warning" description={notice} /> : null}
+      {busy ? (
+        <p className="sr-only">{t.capturing}</p>
+      ) : notice ? (
+        <Alert variant="warning" description={notice} />
+      ) : null}
     </div>
   );
 
   let body: ReactNode;
   if (source) {
     body = (
-      <Suspense
-        fallback={
-          <p className="text-muted-foreground text-sm">{t.loadingEditor}</p>
-        }
-      >
-        <Editor
-          source={source}
-          saveLabel={t.save}
-          onSave={(file) => {
-            setSource(null);
-            onImage(file);
-            focusRegion();
-          }}
-          onCancel={() => {
-            setSource(null);
-            focusRegion();
-          }}
-        />
-      </Suspense>
+      <div role="group" aria-label={t.editorLabel} className="min-h-0">
+        <Suspense
+          fallback={
+            <p role="status" className="text-muted-foreground text-sm">
+              {t.loadingEditor}
+            </p>
+          }
+        >
+          <Editor
+            source={source}
+            saveLabel={t.save}
+            onSave={(file) => {
+              setSource(null);
+              onImage(file);
+              focusRegion();
+            }}
+            onCancel={() => {
+              setSource(null);
+              focusRegion();
+            }}
+          />
+        </Suspense>
+      </div>
     );
   } else if (image) {
     body = (

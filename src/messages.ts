@@ -16,14 +16,12 @@ export interface Messages {
     remove: string;
     maskText: string;
     maskTextHint: string;
-    hostHidden: string;
     capturing: string;
     editorLabel: string;
     previewAlt: string;
     saved: string;
     hint: string;
     save: string;
-    cancel: string;
     loadingEditor: string;
     errors: {
       denied: string;
@@ -92,14 +90,12 @@ export const MESSAGES: Record<Locale, Messages> = {
       maskText: "Mask the text on the page",
       maskTextHint:
         "Covers every character of the page with black boxes before the picture is taken.",
-      hostHidden: "This form hides while the picture is taken.",
       capturing: "Taking the screenshot...",
       editorLabel: "Annotate the screenshot",
       previewAlt: "Your screenshot",
       saved: "Your screenshot is attached.",
       hint: "Optional. You can draw on it and hide anything private before it is sent.",
       save: "Attach",
-      cancel: "Cancel",
       loadingEditor: "Opening the editor...",
       errors: {
         denied: "The capture was refused. You can upload an image instead.",
@@ -174,14 +170,12 @@ export const MESSAGES: Record<Locale, Messages> = {
       maskText: "Masquer le texte de la page",
       maskTextHint:
         "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
-      hostHidden: "Ce formulaire se cache pendant la capture.",
       capturing: "Capture en cours...",
       editorLabel: "Annoter la capture",
       previewAlt: "Votre capture d'écran",
       saved: "Votre capture est jointe.",
       hint: "Facultatif. Vous pouvez dessiner dessus et masquer ce qui est privé avant l'envoi.",
       save: "Joindre",
-      cancel: "Annuler",
       loadingEditor: "Ouverture de l'éditeur...",
       errors: {
         denied:

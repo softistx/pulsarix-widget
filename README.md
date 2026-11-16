@@ -137,13 +137,13 @@ choice). The right pane of the dialog offers:
   `display-capture`.
 - **Upload an image**: always offered, and the only choice where capture is unavailable or was
   refused. PNG, JPEG or WebP, 25 megapixels at most.
-- **Mask the text on the page** (off by default; `data-mask-text="true"` turns it on): covers the
+- **Mask the text on the page** (off by default; `data-mask-text="true"`, or `maskText: true` in `init` / `mount`, turns it on when the dialog opens): covers the
   page's text with opaque boxes before the picture is taken. It needs the current tab to be shared;
   otherwise the widget says it cannot and nothing is captured. Mark anything that must stay visible
   with `data-capture-unmask`.
 
-The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, an arrow,
-a box, text and a solid "Redact" box: redacted pixels are one opaque colour. Only the flattened
+The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
+an arrow, a box, text and a solid "Redact" box: redacted pixels are one opaque colour. Only the flattened
 export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
 revoked and no media track stays live. Retake and Remove are offered. A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
