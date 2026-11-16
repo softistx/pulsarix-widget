@@ -10,6 +10,7 @@ import type { Messages } from "./messages";
 import { ReportFlow } from "./report-flow";
 import { themeNameFor } from "./theme";
 
+// Temporary, until @softistx/material#4987
 /**
  * On a phone the split dialog is one scrolling column: the body and the screenshot pane keep
  * their natural height instead of sharing a grid track that is shorter than the pane.
@@ -106,7 +107,7 @@ export function App({
                 done
                   ? undefined
                   : editing
-                    ? `${PHONE_STACK} max-w-[1152px] lg:[--dialog-aside:480px] xl:[--dialog-aside:640px]`
+                    ? `${PHONE_STACK} max-w-[1280px] lg:[--dialog-aside:560px] xl:[--dialog-aside:760px]`
                     : `${PHONE_STACK} max-w-[896px]`
               }
               onCloseAutoFocus={(event) => {

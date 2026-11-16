@@ -231,6 +231,7 @@ export function ScreenshotPane({
         </div>
         {canCapture ? (
           <div className="flex max-w-xs items-start gap-2 text-left">
+            {/* Temporary, until @softistx/material#4986 */}
             <input
               id={`${ids}-mask`}
               type="checkbox"
