@@ -25,8 +25,12 @@ export interface ReportFlowProps {
   onClose: () => void;
   /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
   onDone?: (done: boolean) => void;
+  /** Told when the screenshot editor opens or closes (the dialog widens its pane). */
+  onEditing?: (editing: boolean) => void;
   /** Overridable for specs; the API's own minimum otherwise. */
   minFillMs?: number;
+  /** The screenshot's mask-text option starts on (`data-mask-text="true"`). */
+  maskText?: boolean;
 }
 
 /**
@@ -42,7 +46,9 @@ export function ReportFlow({
   onError,
   onClose,
   onDone,
+  onEditing,
   minFillMs = MIN_FILL_MS,
+  maskText = false,
 }: ReportFlowProps) {
   const openedAt = useRef(Date.now());
   const honeypot = useRef<HTMLInputElement>(null);
@@ -71,6 +77,8 @@ export function ReportFlow({
     });
     return () => controller.abort();
   }, [apiBase, projectKey, locale]);
+  // The flattened export of the annotated screenshot (W2c sends it); nothing else of the capture lives on.
+  const [screenshot, setScreenshot] = useState<File | null>(null);
   const [sent, setSent] = useState<{ tracking: boolean } | null>(null);
 
   // A failure shows in the scrolling body, above the sticky footer on a phone.
@@ -157,6 +165,10 @@ export function ReportFlow({
       failure={failure}
       submitting={formState.isSubmitting}
       blocked={failure?.kind === "rejected" || failure?.kind === "config"}
+      screenshot={screenshot}
+      onScreenshot={setScreenshot}
+      maskText={maskText}
+      onEditing={onEditing}
     />
   );
 }

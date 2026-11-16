@@ -10,6 +10,14 @@ import type { Messages } from "./messages";
 import { ReportFlow } from "./report-flow";
 import { themeNameFor } from "./theme";
 
+// Temporary, until @softistx/material#4987
+/**
+ * On a phone the split dialog is one scrolling column: the body and the screenshot pane keep
+ * their natural height instead of sharing a grid track that is shorter than the pane.
+ */
+const PHONE_STACK =
+  "max-md:flex max-md:flex-col max-md:[&>[data-slot=dialog-body]]:flex-none max-md:[&>[data-slot=dialog-aside]]:flex-none";
+
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
   themeName?: string;
@@ -21,6 +29,8 @@ export interface AppProps {
   open: boolean;
   launcher: boolean;
   position: Position;
+  /** The screenshot's mask-text option starts on. */
+  maskText?: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: { reportId: string }) => void;
   onError: (detail: { code: string }) => void;
@@ -43,6 +53,7 @@ export function App({
   open,
   launcher,
   position,
+  maskText = false,
   onOpenChange,
   onSubmitted,
   onError,
@@ -50,6 +61,8 @@ export function App({
 }: AppProps) {
   // The confirmation has no screenshot pane: the dialog drops its split layout then.
   const [done, setDone] = useState(false);
+  // While the screenshot editor is open the pane widens: the editor needs more than a preview.
+  const [editing, setEditing] = useState(false);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
@@ -90,7 +103,13 @@ export function App({
               layout={done ? "stack" : "split"}
               size={done ? "md" : undefined}
               // About 896 px from 1280 px up (px, not rem: the host owns the root font size).
-              className={done ? undefined : "max-w-[896px]"}
+              className={
+                done
+                  ? undefined
+                  : editing
+                    ? `${PHONE_STACK} max-w-[1280px] lg:[--dialog-aside:560px] xl:[--dialog-aside:760px]`
+                    : `${PHONE_STACK} max-w-[896px]`
+              }
               onCloseAutoFocus={(event) => {
                 if (!opener.current?.isConnected) return;
                 event.preventDefault();
@@ -105,7 +124,9 @@ export function App({
                 onSubmitted={onSubmitted}
                 onError={onError}
                 minFillMs={minFillMs}
+                maskText={maskText}
                 onDone={setDone}
+                onEditing={setEditing}
                 onClose={() => onOpenChange(false)}
               />
             </DialogContent>
