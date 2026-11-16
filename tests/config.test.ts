@@ -13,6 +13,7 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     accentColor: null,
     apiBase: null,
     maskText: false,
+    attachments: true,
   });
 });
 
@@ -33,6 +34,7 @@ test("valid attributes are taken", () => {
     accentColor: "#0b7a75",
     apiBase: null,
     maskText: false,
+    attachments: true,
   });
 });
 
@@ -76,4 +78,11 @@ test("mask-text is on only for the value true", () => {
   expect(read({ "mask-text": "true" }).maskText).toBe(true);
   expect(read({ "mask-text": "yes" }).maskText).toBe(false);
   expect(read({}).maskText).toBe(false);
+});
+
+test("attachments are on unless the attribute says false", () => {
+  expect(read({ attachments: "false" }).attachments).toBe(false);
+  expect(read({ attachments: "true" }).attachments).toBe(true);
+  expect(read({ attachments: "no" }).attachments).toBe(true);
+  expect(read({}).attachments).toBe(true);
 });

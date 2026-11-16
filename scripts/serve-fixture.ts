@@ -3,23 +3,74 @@
  *   /          the host page with the loader script tag
  *   /baseline  the same page without the widget (the reference for the leak test)
  *   /dist/*    the build output
- *   POST /public/graphql  a stub of the API's intake
+ *   /strict    the same page under a strict CSP (no inline script, no `blob:` image source)
+ *   POST /public/graphql  a stub of the API's intake (tickets for declared files included)
+ *   PUT /public/media/report-files/:slot  a stub of the upload by ticket (a file named
+ *              "fail…" gets a 500, so that the retry and the partial failure can be seen, one
+ *              named "slow…" is answered after 4 s, to see the progress)
+ *   GET /__puts  what the stub received: [{ slot, name, bytes, type }]
  */
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "..");
 
+/** Every connection the page may make is to its own origin: that is the whole policy a host needs. */
+const STRICT_CSP =
+  "default-src 'none'; script-src 'self'; style-src 'nonce-host'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'";
+
 export function serveFixture(port = 0) {
+  /** slot -> the declared name, to answer the PUT with what the stub knows of it. */
+  const slots = new Map<string, string>();
+  const puts: { slot: string; name: string; bytes: number; type: string }[] =
+    [];
   return Bun.serve({
     port,
     async fetch(request) {
       const url = new URL(request.url);
+      if (url.pathname === "/__puts") return Response.json(puts);
+      if (
+        url.pathname.startsWith("/public/media/report-files/") &&
+        request.method === "PUT"
+      ) {
+        const slot = decodeURIComponent(url.pathname.split("/").pop() ?? "");
+        const name = slots.get(slot);
+        if (!name || !request.headers.get("x-pulsarix-ticket"))
+          return Response.json(
+            {
+              errors: [
+                { extensions: { code: "intake.errors.ticket-invalid" } },
+              ],
+            },
+            { status: 403 },
+          );
+        const bytes = (await request.arrayBuffer()).byteLength;
+        // A file named "slow…" is answered after a pause: the progress state, to look at.
+        if (name.startsWith("slow")) await Bun.sleep(4_000);
+        if (name.startsWith("fail"))
+          return Response.json(
+            { errors: [{ extensions: { code: "intake.errors.unavailable" } }] },
+            { status: 500 },
+          );
+        puts.push({
+          slot,
+          name,
+          bytes,
+          type: request.headers.get("content-type") ?? "",
+        });
+        return Response.json({ ok: true });
+      }
       // A stand-in for the pulsarix API's public intake (same origin as the loader, as in
       // production): it answers `submitClientReport` and records nothing.
       if (url.pathname === "/public/graphql" && request.method === "POST") {
         const body = (await request.json()) as {
           id?: string;
-          variables?: { input?: { email?: string; title?: string } };
+          variables?: {
+            input?: {
+              email?: string;
+              title?: string;
+              files?: { role: string; name: string }[];
+            };
+          };
         };
         if (body.id === "widgetConfig")
           return Response.json({
@@ -28,6 +79,7 @@ export function serveFixture(port = 0) {
                 projectName: "Acme Store",
                 locale: "en",
                 enabled: true,
+                attachments: true,
               },
             },
           });
@@ -44,23 +96,39 @@ export function serveFixture(port = 0) {
             },
             { status: 503 },
           );
+        const files = (body.variables?.input?.files ?? []).map((file, i) => {
+          const slot = `slot-${slots.size + 1}-${i}`;
+          slots.set(slot, file.name);
+          return { slot, role: file.role, ticket: `ticket-${slot}` };
+        });
         return Response.json({
           data: {
             submitClientReport: {
               reportId: "fixture-report",
               tracking: !!body.variables?.input?.email,
+              files,
             },
           },
         });
       }
-      if (url.pathname === "/" || url.pathname === "/baseline") {
+      if (["/", "/baseline", "/strict"].includes(url.pathname)) {
         const html = await Bun.file(join(root, "fixtures/host.html")).text();
         const loader =
-          url.pathname === "/"
+          url.pathname !== "/baseline"
             ? '<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"></script>'
             : "";
-        return new Response(html.replace("<!--LOADER-->", loader), {
-          headers: { "content-type": "text/html; charset=utf-8" },
+        // The host's own `<style>` carries the nonce; any style the widget injected would not.
+        const page =
+          url.pathname === "/strict"
+            ? html.replace("<style>", '<style nonce="host">')
+            : html;
+        return new Response(page.replace("<!--LOADER-->", loader), {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            ...(url.pathname === "/strict"
+              ? { "content-security-policy": STRICT_CSP }
+              : {}),
+          },
         });
       }
       if (url.pathname.startsWith("/dist/")) {

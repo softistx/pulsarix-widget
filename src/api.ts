@@ -1,5 +1,20 @@
 /** The public intake client: the persisted `submitClientReport` operation on `/public/graphql`. */
 
+/** A file the report will carry, as `submitClientReport` wants it declared (plan A12). */
+export interface DeclaredFile {
+  role: "screenshot" | "file";
+  name: string;
+  type: string;
+  size: number;
+}
+
+/** The signed, single-use ticket the API answers for each declared file, in order. */
+export interface FileTicket {
+  slot: string;
+  role: "screenshot" | "file";
+  ticket: string;
+}
+
 export interface ReportInput {
   title: string;
   description: string;
@@ -8,11 +23,14 @@ export interface ReportInput {
   locale: string;
   website: string;
   filledInMs: number;
+  files?: DeclaredFile[];
 }
 
 export interface SubmittedReport {
   reportId: string;
   tracking: boolean;
+  /** One ticket per declared file; empty when none was declared. */
+  files: FileTicket[];
 }
 
 /** What went wrong, as far as the form tells the reporter. */
@@ -22,6 +40,7 @@ export type ErrorKind =
   | "unavailable" // 503: the rate limits cannot be checked, try later
   | "rate-limited" // 429
   | "invalid" // 400: the server refused the content
+  | "files" // the declared files were refused (type, size, count, or switched off for the key)
   | "network" // the request did not reach the API
   | "unknown";
 
@@ -42,7 +61,18 @@ interface GraphQLErrorBody {
   extensions?: { code?: string; retryAfter?: number };
 }
 
+const FILE_CODES = new Set([
+  "file-unsupported-type",
+  "file-too-large",
+  "file-undecodable",
+  "file-too-many-pixels",
+  "too-many-files",
+  "files-too-large",
+  "attachments-disabled",
+]);
+
 function kindOf(status: number, code: string): ErrorKind {
+  if (FILE_CODES.has(code.replace("intake.errors.", ""))) return "files";
   if (status === 404 || status === 403) return "rejected";
   if (status === 503) return "unavailable";
   if (status === 429) return "rate-limited";
@@ -66,10 +96,14 @@ export async function submitReport({
   fetch: doFetch = fetch,
   signal,
 }: SubmitOptions): Promise<SubmittedReport> {
-  const { email, ...rest } = input;
+  const { email, files, ...rest } = input;
   const variables = {
     publicKey,
-    input: { ...rest, ...(email ? { email } : {}) },
+    input: {
+      ...rest,
+      ...(email ? { email } : {}),
+      ...(files?.length ? { files } : {}),
+    },
   };
   let response: Response;
   try {
@@ -88,7 +122,11 @@ export async function submitReport({
     throw new IntakeError("network", "network");
   }
   let body: {
-    data?: { submitClientReport?: SubmittedReport };
+    data?: {
+      submitClientReport?: Omit<SubmittedReport, "files"> & {
+        files?: FileTicket[];
+      };
+    };
     errors?: GraphQLErrorBody[];
   } | null = null;
   try {
@@ -107,12 +145,14 @@ export async function submitReport({
   }
   const report = body?.data?.submitClientReport;
   if (!report) throw new IntakeError("unknown", "empty-response");
-  return report;
+  return { ...report, files: report.files ?? [] };
 }
 
 export interface WidgetProject {
   /** The project's display name; null when the API did not give one. */
   projectName: string | null;
+  /** Whether the key takes a screenshot and files (the key's `attachmentsEnabled`). */
+  attachments: boolean;
 }
 
 /**
@@ -148,13 +188,19 @@ export async function fetchWidgetConfig({
     );
     if (!response.ok) return null;
     const body = (await response.json()) as {
-      data?: { widgetConfig?: { projectName?: unknown } };
+      data?: {
+        widgetConfig?: { projectName?: unknown; attachments?: unknown };
+      };
     };
     const config = body.data?.widgetConfig;
     if (!config) return null;
     const name =
       typeof config.projectName === "string" ? config.projectName.trim() : "";
-    return { projectName: name ? name.slice(0, 120) : null };
+    return {
+      projectName: name ? name.slice(0, 120) : null,
+      // Absent (an older API) counts as on: the API refuses files itself when the key says no.
+      attachments: config.attachments !== false,
+    };
   } catch {
     return null;
   }

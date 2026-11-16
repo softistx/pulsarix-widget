@@ -16,6 +16,8 @@ export function failureText(messages: Messages, error: IntakeError): string {
       );
     case "invalid":
       return text.invalid;
+    case "files":
+      return text.files;
     case "network":
       return text.network;
     default:

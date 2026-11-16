@@ -15,6 +15,7 @@ interface InitOptions {
   apiBase?: string;
   launcher?: boolean;
   maskText?: boolean;
+  attachments?: boolean;
 }
 
 interface Handle {
@@ -96,5 +97,6 @@ if (data?.projectKey) {
     apiBase: data.apiBase,
     launcher: data.launcher === "false" ? false : undefined,
     maskText: data.maskText === "true" ? true : undefined,
+    attachments: data.attachments === "false" ? false : undefined,
   });
 }
