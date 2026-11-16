@@ -10,14 +10,6 @@ import type { Messages } from "./messages";
 import { ReportFlow, type SubmitDetail } from "./report-flow";
 import { themeNameFor } from "./theme";
 
-// Temporary, until @softistx/material#4987
-/**
- * On a phone the split dialog is one scrolling column: the body and the screenshot pane keep
- * their natural height instead of sharing a grid track that is shorter than the pane.
- */
-const PHONE_STACK =
-  "max-md:flex max-md:flex-col max-md:[&>[data-slot=dialog-body]]:flex-none max-md:[&>[data-slot=dialog-aside]]:flex-none";
-
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
   themeName?: string;
@@ -116,8 +108,8 @@ export function App({
                 stacked
                   ? undefined
                   : editing
-                    ? `${PHONE_STACK} max-w-[1280px] lg:[--dialog-aside:560px] xl:[--dialog-aside:760px]`
-                    : `${PHONE_STACK} max-w-[896px]`
+                    ? "max-w-[1280px] lg:[--dialog-aside:560px]! xl:[--dialog-aside:760px]!"
+                    : "max-w-[896px]"
               }
               onCloseAutoFocus={(event) => {
                 if (!opener.current?.isConnected) return;
