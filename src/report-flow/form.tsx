@@ -15,6 +15,7 @@ import type { FormEventHandler, Ref } from "react";
 import type { Control } from "react-hook-form";
 import type { IntakeError } from "../api";
 import type { Messages } from "../messages";
+import { ScreenshotPane } from "../screenshot/pane";
 import {
   DESCRIPTION_MAX,
   EMAIL_MAX,
@@ -36,6 +37,10 @@ export function Form({
   failure,
   submitting,
   blocked,
+  screenshot,
+  onScreenshot,
+  maskText,
+  onEditing,
 }: {
   messages: Messages;
   projectName: string | null;
@@ -47,6 +52,10 @@ export function Form({
   failure: IntakeError | null;
   submitting: boolean;
   blocked: boolean;
+  screenshot: File | null;
+  onScreenshot: (image: File | null) => void;
+  maskText: boolean;
+  onEditing?: (editing: boolean) => void;
 }) {
   return (
     <>
@@ -64,10 +73,7 @@ export function Form({
           {projectName ? messages.introFor(projectName) : messages.intro}
         </DialogDescription>
       </DialogHeader>
-      <DialogBody
-        aria-label={messages.title}
-        className="min-h-0 flex-1 overflow-y-auto"
-      >
+      <DialogBody aria-label={messages.title}>
         <form
           id={FORM_ID}
           onSubmit={onSubmit}
@@ -152,15 +158,14 @@ export function Form({
           </div>
         </form>
       </DialogBody>
-      <DialogAside aria-label={messages.aside.title} className="max-md:hidden">
-        <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 rounded-lg border border-border border-dashed p-6 text-center">
-          <p className="font-medium text-foreground text-sm">
-            {messages.aside.title}
-          </p>
-          <p className="text-muted-foreground text-xs">
-            {messages.aside.empty}
-          </p>
-        </div>
+      <DialogAside aria-label={messages.aside.title}>
+        <ScreenshotPane
+          messages={messages}
+          image={screenshot}
+          onImage={onScreenshot}
+          maskTextDefault={maskText}
+          onEditingChange={onEditing}
+        />
       </DialogAside>
       <DialogFooter>
         <Button type="button" variant="tonal" onClick={onClose}>

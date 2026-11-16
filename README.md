@@ -36,7 +36,8 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
 `data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
-floating button; open it with `window.PulsarixWidget.open()`).
+floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
+"Mask the text on the page" screenshot option starts on; see "Screenshots").
 
 Without the attributes, drive it from script. Calls made before the bundle has loaded are queued, and a second `init` while loaded is ignored:
 
@@ -124,6 +125,29 @@ and returns focus to the launcher (or to whatever opened it).
 - Locales: English (default) and French, from `locale`. The page address (origin and path only,
   never the query string or the fragment), the browser and the e-mail (if given) are sent with
   the report; the form says so.
+
+## Screenshots
+
+A report can carry one optional screenshot, never taken without a click (and a per-report
+choice). The right pane of the dialog offers:
+
+- **Add a screenshot**: the browser's screen capture (`getDisplayMedia`). The widget hides itself
+  (`visibility`, not unmount, so the form keeps its text) while the frame is grabbed, then shows
+  itself again. Not offered on a phone, without the API, or under a Permissions-Policy that blocks
+  `display-capture`.
+- **Upload an image**: always offered, and the only choice where capture is unavailable or was
+  refused. PNG, JPEG or WebP, 25 megapixels at most.
+- **Mask the text on the page** (off by default; `data-mask-text="true"` turns it on): covers the
+  page's text with opaque boxes before the picture is taken. It needs the current tab to be shared;
+  otherwise the widget says it cannot and nothing is captured. Mark anything that must stay visible
+  with `data-capture-unmask`.
+
+The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, an arrow,
+a box, text and a solid "Redact" box: redacted pixels are one opaque colour. Only the flattened
+export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
+revoked and no media track stays live. Retake and Remove are offered. A report is complete without
+any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
+`Permissions-Policy` without `display-capture` turns the capture button off.
 
 Events, on the element and through `on(name, cb)`: `pulsarix:ready` (asynchronous, in a microtask,
 so a listener added right after `mount()` hears it; it fires even when the key is missing, then

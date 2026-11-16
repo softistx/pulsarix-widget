@@ -9,6 +9,7 @@ interface Window {
       accentColor?: string;
       apiBase?: string;
       launcher?: boolean;
+      maskText?: boolean;
     }): Promise<void>;
     open(): void;
     close(): void;

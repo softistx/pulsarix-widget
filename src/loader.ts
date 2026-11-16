@@ -14,6 +14,7 @@ interface InitOptions {
   accentColor?: string;
   apiBase?: string;
   launcher?: boolean;
+  maskText?: boolean;
 }
 
 interface Handle {
@@ -94,5 +95,6 @@ if (data?.projectKey) {
     accentColor: data.accentColor,
     apiBase: data.apiBase,
     launcher: data.launcher === "false" ? false : undefined,
+    maskText: data.maskText === "true" ? true : undefined,
   });
 }

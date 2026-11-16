@@ -38,7 +38,7 @@
     "typecheck": "bun check",
     "test": "bun test",
     "size": "bun scripts/check-size.ts",
-    "test:browser": "bun scripts/leak-test.ts",
+    "test:browser": "bun scripts/leak-test.ts && bun scripts/screenshot-test.ts",
     "fixture": "bun scripts/serve-fixture.ts",
     "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size",
     "release": "bun scripts/publish.ts",

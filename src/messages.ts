@@ -9,6 +9,32 @@ export interface Messages {
   close: string;
   sections: { problem: string; contact: string };
   aside: { title: string; empty: string };
+  screenshot: {
+    add: string;
+    upload: string;
+    retake: string;
+    remove: string;
+    maskText: string;
+    maskTextHint: string;
+    hostHidden: string;
+    capturing: string;
+    editorLabel: string;
+    previewAlt: string;
+    saved: string;
+    hint: string;
+    save: string;
+    cancel: string;
+    loadingEditor: string;
+    errors: {
+      denied: string;
+      unavailable: string;
+      maskUnavailable: string;
+      failed: string;
+      type: string;
+      tooLarge: string;
+      unreadable: string;
+    };
+  };
   fields: {
     title: string;
     titleHint: string;
@@ -57,6 +83,36 @@ export const MESSAGES: Record<Locale, Messages> = {
     aside: {
       title: "Screenshot",
       empty: "A screenshot of the page will show here.",
+    },
+    screenshot: {
+      add: "Add a screenshot",
+      upload: "Upload an image",
+      retake: "Retake",
+      remove: "Remove",
+      maskText: "Mask the text on the page",
+      maskTextHint:
+        "Covers every character of the page with black boxes before the picture is taken.",
+      hostHidden: "This form hides while the picture is taken.",
+      capturing: "Taking the screenshot...",
+      editorLabel: "Annotate the screenshot",
+      previewAlt: "Your screenshot",
+      saved: "Your screenshot is attached.",
+      hint: "Optional. You can draw on it and hide anything private before it is sent.",
+      save: "Attach",
+      cancel: "Cancel",
+      loadingEditor: "Opening the editor...",
+      errors: {
+        denied: "The capture was refused. You can upload an image instead.",
+        unavailable:
+          "This browser cannot capture the screen. You can upload an image instead.",
+        maskUnavailable:
+          "Masking needs this tab to be the one shared. Share this tab, or turn masking off.",
+        failed:
+          "The screenshot could not be taken. Try again, or upload an image.",
+        type: "Choose a PNG, JPEG or WebP image.",
+        tooLarge: "This image is too large (25 megapixels at most).",
+        unreadable: "This image could not be read.",
+      },
     },
     fields: {
       title: "Title",
@@ -109,6 +165,36 @@ export const MESSAGES: Record<Locale, Messages> = {
     aside: {
       title: "Capture d'écran",
       empty: "Une capture d'écran de la page s'affichera ici.",
+    },
+    screenshot: {
+      add: "Ajouter une capture",
+      upload: "Téléverser une image",
+      retake: "Reprendre",
+      remove: "Retirer",
+      maskText: "Masquer le texte de la page",
+      maskTextHint:
+        "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
+      hostHidden: "Ce formulaire se cache pendant la capture.",
+      capturing: "Capture en cours...",
+      editorLabel: "Annoter la capture",
+      previewAlt: "Votre capture d'écran",
+      saved: "Votre capture est jointe.",
+      hint: "Facultatif. Vous pouvez dessiner dessus et masquer ce qui est privé avant l'envoi.",
+      save: "Joindre",
+      cancel: "Annuler",
+      loadingEditor: "Ouverture de l'éditeur...",
+      errors: {
+        denied:
+          "La capture a été refusée. Vous pouvez téléverser une image à la place.",
+        unavailable:
+          "Ce navigateur ne peut pas capturer l'écran. Vous pouvez téléverser une image.",
+        maskUnavailable:
+          "Le masquage exige que cet onglet soit celui partagé. Partagez cet onglet, ou désactivez le masquage.",
+        failed: "La capture a échoué. Réessayez, ou téléversez une image.",
+        type: "Choisissez une image PNG, JPEG ou WebP.",
+        tooLarge: "Cette image est trop grande (25 mégapixels au plus).",
+        unreadable: "Cette image n'a pas pu être lue.",
+      },
     },
     fields: {
       title: "Titre",
