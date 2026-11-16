@@ -11,7 +11,7 @@ import {
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
-import type { FormEventHandler, Ref } from "react";
+import type { FormEventHandler, ReactNode, Ref } from "react";
 import type { Control } from "react-hook-form";
 import type { IntakeError } from "../api";
 import type { Messages } from "../messages";
@@ -37,6 +37,8 @@ export function Form({
   failure,
   submitting,
   blocked,
+  controls,
+  filesSection,
   screenshot,
   onScreenshot,
   maskText,
@@ -52,6 +54,9 @@ export function Form({
   failure: IntakeError | null;
   submitting: boolean;
   blocked: boolean;
+  /** The screenshot pane and the files section show (the key and the page allow them). */
+  controls: boolean;
+  filesSection: ReactNode;
   screenshot: File | null;
   onScreenshot: (image: File | null) => void;
   maskText: boolean;
@@ -111,6 +116,23 @@ export function Form({
             />
           </section>
           <hr className="border-border border-t" />
+          {controls ? (
+            <>
+              <section
+                aria-labelledby={`${FORM_ID}-files`}
+                className="grid content-start gap-4"
+              >
+                <h3
+                  id={`${FORM_ID}-files`}
+                  className="font-semibold text-foreground text-sm"
+                >
+                  {messages.sections.files}
+                </h3>
+                {filesSection}
+              </section>
+              <hr className="border-border border-t" />
+            </>
+          ) : null}
           <section
             aria-labelledby={`${FORM_ID}-contact`}
             className="grid content-start gap-4"
@@ -158,15 +180,17 @@ export function Form({
           </div>
         </form>
       </DialogBody>
-      <DialogAside aria-label={messages.aside.title}>
-        <ScreenshotPane
-          messages={messages}
-          image={screenshot}
-          onImage={onScreenshot}
-          maskTextDefault={maskText}
-          onEditingChange={onEditing}
-        />
-      </DialogAside>
+      {controls ? (
+        <DialogAside aria-label={messages.aside.title}>
+          <ScreenshotPane
+            messages={messages}
+            image={screenshot}
+            onImage={onScreenshot}
+            maskTextDefault={maskText}
+            onEditingChange={onEditing}
+          />
+        </DialogAside>
+      ) : null}
       <DialogFooter>
         <Button type="button" variant="tonal" onClick={onClose}>
           {messages.close}

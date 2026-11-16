@@ -7,7 +7,7 @@ import {
 import { useRef, useState } from "react";
 import type { Locale, Position } from "./config";
 import type { Messages } from "./messages";
-import { ReportFlow } from "./report-flow";
+import { ReportFlow, type SubmitDetail } from "./report-flow";
 import { themeNameFor } from "./theme";
 
 // Temporary, until @softistx/material#4987
@@ -31,11 +31,15 @@ export interface AppProps {
   position: Position;
   /** The screenshot's mask-text option starts on. */
   maskText?: boolean;
+  /** `data-attachments="false"` hides the screenshot pane and the files. */
+  attachments?: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmitted: (detail: { reportId: string }) => void;
+  onSubmitted: (detail: SubmitDetail) => void;
   onError: (detail: { code: string }) => void;
   /** Specs only: the API's minimum fill time is waited out otherwise. */
   minFillMs?: number;
+  /** Specs only: the wait before an upload's one retry. */
+  retryDelayMs?: number;
 }
 
 /**
@@ -54,13 +58,18 @@ export function App({
   launcher,
   position,
   maskText = false,
+  attachments = true,
   onOpenChange,
   onSubmitted,
   onError,
   minFillMs,
+  retryDelayMs,
 }: AppProps) {
   // The confirmation has no screenshot pane: the dialog drops its split layout then.
   const [done, setDone] = useState(false);
+  // Without the screenshot pane and files (the page or the key turned them off) it is one column too.
+  const [controls, setControls] = useState(attachments);
+  const stacked = done || !controls;
   // While the screenshot editor is open the pane widens: the editor needs more than a preview.
   const [editing, setEditing] = useState(false);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
@@ -100,11 +109,11 @@ export function App({
           ) : null}
           <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-              layout={done ? "stack" : "split"}
-              size={done ? "md" : undefined}
+              layout={stacked ? "stack" : "split"}
+              size={stacked ? "md" : undefined}
               // About 896 px from 1280 px up (px, not rem: the host owns the root font size).
               className={
-                done
+                stacked
                   ? undefined
                   : editing
                     ? `${PHONE_STACK} max-w-[1280px] lg:[--dialog-aside:560px] xl:[--dialog-aside:760px]`
@@ -124,9 +133,12 @@ export function App({
                 onSubmitted={onSubmitted}
                 onError={onError}
                 minFillMs={minFillMs}
+                retryDelayMs={retryDelayMs}
                 maskText={maskText}
                 onDone={setDone}
                 onEditing={setEditing}
+                attachments={attachments}
+                onControls={setControls}
                 onClose={() => onOpenChange(false)}
               />
             </DialogContent>

@@ -166,7 +166,7 @@ describe("the report form", () => {
     });
     expect(call?.body.variables.input).not.toHaveProperty("email");
     expect(typeof call?.body.variables.input.filledInMs).toBe("number");
-    expect(onSubmitted).toHaveBeenCalledWith({ reportId: "r1" });
+    expect(onSubmitted).toHaveBeenCalledWith({ reportId: "r1", files: [] });
     expect(screen.getByRole("status")).toBeTruthy();
   });
 

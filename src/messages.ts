@@ -7,7 +7,7 @@ export interface Messages {
   /** The intro once the project's name is known. */
   introFor: (project: string) => string;
   close: string;
-  sections: { problem: string; contact: string };
+  sections: { problem: string; files: string; contact: string };
   aside: { title: string; empty: string };
   screenshot: {
     add: string;
@@ -31,6 +31,26 @@ export interface Messages {
       type: string;
       tooLarge: string;
       unreadable: string;
+    };
+  };
+  files: {
+    hint: string;
+    dropTitle: string;
+    zoneTitle: string;
+    browse: string;
+    screenshot: string;
+    count: string;
+    total: string;
+    totalBlocked: string;
+    /** Why one file did not reach the API. */
+    reasons: {
+      type: string;
+      size: string;
+      unreadable: string;
+      expired: string;
+      busy: string;
+      network: string;
+      unknown: string;
     };
   };
   fields: {
@@ -58,6 +78,7 @@ export interface Messages {
     unavailable: string;
     rateLimited: (minutes: number) => string;
     invalid: string;
+    files: string;
     network: string;
     unknown: string;
   };
@@ -66,6 +87,9 @@ export interface Messages {
     body: string;
     tracking: string;
     noTracking: string;
+    attached: (count: number) => string;
+    partialTitle: string;
+    partial: (failed: number, total: number) => string;
   };
 }
 
@@ -77,7 +101,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     introFor: (project) =>
       `Tell us what went wrong in ${project} and we will look into it.`,
     close: "Close",
-    sections: { problem: "The problem", contact: "Follow-up" },
+    sections: { problem: "The problem", files: "Files", contact: "Follow-up" },
     aside: {
       title: "Screenshot",
       empty: "A screenshot of the page will show here.",
@@ -110,6 +134,26 @@ export const MESSAGES: Record<Locale, Messages> = {
         unreadable: "This image could not be read.",
       },
     },
+    files: {
+      hint: "Optional. Up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
+      dropTitle: "Drop files to attach",
+      zoneTitle: "Drag files here",
+      browse: "Browse",
+      screenshot: "Screenshot",
+      count: "A report takes 3 files at most.",
+      total: "This file would take the report past 12 MB.",
+      totalBlocked:
+        "The screenshot and the files together pass 12 MB. Remove one to send the report.",
+      reasons: {
+        type: "Not accepted: use a PNG, JPEG, WebP or PDF.",
+        size: "Too large: 5 MB at most.",
+        unreadable: "Empty or damaged.",
+        expired: "Took too long to send.",
+        busy: "The service was busy.",
+        network: "The connection dropped.",
+        unknown: "It could not be sent.",
+      },
+    },
     fields: {
       title: "Title",
       titleHint: "A short summary",
@@ -139,6 +183,8 @@ export const MESSAGES: Record<Locale, Messages> = {
       rateLimited: (minutes) =>
         `Too many reports from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       invalid: "The report was refused. Check what you wrote and try again.",
+      files:
+        "Your files were refused. Remove them, or check they are PNG, JPEG, WebP or PDF files under 5 MB, and try again.",
       network:
         "Could not reach the server. Check your connection, or ask the site owner whether reports are enabled here.",
       unknown: "Something went wrong. Try again in a moment.",
@@ -148,6 +194,13 @@ export const MESSAGES: Record<Locale, Messages> = {
       body: "Your report was sent.",
       tracking: "We e-mailed you a link to follow it.",
       noTracking: "You gave no e-mail, so there is no link to follow it.",
+      attached: (count) =>
+        count === 1
+          ? "Your file is attached."
+          : `Your ${count} files are attached.`,
+      partialTitle: "Some files were not attached",
+      partial: (failed, total) =>
+        `Your report was sent, but ${failed} of ${total} ${total === 1 ? "file" : "files"} could not be attached.`,
     },
   },
   fr: {
@@ -157,7 +210,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     introFor: (project) =>
       `Dites-nous ce qui ne va pas dans ${project}, nous allons regarder.`,
     close: "Fermer",
-    sections: { problem: "Le problème", contact: "Suivi" },
+    sections: { problem: "Le problème", files: "Fichiers", contact: "Suivi" },
     aside: {
       title: "Capture d'écran",
       empty: "Une capture d'écran de la page s'affichera ici.",
@@ -188,6 +241,26 @@ export const MESSAGES: Record<Locale, Messages> = {
         type: "Choisissez une image PNG, JPEG ou WebP.",
         tooLarge: "Cette image est trop grande (25 mégapixels au plus).",
         unreadable: "Cette image n'a pas pu être lue.",
+      },
+    },
+    files: {
+      hint: "Facultatif. 3 fichiers au plus : PNG, JPEG, WebP ou PDF, 5 Mo chacun.",
+      dropTitle: "Déposez les fichiers à joindre",
+      zoneTitle: "Glissez des fichiers ici",
+      browse: "Parcourir",
+      screenshot: "Capture d'écran",
+      count: "Un signalement accepte 3 fichiers au plus.",
+      total: "Ce fichier ferait dépasser 12 Mo au signalement.",
+      totalBlocked:
+        "La capture et les fichiers dépassent 12 Mo ensemble. Retirez-en un pour envoyer le signalement.",
+      reasons: {
+        type: "Refusé : utilisez un PNG, JPEG, WebP ou PDF.",
+        size: "Trop volumineux : 5 Mo au plus.",
+        unreadable: "Vide ou endommagé.",
+        expired: "L'envoi a pris trop de temps.",
+        busy: "Le service était occupé.",
+        network: "La connexion a été coupée.",
+        unknown: "Il n'a pas pu être envoyé.",
       },
     },
     fields: {
@@ -221,6 +294,8 @@ export const MESSAGES: Record<Locale, Messages> = {
         `Trop de signalements depuis ici. Réessayez dans ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       invalid:
         "Le signalement a été refusé. Vérifiez votre texte et réessayez.",
+      files:
+        "Vos fichiers ont été refusés. Retirez-les, ou vérifiez que ce sont des PNG, JPEG, WebP ou PDF de moins de 5 Mo, puis réessayez.",
       network:
         "Le serveur est injoignable. Vérifiez votre connexion, ou demandez au responsable du site si les signalements y sont activés.",
       unknown: "Une erreur est survenue. Réessayez dans un instant.",
@@ -230,6 +305,13 @@ export const MESSAGES: Record<Locale, Messages> = {
       body: "Votre signalement a été envoyé.",
       tracking: "Nous vous avons envoyé un lien pour le suivre.",
       noTracking: "Sans e-mail, il n'y a pas de lien de suivi.",
+      attached: (count) =>
+        count === 1
+          ? "Votre fichier est joint."
+          : `Vos ${count} fichiers sont joints.`,
+      partialTitle: "Certains fichiers n'ont pas été joints",
+      partial: (failed, total) =>
+        `Votre signalement a été envoyé, mais ${failed} fichier${failed === 1 ? "" : "s"} sur ${total} n'${failed === 1 ? "a" : "ont"} pas pu être joint${failed === 1 ? "" : "s"}.`,
     },
   },
 };

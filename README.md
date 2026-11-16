@@ -37,7 +37,8 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 `data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
-"Mask the text on the page" screenshot option starts on; see "Screenshots").
+"Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
+(no screenshot and no file controls; see "Attached files").
 
 Without the attributes, drive it from script. Calls made before the bundle has loaded are queued, and a second `init` while loaded is ignored:
 
@@ -152,13 +153,37 @@ any of this. No `blob:` image source is needed in your CSP (the editor draws on 
 Events, on the element and through `on(name, cb)`: `pulsarix:ready` (asynchronous, in a microtask,
 so a listener added right after `mount()` hears it; it fires even when the key is missing, then
 `pulsarix:error` with `config` follows), `pulsarix:open`,
-`pulsarix:close`, `pulsarix:submit` (`detail: { reportId }`) and `pulsarix:error`
+`pulsarix:close`, `pulsarix:submit` (`detail: { reportId, files }`, one `{ name, role, type, size,
+uploaded }` per file sent with the report) and `pulsarix:error`
 (`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
 
 ```ts
 widget.on("pulsarix:submit", (event) => console.log(event.detail.reportId));
 widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 ```
+
+## Attached files
+
+Besides the screenshot, a reporter can attach up to 3 files (PNG, JPEG, WebP or PDF, 5 MB each,
+12 MB for the report, screenshot included) by dropping them on the zone or with Browse. The
+checks mirror the API's, so a refused file is shown with its reason and never sent; the list shows
+each file's type icon, name, size, a thumbnail for images, a Remove button, and its progress while
+the report goes out.
+
+- On submit the widget declares the files to `submitClientReport`, then PUTs each one to the signed
+  single-use ticket the API answers (`/public/media/report-files/<slot>`), with progress, and one
+  retry on a network failure or a 5xx. The report itself is already saved by then: if a file
+  cannot be attached, the confirmation says "Your report was sent, but N of M files could not be
+  attached" and `pulsarix:submit` lists that file with `uploaded: false`.
+- Off for one embed with `data-attachments="false"` (`attachments: false` in `init` / `mount`), and
+  off for a key when its project switches attachments off (`widgetConfig.attachments`); the
+  screenshot pane goes with them.
+- The files go to the same origin as the report, so `connect-src` is unchanged. Thumbnails are
+  drawn on canvases, so no `img-src blob:` is needed. Capture needs `display-capture` in the
+  host's `Permissions-Policy` (the upload of an image works without it).
+- The list's own labels (the "Attachments" name, "Remove") come from `@softistx/material/embed`
+  and are in English in both locales; every refusal and the confirmation are in the widget's
+  locale.
 
 ## How it is isolated
 

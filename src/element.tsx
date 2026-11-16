@@ -119,6 +119,7 @@ export class PulsarixWidgetElement extends HTMLElement {
         open={this.#open}
         launcher={this.getAttribute("launcher") !== "false"}
         maskText={config.maskText}
+        attachments={config.attachments}
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
@@ -144,6 +145,8 @@ export interface MountOptions {
   launcher?: boolean;
   /** The screenshot's "Mask the text on the page" option starts on. */
   maskText?: boolean;
+  /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
+  attachments?: boolean;
   /** Where to append the element; `document.body` by default. */
   target?: Element;
 }
@@ -179,6 +182,8 @@ export function mount(options: MountOptions): WidgetHandle {
     element.setAttribute("accent-color", options.accentColor);
   if (options.apiBase) element.setAttribute("api-base", options.apiBase);
   if (options.maskText) element.setAttribute("mask-text", "true");
+  if (options.attachments === false)
+    element.setAttribute("attachments", "false");
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
