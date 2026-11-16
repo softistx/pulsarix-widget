@@ -35,7 +35,7 @@ export default function Editor({
   return (
     <div
       ref={mark}
-      className="h-full min-h-0 w-full max-md:-mx-3 max-md:w-[calc(100%+24px)]"
+      className="h-full min-h-0 w-full max-md:-mx-8 max-md:w-[calc(100%+64px)]"
     >
       {styled ? (
         <ImageMarkupEditor
