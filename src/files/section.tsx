@@ -24,8 +24,8 @@ export interface AttachmentsSectionProps {
  * The files of the report: a drop zone with Browse (`@softistx/material/files/drop`) and the
  * list of what was chosen (`AttachmentList`, from `/embed`). The i18n provider gives the drop
  * zone's own words the widget's locale; `initialLanguage` keeps it from reading the host page's
- * `localStorage`. `/embed` carries a private i18n context with no locale input, so the list's own
- * labels stay English; every refusal is therefore worded here, in the widget's messages.
+ * `localStorage`. `/embed` has its own i18n context, given the locale by `App`'s embed `I18nProvider`; every
+ * refusal is worded here, in the widget's messages.
  */
 export function AttachmentsSection({
   messages,
