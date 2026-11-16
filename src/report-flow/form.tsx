@@ -54,7 +54,7 @@ export function Form({
         {projectName ? (
           <p
             data-testid="project-name"
-            className="font-medium text-primary text-xs"
+            className="font-semibold text-primary-text text-xs uppercase tracking-wide"
           >
             {projectName}
           </p>

@@ -23,6 +23,8 @@ export interface ReportFlowProps {
   onSubmitted: (detail: { reportId: string }) => void;
   onError: (detail: { code: string }) => void;
   onClose: () => void;
+  /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
+  onDone?: (done: boolean) => void;
   /** Overridable for specs; the API's own minimum otherwise. */
   minFillMs?: number;
 }
@@ -39,6 +41,7 @@ export function ReportFlow({
   onSubmitted,
   onError,
   onClose,
+  onDone,
   minFillMs = MIN_FILL_MS,
 }: ReportFlowProps) {
   const openedAt = useRef(Date.now());
@@ -82,7 +85,10 @@ export function ReportFlow({
 
   useEffect(() => {
     if (sent) done.current?.focus();
-  }, [sent]);
+    onDone?.(!!sent);
+  }, [sent, onDone]);
+  // Closing unmounts the flow: the next opening starts split again.
+  useEffect(() => () => onDone?.(false), [onDone]);
 
   const submit = handleSubmit(async (values) => {
     setFailure(null);
