@@ -8,8 +8,8 @@ export interface Entry {
   id: string;
   file: File;
   /**
-   * Why it will not be sent, or why its upload failed, in the widget's own words: `/embed`'s
-   * `AttachmentList` takes no locale, so a coded refusal would always read in English.
+   * Why it will not be sent, or why its upload failed, in the widget's own words (the list
+   * does not word refusals).
    */
   refusal?: string;
   /** Uploading, 0 to 100. */

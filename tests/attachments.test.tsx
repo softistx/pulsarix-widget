@@ -419,6 +419,11 @@ describe("French", () => {
     ]);
     const list = await screen.findByRole("list");
     expect(within(list).getByText(fr.files.reasons.type)).toBeTruthy();
+    // The material list's own labels follow the locale (embed I18nProvider).
+    expect(
+      within(list).getByRole("button", { name: "Retirer a.png" }),
+    ).toBeTruthy();
+    expect(within(list).queryByRole("button", { name: /^Remove/ })).toBeNull();
     await fillAndSend(user, "fr");
     await screen.findByText(fr.done.partial(1, 1));
     expect(
