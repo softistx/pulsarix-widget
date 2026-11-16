@@ -1,11 +1,10 @@
-import { Alert, Button } from "@softistx/material/embed";
+import { Alert, Button, Checkbox } from "@softistx/material/embed";
 import {
   lazy,
   type ReactNode,
   Suspense,
   useCallback,
   useEffect,
-  useId,
   useRef,
   useState,
 } from "react";
@@ -67,7 +66,6 @@ export function ScreenshotPane({
   onEditingChange,
 }: ScreenshotPaneProps) {
   const t = messages.screenshot;
-  const ids = useId();
   const region = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const alive = useRef(true);
@@ -230,20 +228,14 @@ export function ScreenshotPane({
           </Button>
         </div>
         {canCapture ? (
-          <div className="flex max-w-xs items-start gap-2 text-left">
-            {/* Temporary, until @softistx/material#4986 */}
-            <input
-              id={`${ids}-mask`}
-              type="checkbox"
+          <div className="max-w-xs text-left">
+            <Checkbox
               checked={maskText}
               disabled={busy}
-              onChange={(event) => setMaskText(event.currentTarget.checked)}
-              className="mt-0.5 size-4 shrink-0 accent-primary"
+              onCheckedChange={(checked) => setMaskText(checked === true)}
+              label={t.maskText}
+              helperText={t.maskTextHint}
             />
-            <label htmlFor={`${ids}-mask`} className="grid gap-0.5 text-xs">
-              <span className="font-medium text-foreground">{t.maskText}</span>
-              <span className="text-muted-foreground">{t.maskTextHint}</span>
-            </label>
           </div>
         ) : null}
         <p className="text-muted-foreground text-xs">{t.hint}</p>
