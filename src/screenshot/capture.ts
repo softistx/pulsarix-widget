@@ -20,11 +20,11 @@ export type CaptureFailure =
  */
 export function captureAvailable(): boolean {
   if (!canCaptureScreen()) return false;
-  const policy = (
-    document as {
-      permissionsPolicy?: { allowsFeature?: (feature: string) => boolean };
-    }
-  ).permissionsPolicy;
+  const doc = document as {
+    permissionsPolicy?: { allowsFeature?: (feature: string) => boolean };
+    featurePolicy?: { allowsFeature?: (feature: string) => boolean };
+  };
+  const policy = doc.permissionsPolicy ?? doc.featurePolicy;
   return policy?.allowsFeature?.("display-capture") !== false;
 }
 

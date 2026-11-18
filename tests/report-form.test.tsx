@@ -52,7 +52,7 @@ beforeEach(() => {
       return json(200, {
         data: {
           widgetConfig: projectName
-            ? { projectName, locale: "en", enabled: true }
+            ? { projectName, locale: "en", enabled: true, attachments: true }
             : null,
         },
       });

@@ -10,6 +10,7 @@ interface Window {
       apiBase?: string;
       launcher?: boolean;
       maskText?: boolean;
+      attachments?: boolean;
     }): Promise<void>;
     open(): void;
     close(): void;

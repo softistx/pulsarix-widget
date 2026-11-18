@@ -85,7 +85,7 @@ beforeEach(() => {
   declared = [];
   puts = [];
   attempts.clear();
-  configAttachments = undefined;
+  configAttachments = true;
   answer = () => ({ status: 200 });
   globalThis.XMLHttpRequest = FakeXHR as unknown as typeof XMLHttpRequest;
   globalThis.fetch = mock(async (_url: string, init: RequestInit) => {

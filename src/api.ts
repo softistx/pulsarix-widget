@@ -198,8 +198,8 @@ export async function fetchWidgetConfig({
       typeof config.projectName === "string" ? config.projectName.trim() : "";
     return {
       projectName: name ? name.slice(0, 120) : null,
-      // Absent (an older API) counts as on: the API refuses files itself when the key says no.
-      attachments: config.attachments !== false,
+      // Absent (an older API) counts as off: the widget then behaves as v1, with no file controls.
+      attachments: config.attachments === true,
     };
   } catch {
     return null;
