@@ -260,6 +260,13 @@ try {
     await tool(page, "Pen").click();
     await drag(page, [0.1, 0.12], [0.35, 0.2]);
     await tool(page, "Redact").click();
+    check(
+      (await page
+        .locator("pulsarix-widget")
+        .getByText(/pixelate/i)
+        .count()) === 0,
+      "the Redact tool offers no pixelate option (solid masking only)",
+    );
     await drag(page, [0.4, 0.3], [0.75, 0.85]);
     await page.getByRole("button", { name: "Attach" }).click();
     await preview(page).waitFor();
