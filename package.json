@@ -15,7 +15,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@softistx/material": "^3.244.0",
+    "@softistx/material": "^3.245.0",
     "@softistx/material-core": "^0.94.0",
     "@tailwindcss/cli": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
@@ -38,7 +38,7 @@
     "typecheck": "bun check",
     "test": "bun test",
     "size": "bun scripts/check-size.ts",
-    "test:browser": "bun scripts/leak-test.ts",
+    "test:browser": "bun scripts/leak-test.ts && bun scripts/screenshot-test.ts && bun scripts/files-test.ts",
     "fixture": "bun scripts/serve-fixture.ts",
     "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size",
     "release": "bun scripts/publish.ts",

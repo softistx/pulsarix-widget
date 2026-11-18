@@ -12,6 +12,8 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     position: "bottom-right",
     accentColor: null,
     apiBase: null,
+    maskText: false,
+    attachments: true,
   });
 });
 
@@ -31,6 +33,8 @@ test("valid attributes are taken", () => {
     position: "bottom-left",
     accentColor: "#0b7a75",
     apiBase: null,
+    maskText: false,
+    attachments: true,
   });
 });
 
@@ -68,4 +72,17 @@ test("apiBase keeps an http(s) origin and path, and drops anything else", () => 
   expect(read({ "api-base": "https://p.example.com" }).apiBase).toBe(
     "https://p.example.com",
   );
+});
+
+test("mask-text is on only for the value true", () => {
+  expect(read({ "mask-text": "true" }).maskText).toBe(true);
+  expect(read({ "mask-text": "yes" }).maskText).toBe(false);
+  expect(read({}).maskText).toBe(false);
+});
+
+test("attachments are on unless the attribute says false", () => {
+  expect(read({ attachments: "false" }).attachments).toBe(false);
+  expect(read({ attachments: "true" }).attachments).toBe(true);
+  expect(read({ attachments: "no" }).attachments).toBe(true);
+  expect(read({}).attachments).toBe(true);
 });

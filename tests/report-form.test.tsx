@@ -20,6 +20,9 @@ type Handler = (request: {
 }) => Response;
 
 let calls: Array<{ url: string; body: Body; headers: Headers }> = [];
+// The `widgetConfig` reads (the project's name), kept apart from the reports.
+let configCalls: Array<{ url: string; body: Body }> = [];
+let projectName: string | null = "Acme Store";
 let handler: Handler;
 const realFetch = globalThis.fetch;
 
@@ -35,13 +38,25 @@ const refusal = (status: number, code: string, extra: object = {}) =>
 
 beforeEach(() => {
   calls = [];
+  configCalls = [];
+  projectName = "Acme Store";
   handler = () => ok(false);
   globalThis.fetch = mock(async (url: string, init: RequestInit) => {
     const call = {
       url,
-      body: JSON.parse(String(init.body)),
+      body: JSON.parse(String(init.body)) as Body,
       headers: new Headers(init.headers),
     };
+    if (call.body.id === "widgetConfig") {
+      configCalls.push(call);
+      return json(200, {
+        data: {
+          widgetConfig: projectName
+            ? { projectName, locale: "en", enabled: true, attachments: true }
+            : null,
+        },
+      });
+    }
     calls.push(call);
     return handler(call);
   }) as unknown as typeof fetch;
@@ -151,7 +166,7 @@ describe("the report form", () => {
     });
     expect(call?.body.variables.input).not.toHaveProperty("email");
     expect(typeof call?.body.variables.input.filledInMs).toBe("number");
-    expect(onSubmitted).toHaveBeenCalledWith({ reportId: "r1" });
+    expect(onSubmitted).toHaveBeenCalledWith({ reportId: "r1", files: [] });
     expect(screen.getByRole("status")).toBeTruthy();
   });
 
@@ -405,5 +420,61 @@ describe("the report form", () => {
     await send(user);
     await screen.findByText(m.errors.emailInvalid);
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("the split dialog", () => {
+  test("names the project from widgetConfig, with the key, above the form", async () => {
+    setup();
+    await screen.findByText("Acme Store");
+    expect(screen.getByText(m.introFor("Acme Store"))).toBeTruthy();
+    expect(configCalls).toHaveLength(1);
+    expect(configCalls[0]?.body.variables.publicKey).toBe("pk_live_abc");
+  });
+
+  test("shows the plain intro when the project is unknown", async () => {
+    projectName = null;
+    setup();
+    await screen.findByRole("dialog");
+    await waitFor(() => expect(configCalls).toHaveLength(1));
+    expect(screen.getByText(m.intro)).toBeTruthy();
+    expect(screen.queryByTestId("project-name")).toBeNull();
+  });
+
+  test("groups the fields in titled sections and keeps a screenshot pane beside the form", async () => {
+    setup();
+    const dialog = await screen.findByRole("dialog");
+    // The pane shows once the key's config says attachments are on.
+    await waitFor(() =>
+      expect(dialog.getAttribute("data-layout")).toBe("split"),
+    );
+    expect(
+      screen.getByRole("region", { name: m.sections.problem }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("region", { name: m.sections.contact }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("complementary", { name: m.aside.title }),
+    ).toBeTruthy();
+  });
+
+  test("sends no widgetConfig read without a key", async () => {
+    setup({ projectKey: null });
+    await screen.findByRole("dialog");
+    expect(configCalls).toHaveLength(0);
+  });
+
+  test("a failing widgetConfig read leaves the plain intro", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
+      if ((JSON.parse(String(init.body)) as Body).id === "widgetConfig")
+        throw new TypeError("Failed to fetch");
+      return ok(false);
+    }) as unknown as typeof fetch;
+    setup();
+    await screen.findByText(m.intro);
+    expect(screen.queryByTestId("project-name")).toBeNull();
+    globalThis.fetch = real;
   });
 });

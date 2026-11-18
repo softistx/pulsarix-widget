@@ -13,6 +13,10 @@ export interface WidgetConfig {
   accentColor: string | null;
   /** Origin of the pulsarix host that serves `/public/graphql`; null until given. */
   apiBase: string | null;
+  /** The "Mask the text on the page" option starts on (`data-mask-text="true"`). */
+  maskText: boolean;
+  /** The screenshot and file controls are shown (`data-attachments="false"` hides them). */
+  attachments: boolean;
 }
 
 /** The attributes the element observes, in their HTML spelling. */
@@ -23,6 +27,8 @@ export const OBSERVED_ATTRIBUTES = [
   "position",
   "accent-color",
   "api-base",
+  "mask-text",
+  "attachments",
 ] as const;
 
 function oneOf<T extends string>(
@@ -64,5 +70,7 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
     ),
     accentColor: isHexColor(accent) ? accent.trim() : null,
     apiBase: apiBaseOf(get("api-base")),
+    maskText: get("mask-text") === "true",
+    attachments: get("attachments") !== "false",
   };
 }

@@ -24,7 +24,7 @@ test("an empty e-mail is left out of the request", async () => {
       );
     }) as unknown as typeof fetch,
   });
-  expect(result).toEqual({ reportId: "x", tracking: false });
+  expect(result).toEqual({ reportId: "x", tracking: false, files: [] });
   expect(body?.variables.input).not.toHaveProperty("email");
 });
 
