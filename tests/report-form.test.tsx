@@ -52,7 +52,7 @@ beforeEach(() => {
       return json(200, {
         data: {
           widgetConfig: projectName
-            ? { projectName, locale: "en", enabled: true }
+            ? { projectName, locale: "en", enabled: true, attachments: true }
             : null,
         },
       });
@@ -444,7 +444,10 @@ describe("the split dialog", () => {
   test("groups the fields in titled sections and keeps a screenshot pane beside the form", async () => {
     setup();
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.getAttribute("data-layout")).toBe("split");
+    // The pane shows once the key's config says attachments are on.
+    await waitFor(() =>
+      expect(dialog.getAttribute("data-layout")).toBe("split"),
+    );
     expect(
       screen.getByRole("region", { name: m.sections.problem }),
     ).toBeTruthy();

@@ -78,7 +78,7 @@ export function Form({
           {projectName ? messages.introFor(projectName) : messages.intro}
         </DialogDescription>
       </DialogHeader>
-      <DialogBody aria-label={messages.title}>
+      <DialogBody role="region" aria-label={messages.title}>
         <form
           id={FORM_ID}
           onSubmit={onSubmit}

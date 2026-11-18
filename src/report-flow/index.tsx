@@ -88,8 +88,10 @@ export function ReportFlow({
   }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
   const [projectName, setProjectName] = useState<string | null>(null);
-  // The key's own switch (`attachmentsEnabled`): on until the config says otherwise.
-  const [keyAttachments, setKeyAttachments] = useState(true);
+  // The key's own switch (`attachmentsEnabled`): unknown counts as off, so the controls
+  // never flash. They show once the config says so; an API that does not send it, or a
+  // failed config read, leaves them off (v1 behaviour, see `fetchWidgetConfig`).
+  const [keyAttachments, setKeyAttachments] = useState(false);
   const controls = attachments && keyAttachments;
   useEffect(() => onControls?.(controls), [controls, onControls]);
   useEffect(() => {
@@ -103,7 +105,7 @@ export function ReportFlow({
     }).then((config) => {
       if (controller.signal.aborted) return;
       setProjectName(config?.projectName ?? null);
-      setKeyAttachments(config?.attachments ?? true);
+      setKeyAttachments(config?.attachments ?? false);
     });
     return () => controller.abort();
   }, [apiBase, projectKey, locale]);
@@ -225,7 +227,8 @@ export function ReportFlow({
             size: item.file.size,
             ...result,
           });
-          if (!ticket) return done({ ok: false, reason: "unknown" });
+          if (!ticket || ticket.role !== item.role)
+            return done({ ok: false, reason: "unknown" });
           return done(
             await putFile({
               apiBase,
@@ -239,9 +242,12 @@ export function ReportFlow({
           );
         }),
       );
-      if (aborted.current.signal.aborted) return;
+      // A close before submitReport resolves aborts it and emits nothing (accepted: the
+      // report may not exist). From here on the report is saved: `pulsarix:submit` fires once even if the dialog closed during
+      // the PUTs (those were aborted and read as not uploaded); only the confirmation is skipped.
       const uploads = [...leftOut, ...results];
-      setSent({ tracking: report.tracking, uploads });
+      if (!aborted.current.signal.aborted)
+        setSent({ tracking: report.tracking, uploads });
       onSubmitted({
         reportId: report.reportId,
         files: uploads.map(({ name, role, type, size, ok }) => ({
