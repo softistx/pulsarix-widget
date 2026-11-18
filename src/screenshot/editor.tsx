@@ -8,8 +8,8 @@ import { MAX_EXPORT_SIDE } from "./capture";
 
 /**
  * The annotation editor, the one lazy chunk of the widget: pen, highlighter, arrow, box,
- * text and "Redact" (a solid, opaque redaction). It carries its own stylesheet, adopted into
- * the shadow root the first time it mounts, so the form pays for none of it. The image is
+ * text and "Redact" (a solid, opaque redaction only: pixelating a screenshot can be reversed).
+ * It carries its own stylesheet, adopted into the shadow root the first time it mounts, so the form pays for none of it. The image is
  * decoded with `createImageBitmap` (the preset's default): no `blob:` image, no CSP change.
  */
 export default function Editor({
@@ -43,6 +43,7 @@ export default function Editor({
           fileName="screenshot"
           maxExportSize={MAX_EXPORT_SIDE}
           defaultExportOptions={{ format: "image/png", scale: 1 }}
+          redactModes={["solid"]}
           saveLabel={saveLabel}
           onSave={({ file }) => onSave(file)}
           onCancel={onCancel}
