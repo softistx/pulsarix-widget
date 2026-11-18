@@ -176,11 +176,16 @@ async function fillAndSend(
 }
 
 const en = MESSAGES.en;
+/** The dialog, and the controls the key's config switches on. */
+async function ready() {
+  await screen.findByRole("dialog");
+  await waitFor(() => expect(input()).not.toBeNull());
+}
 
 describe("attached files", () => {
   test("lists what was chosen and uploads each ticket after the report", async () => {
     const { user, onSubmitted } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [
       file("trace.png", "image/png", 2048),
       file("invoice.pdf", "application/pdf", 4096),
@@ -231,7 +236,7 @@ describe("attached files", () => {
 
   test("a removed file is not declared", async () => {
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [
       file("a.png", "image/png"),
       file("b.png", "image/png"),
@@ -257,7 +262,7 @@ describe("attached files", () => {
 describe("refusals, as the API would give them", () => {
   test("a type, a size and an empty file are refused with their reason and never sent", async () => {
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [
       file("anim.gif", "image/gif"),
       file("huge.pdf", "application/pdf", 5 * 1024 * 1024 + 1),
@@ -275,7 +280,7 @@ describe("refusals, as the API would give them", () => {
 
   test("a fourth file is refused: three at most", async () => {
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [
       file("1.png", "image/png"),
       file("2.png", "image/png"),
@@ -290,7 +295,7 @@ describe("refusals, as the API would give them", () => {
 
   test("files that pass 12 MB together are refused one by one", async () => {
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     const mb = 1024 * 1024;
     await user.upload(input(), [
       file("a.pdf", "application/pdf", 5 * mb),
@@ -311,7 +316,7 @@ describe("partial failure and the one retry", () => {
         ? { status: 415, code: "intake.errors.file-unsupported-type" }
         : { status: 200 };
     const { user, onSubmitted } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [
       file("a.png", "image/png"),
       file("fake.pdf", "application/pdf"),
@@ -338,7 +343,7 @@ describe("partial failure and the one retry", () => {
     answer = (_xhr, attempt) =>
       attempt === 1 ? { status: 0 } : { status: 200 };
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [file("a.png", "image/png")]);
     await fillAndSend(user);
     await screen.findByText(en.done.attached(1));
@@ -348,7 +353,7 @@ describe("partial failure and the one retry", () => {
   test("two failures end as a partial failure", async () => {
     answer = () => ({ status: 503, code: "intake.errors.unavailable" });
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [file("a.png", "image/png")]);
     await fillAndSend(user);
     await screen.findByText(en.done.partial(1, 1));
@@ -360,7 +365,9 @@ describe("partial failure and the one retry", () => {
     globalThis.fetch = mock(async (_u: string, init: RequestInit) => {
       const body = JSON.parse(String(init.body)) as { id: string };
       if (body.id === "widgetConfig")
-        return json({ data: { widgetConfig: null } });
+        return json({
+          data: { widgetConfig: { enabled: true, attachments: true } },
+        });
       return json(
         {
           errors: [
@@ -374,7 +381,7 @@ describe("partial failure and the one retry", () => {
       );
     }) as unknown as typeof fetch;
     const { user } = setup();
-    await screen.findByRole("dialog");
+    await ready();
     await user.upload(input(), [file("a.png", "image/png")]);
     await fillAndSend(user);
     await screen.findByText(en.failure.files);

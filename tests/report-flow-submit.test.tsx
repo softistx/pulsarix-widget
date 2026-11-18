@@ -15,6 +15,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { MESSAGES } from "../src/messages";
 
 setDefaultTimeout(30_000);
@@ -42,6 +43,7 @@ let configAttachments: boolean | undefined;
 let tickets: (index: number, file: Declared) => Record<string, unknown> | null;
 let puts: FakeXHR[] = [];
 let hold = false;
+let configFails = false;
 
 class FakeXHR {
   url = "";
@@ -83,6 +85,7 @@ beforeEach(() => {
   declared = [];
   puts = [];
   hold = false;
+  configFails = false;
   configAttachments = true;
   tickets = (index, file) => ({
     slot: `slot${index}`,
@@ -99,6 +102,8 @@ beforeEach(() => {
       id: string;
       variables: { input?: { files?: Declared[] } };
     };
+    if (body.id === "widgetConfig" && configFails)
+      return new Response("{}", { status: 500 });
     if (body.id === "widgetConfig")
       return json({
         data: {
@@ -132,25 +137,30 @@ afterEach(() => {
   globalThis.createImageBitmap = realBitmap;
 });
 
-function setup() {
-  const onSubmitted = mock((_: unknown) => {});
-  render(
+function Host({ onSubmitted }: { onSubmitted: (detail: unknown) => void }) {
+  const [open, setOpen] = useState(true);
+  return (
     <App
       messages={MESSAGES.en}
       locale="en"
       projectKey="pk_live_abc"
       apiBase="https://pulsarix.test"
       dark={false}
-      open
+      open={open}
       launcher={false}
       position="bottom-right"
-      onOpenChange={() => {}}
+      onOpenChange={setOpen}
       onSubmitted={onSubmitted}
       onError={() => {}}
       minFillMs={0}
       retryDelayMs={1}
-    />,
+    />
   );
+}
+
+function setup() {
+  const onSubmitted = mock((_: unknown) => {});
+  render(<Host onSubmitted={onSubmitted} />);
   return { user: userEvent.setup({ applyAccept: false }), onSubmitted };
 }
 
@@ -173,6 +183,21 @@ describe("a widgetConfig without `attachments` (an older API)", () => {
     configAttachments = undefined;
     const { user } = setup();
     await waitFor(() => expect(fileInput()).toBeNull());
+    expect(screen.queryByText("stub-shot")).toBeNull();
+    await send(user);
+    await screen.findByText(MESSAGES.en.done.noTracking);
+    expect(declared).toEqual([]);
+  });
+});
+
+describe("a failed widgetConfig read", () => {
+  test("shows no controls, and never flashes them", async () => {
+    configFails = true;
+    const { user } = setup();
+    await screen.findByRole("dialog");
+    expect(fileInput()).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fileInput()).toBeNull();
     expect(screen.queryByText("stub-shot")).toBeNull();
     await send(user);
     await screen.findByText(MESSAGES.en.done.noTracking);
@@ -233,32 +258,56 @@ describe("the screenshot upload path", () => {
     });
   });
 
-  test("a missing ticket gives unknown, and a ticket of another role too", async () => {
-    tickets = () => null;
-    const first = setup();
-    await first.user.click(await screen.findByText("stub-shot"));
-    await send(first.user);
-    await waitFor(() => expect(first.onSubmitted).toHaveBeenCalledTimes(1));
+  const expectUnknownScreenshot = async (
+    run: Awaited<ReturnType<typeof pickScreenshot>>,
+  ) => {
+    await waitFor(() => expect(run.onSubmitted).toHaveBeenCalledTimes(1));
     expect(puts).toHaveLength(0);
-    expect(first.onSubmitted).toHaveBeenCalledWith({
+    expect(run.onSubmitted).toHaveBeenCalledWith({
       reportId: "r1",
-      files: [expect.objectContaining({ role: "screenshot", uploaded: false })],
+      files: [expect.objectContaining({ uploaded: false })],
     });
-    cleanup();
+  };
+  const pickScreenshot = async () => {
+    const run = setup();
+    await run.user.click(await screen.findByText("stub-shot"));
+    await send(run.user);
+    return run;
+  };
+
+  test("a missing ticket gives unknown", async () => {
+    tickets = () => null;
+    await expectUnknownScreenshot(await pickScreenshot());
+  });
+
+  test("a file ticket given to a screenshot gives unknown", async () => {
     tickets = (index) => ({
       slot: `slot${index}`,
       role: "file",
       ticket: "t",
       expiresAt: "2026-11-16T12:00:00Z",
     });
-    const second = setup();
-    await second.user.click(await screen.findByText("stub-shot"));
-    await send(second.user);
-    await waitFor(() => expect(second.onSubmitted).toHaveBeenCalledTimes(1));
+    await expectUnknownScreenshot(await pickScreenshot());
+  });
+
+  test("a screenshot ticket given to a file gives unknown", async () => {
+    tickets = (index) => ({
+      slot: `slot${index}`,
+      role: "screenshot",
+      ticket: "t",
+      expiresAt: "2026-11-16T12:00:00Z",
+    });
+    const { user, onSubmitted } = setup();
+    await screen.findByText("stub-shot");
+    await user.upload(fileInput() as HTMLInputElement, [
+      new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
+    ]);
+    await send(user);
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     expect(puts).toHaveLength(0);
-    expect(second.onSubmitted).toHaveBeenCalledWith({
+    expect(onSubmitted).toHaveBeenCalledWith({
       reportId: "r1",
-      files: [expect.objectContaining({ role: "screenshot", uploaded: false })],
+      files: [expect.objectContaining({ role: "file", uploaded: false })],
     });
   });
 });
@@ -271,6 +320,22 @@ describe("closing while the files go up", () => {
     await send(user);
     await waitFor(() => expect(puts).toHaveLength(1));
     cleanup(); // the dialog closes: the flow unmounts and aborts the PUT
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(onSubmitted).toHaveBeenCalledTimes(1);
+    expect(onSubmitted).toHaveBeenCalledWith({
+      reportId: "r1",
+      files: [expect.objectContaining({ role: "screenshot", uploaded: false })],
+    });
+  });
+
+  test("closing only the dialog (its Close button) still emits one pulsarix:submit", async () => {
+    hold = true;
+    const { user, onSubmitted } = setup();
+    await user.click(await screen.findByText("stub-shot"));
+    await send(user);
+    await waitFor(() => expect(puts).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: MESSAGES.en.close }));
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(onSubmitted).toHaveBeenCalledTimes(1);

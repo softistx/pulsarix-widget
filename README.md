@@ -182,7 +182,9 @@ the report goes out.
   drawn on canvases, so no `img-src blob:` is needed. Capture needs `display-capture` in the
   host's `Permissions-Policy` (the upload of an image works without it).
 - The list's own labels (the "Attachments" name, "Remove") come from `@softistx/material/embed`
-  follow the widget's locale through `I18nProvider`, like every refusal and the confirmation.
+  and follow the widget's locale through `I18nProvider`, like every refusal and the confirmation.
+- An API that sends no `attachments` in `widgetConfig`, or a failed config read, shows no file
+  controls (the widget then behaves as v1).
 
 ## How it is isolated
 
