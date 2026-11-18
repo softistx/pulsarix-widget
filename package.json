@@ -15,7 +15,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@softistx/material": "^3.234.1",
+    "@softistx/material": "^3.235.0",
     "@softistx/material-core": "^0.91.0",
     "@tailwindcss/cli": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
