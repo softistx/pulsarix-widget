@@ -120,6 +120,9 @@ export class PulsarixWidgetElement extends HTMLElement {
         launcher={this.getAttribute("launcher") !== "false"}
         maskText={config.maskText}
         attachments={config.attachments}
+        prefill={config.prefill}
+        metadata={config.metadata}
+        privacyUrl={config.privacyUrl}
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
@@ -147,6 +150,12 @@ export interface MountOptions {
   maskText?: boolean;
   /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
   attachments?: boolean;
+  /** Starting values of the form; the reporter can change them. */
+  prefill?: { email?: string; title?: string };
+  /** Flat strings stored with each report (20 entries, 2 KB at most; the rest is dropped). */
+  metadata?: Record<string, string | number | boolean>;
+  /** Link to your own privacy page, shown after the privacy line (http or https). */
+  privacyUrl?: string;
   /** Where to append the element; `document.body` by default. */
   target?: Element;
 }
@@ -184,6 +193,14 @@ export function mount(options: MountOptions): WidgetHandle {
   if (options.maskText) element.setAttribute("mask-text", "true");
   if (options.attachments === false)
     element.setAttribute("attachments", "false");
+  if (options.privacyUrl)
+    element.setAttribute("privacy-url", options.privacyUrl);
+  if (options.prefill?.email)
+    element.setAttribute("prefill-email", options.prefill.email);
+  if (options.prefill?.title)
+    element.setAttribute("prefill-title", options.prefill.title);
+  if (options.metadata)
+    element.setAttribute("metadata", JSON.stringify(options.metadata));
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {

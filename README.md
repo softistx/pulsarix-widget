@@ -38,7 +38,14 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
-(no screenshot and no file controls; see "Attached files").
+(no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
+own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
+values of the form), `data-metadata` (a JSON object of strings stored with each report: at most 20 entries,
+keys of 64 characters, values of 512, 2 KB in all; the rest is dropped).
+
+In script, the same are `privacyUrl`, `prefill: { email, title }` and `metadata: { plan: "pro" }`.
+What the reporter typed is kept when the dialog is closed by accident (a click outside, Escape) and comes
+back at the next opening; a sent report clears it.
 
 Without the attributes, drive it from script. Calls made before the bundle has loaded are queued, and a second `init` while loaded is ignored:
 

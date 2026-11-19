@@ -43,6 +43,7 @@ export function Form({
   onScreenshot,
   maskText,
   onEditing,
+  privacyUrl,
 }: {
   messages: Messages;
   projectName: string | null;
@@ -61,6 +62,8 @@ export function Form({
   onScreenshot: (image: File | null) => void;
   maskText: boolean;
   onEditing?: (editing: boolean) => void;
+  /** The integrator's privacy page, linked after the privacy line. */
+  privacyUrl?: string | null;
 }) {
   return (
     <>
@@ -155,6 +158,19 @@ export function Form({
               />
               <p className="text-muted-foreground text-xs sm:pt-6">
                 {messages.privacy}
+                {privacyUrl ? (
+                  <>
+                    {" "}
+                    <a
+                      href={privacyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-text underline"
+                    >
+                      {messages.privacyLink}
+                    </a>
+                  </>
+                ) : null}
               </p>
             </div>
           </section>

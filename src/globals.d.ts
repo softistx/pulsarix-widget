@@ -11,6 +11,9 @@ interface Window {
       launcher?: boolean;
       maskText?: boolean;
       attachments?: boolean;
+      privacyUrl?: string;
+      prefill?: { email?: string; title?: string };
+      metadata?: Record<string, string | number | boolean>;
     }): Promise<void>;
     open(): void;
     close(): void;

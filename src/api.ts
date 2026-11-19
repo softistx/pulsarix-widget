@@ -24,6 +24,8 @@ export interface ReportInput {
   website: string;
   filledInMs: number;
   files?: DeclaredFile[];
+  /** Flat strings the host page stored with the report (`metadata`). */
+  metadata?: { key: string; value: string }[];
 }
 
 export interface SubmittedReport {
@@ -96,13 +98,14 @@ export async function submitReport({
   fetch: doFetch = fetch,
   signal,
 }: SubmitOptions): Promise<SubmittedReport> {
-  const { email, files, ...rest } = input;
+  const { email, files, metadata, ...rest } = input;
   const variables = {
     publicKey,
     input: {
       ...rest,
       ...(email ? { email } : {}),
       ...(files?.length ? { files } : {}),
+      ...(metadata?.length ? { metadata } : {}),
     },
   };
   let response: Response;

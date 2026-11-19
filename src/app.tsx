@@ -6,10 +6,11 @@ import {
   PortalContainerProvider,
 } from "@softistx/material/embed";
 import { useRef, useState } from "react";
-import type { Locale, Position } from "./config";
+import type { Locale, MetadataEntry, Position } from "./config";
 import type { Messages } from "./messages";
 import { ReportFlow, type SubmitDetail } from "./report-flow";
 import { themeNameFor } from "./theme";
+import type { ReportValues } from "./validation";
 
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
@@ -26,6 +27,12 @@ export interface AppProps {
   maskText?: boolean;
   /** `data-attachments="false"` hides the screenshot pane and the files. */
   attachments?: boolean;
+  /** Starting values of the form (`prefill-email`, `prefill-title`). */
+  prefill?: { email: string; title: string };
+  /** Flat strings stored with each report. */
+  metadata?: MetadataEntry[];
+  /** The integrator's privacy page, linked in the privacy line. */
+  privacyUrl?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;
   onError: (detail: { code: string }) => void;
@@ -52,6 +59,9 @@ export function App({
   position,
   maskText = false,
   attachments = true,
+  prefill,
+  metadata,
+  privacyUrl,
   onOpenChange,
   onSubmitted,
   onError,
@@ -69,6 +79,9 @@ export function App({
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
   const opener = useRef<HTMLElement | null>(null);
+  // The typed text outlives the dialog (its content unmounts on close): a close by accident,
+  // a click outside or Escape, keeps it for the next opening. A sent report clears it.
+  const draft = useRef<ReportValues | null>(null);
   return (
     <div
       ref={setRoot}
@@ -140,6 +153,10 @@ export function App({
                   onDone={setDone}
                   onEditing={setEditing}
                   attachments={attachments}
+                  prefill={prefill}
+                  metadata={metadata}
+                  privacyUrl={privacyUrl}
+                  draft={draft}
                   onControls={setControls}
                   onClose={() => onOpenChange(false)}
                 />

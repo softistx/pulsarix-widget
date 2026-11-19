@@ -79,4 +79,54 @@ describe("mount", () => {
     expect(handle.element.isOpen).toBe(false);
     expect(shadow.adoptedStyleSheets?.length ?? 0).toBe(0);
   });
+
+  test("pulsarix:error is a composed CustomEvent carrying { code }", async () => {
+    handle = mount({ projectKey: "" });
+    const events: CustomEvent[] = [];
+    handle.element.addEventListener("pulsarix:error", (e) =>
+      events.push(e as CustomEvent),
+    );
+    await settle();
+    expect(events).toHaveLength(1);
+    expect(events[0]).toBeInstanceOf(CustomEvent);
+    expect(events[0]?.composed).toBe(true);
+    expect(events[0]?.detail).toEqual({ code: "config" });
+  });
+
+  test("open and close events are composed and carry a detail object", () => {
+    handle = mount({ projectKey: "pk_live_abc", launcher: false });
+    const events: CustomEvent[] = [];
+    for (const name of ["pulsarix:open", "pulsarix:close"] as const)
+      handle.element.addEventListener(name, (e) =>
+        events.push(e as CustomEvent),
+      );
+    handle.open();
+    handle.close();
+    expect(events.map((e) => e.type)).toEqual([
+      "pulsarix:open",
+      "pulsarix:close",
+    ]);
+    for (const event of events) {
+      expect(event.composed).toBe(true);
+      expect(event.detail).toEqual({});
+    }
+  });
+
+  test("prefill, metadata and privacyUrl reach the element's config", () => {
+    handle = mount({
+      projectKey: "pk_live_abc",
+      launcher: false,
+      privacyUrl: "https://acme.test/privacy",
+      prefill: { email: "ada@example.com", title: "Hello" },
+      metadata: { plan: "pro", seats: 3 },
+    });
+    expect(handle.element.config).toMatchObject({
+      privacyUrl: "https://acme.test/privacy",
+      prefill: { email: "ada@example.com", title: "Hello" },
+      metadata: [
+        { key: "plan", value: "pro" },
+        { key: "seats", value: "3" },
+      ],
+    });
+  });
 });
