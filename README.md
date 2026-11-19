@@ -180,7 +180,8 @@ choice). The right pane of the dialog offers:
   with `data-capture-unmask`.
 
 The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
-an arrow, a box, text and a solid "Redact" box: redacted pixels are one opaque colour. Only the flattened
+an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
+picture before it is kept. Only the flattened
 export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
 revoked and no media track stays live. Retake and Remove are offered. A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
@@ -238,6 +239,13 @@ the report goes out.
   modal is open, the dialog's scroll lock adds a transient style element and focus guards
   to the document; both are removed on close.
 - Fonts: `@font-face` is ignored in a shadow root. The widget uses the system font stack.
+
+## Strict CSP and the requests thread
+
+The requests thread's scroll area injects one `<style>` element into the shadow root. Under a strict
+`style-src`, give your page a nonce: a `style` or `script` element carrying `nonce`, or
+`<meta property="csp-nonce" content="...">`. The widget reads it and puts it on that element. The
+form, the dialog and the screenshot editor need no nonce.
 
 ## Serving (script-tag integrators)
 
