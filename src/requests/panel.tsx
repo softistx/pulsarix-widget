@@ -3,6 +3,7 @@ import {
   Badge,
   Button,
   ChipGroupField,
+  ConfirmDialog,
   DialogBody,
   DialogDescription,
   DialogFooter,
@@ -11,6 +12,7 @@ import {
   EmptyState,
   ListRow,
   SkeletonText,
+  SwitchField,
 } from "@softistx/material/embed";
 import {
   type ReactNode,
@@ -23,12 +25,14 @@ import { IntakeError } from "../api";
 import type { Locale } from "../config";
 import type { Messages } from "../messages";
 import {
+  eraseMyData,
   fetchMyRequests,
   type MyRequests,
   type PublicState,
   type RequestCounts,
   type RequestFilter,
   type RequestSummary,
+  setRequestEmails,
 } from "./api";
 import { REQUESTS_MESSAGES, type RequestsMessages } from "./messages";
 import Thread from "./thread";
@@ -59,6 +63,8 @@ export interface RequestsPanelProps {
   onUnread: (count: number) => void;
   /** A team reply arrived while a thread was open. */
   onReply?: (detail: { requestId: string }) => void;
+  /** "Delete my data" erased this many requests (the page hears `pulsarix:erase`). */
+  onErase?: (detail: { requests: number }) => void;
   onClose: () => void;
   /** The "New request" action of the first-use state. */
   onNewRequest: () => void;
@@ -99,6 +105,7 @@ export default function RequestsPanel({
   headerExtra,
   onUnread,
   onReply,
+  onErase,
   onClose,
   onNewRequest,
 }: RequestsPanelProps) {
@@ -116,6 +123,12 @@ export default function RequestsPanel({
   // The request whose thread is open; the list stays mounted behind it, so its filter holds.
   const [opened, setOpened] = useState<RequestSummary | null>(null);
   const aborted = useRef<AbortController | null>(null);
+  // The e-mail choice (optimistic) and "Delete my data".
+  const [emailsOn, setEmailsOn] = useState(true);
+  const [emailsError, setEmailsError] = useState(false);
+  const saving = useRef(false);
+  const [confirming, setConfirming] = useState(false);
+  const [erased, setErased] = useState<number | null>(null);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
   const read = useCallback(
@@ -142,6 +155,7 @@ export default function RequestsPanel({
         });
         if (controller.signal.aborted) return;
         setCounts(page.counts);
+        if (!saving.current) setEmailsOn(page.emailsOn);
         onUnread(page.unread);
         setNodes((rows) => (after ? [...rows, ...page.nodes] : page.nodes));
         setNext({ cursor: page.endCursor, more: page.hasNextPage });
@@ -177,6 +191,52 @@ export default function RequestsPanel({
     </Badge>
   );
   const total = counts?.all ?? null;
+
+  const callBase = () =>
+    apiBase && projectKey
+      ? { apiBase, publicKey: projectKey, identity, locale }
+      : null;
+
+  async function changeEmails(next: boolean) {
+    const base = callBase();
+    if (!base) return;
+    const before = emailsOn;
+    saving.current = true;
+    setEmailsError(false);
+    setEmailsOn(next);
+    try {
+      await setRequestEmails({ ...base, on: next });
+    } catch {
+      setEmailsOn(before);
+      setEmailsError(true);
+    } finally {
+      saving.current = false;
+    }
+  }
+
+  /** Throws the words of the failure, which the confirm dialog shows and stays open on. */
+  async function eraseAll() {
+    const base = callBase();
+    if (!base) throw new Error(text.privacy.eraseFailed);
+    let result: { requests: number };
+    try {
+      result = await eraseMyData(base);
+    } catch (error) {
+      throw new Error(
+        error instanceof IntakeError && error.kind !== "unknown"
+          ? errorText(text, error)
+          : text.privacy.eraseFailed,
+      );
+    }
+    aborted.current?.abort();
+    setNodes([]);
+    setCounts({ open: 0, resolved: 0, declined: 0, all: 0 });
+    setNext({ cursor: null, more: false });
+    setLoad({ status: "ready" });
+    setErased(result.requests);
+    onUnread(0);
+    onErase?.({ requests: result.requests });
+  }
   if (opened && apiBase && projectKey)
     return (
       <Thread
@@ -239,6 +299,12 @@ export default function RequestsPanel({
                       </Button>
                     ),
                   })}
+            />
+          ) : null}
+          {erased !== null ? (
+            <Alert
+              variant="success"
+              description={text.privacy.erased(erased)}
             />
           ) : null}
           {load.status === "loading" ? (
@@ -338,8 +404,44 @@ export default function RequestsPanel({
               {text.more}
             </Button>
           ) : null}
+          {load.status === "ready" && (total ?? 0) > 0 ? (
+            <div className="grid min-w-0 gap-3 border-border border-t pt-4">
+              <SwitchField
+                variant="plain"
+                label={text.privacy.emails}
+                helperText={
+                  emailsError
+                    ? text.privacy.emailsFailed
+                    : text.privacy.emailsHint
+                }
+                error={emailsError}
+                checked={emailsOn}
+                onCheckedChange={(next) => void changeEmails(next === true)}
+              />
+              <Button
+                type="button"
+                variant="outlined"
+                color="error"
+                className="justify-self-start"
+                onClick={() => setConfirming(true)}
+              >
+                {text.privacy.erase}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </DialogBody>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={text.privacy.eraseTitle}
+        description={text.privacy.eraseBody}
+        confirmLabel={text.privacy.eraseConfirm}
+        cancelLabel={text.privacy.eraseCancel}
+        variant="destructive"
+        tone="danger"
+        onConfirm={eraseAll}
+      />
       <DialogFooter>
         <Button type="button" variant="tonal" onClick={onClose}>
           {messages.close}

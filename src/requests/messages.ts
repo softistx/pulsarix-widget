@@ -43,6 +43,19 @@ export interface RequestsMessages {
       files: string;
     };
   };
+  /** The e-mail choice and "Delete my data" (W3c). */
+  privacy: {
+    emails: string;
+    emailsHint: string;
+    emailsFailed: string;
+    erase: string;
+    eraseTitle: string;
+    eraseBody: string;
+    eraseConfirm: string;
+    eraseCancel: string;
+    erased: (count: number) => string;
+    eraseFailed: string;
+  };
   errors: {
     title: string;
     identity: string;
@@ -114,6 +127,20 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
         files:
           "A file was refused (PNG, JPEG, WebP or PDF, 5 MB each, 3 files).",
       },
+    },
+    privacy: {
+      emails: "E-mails about my requests",
+      emailsHint: "Get an e-mail when the team replies.",
+      emailsFailed: "Your e-mail choice was not saved. Try again.",
+      erase: "Delete my data",
+      eraseTitle: "Delete my data?",
+      eraseBody:
+        "Every request you sent from this site, with its replies and files, is erased for good. This cannot be undone.",
+      eraseConfirm: "Delete",
+      eraseCancel: "Cancel",
+      erased: (count) =>
+        count === 1 ? "1 request erased." : `${count} requests erased.`,
+      eraseFailed: "Your data was not deleted. Try again.",
     },
     errors: {
       title: "Your requests could not be loaded",
@@ -187,6 +214,20 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
         files:
           "Un fichier a été refusé (PNG, JPEG, WebP ou PDF, 5 Mo chacun, 3 fichiers).",
       },
+    },
+    privacy: {
+      emails: "E-mails sur mes demandes",
+      emailsHint: "Recevoir un e-mail quand l'équipe répond.",
+      emailsFailed: "Votre choix n'a pas été enregistré. Réessayez.",
+      erase: "Supprimer mes données",
+      eraseTitle: "Supprimer mes données ?",
+      eraseBody:
+        "Toutes les demandes envoyées depuis ce site, avec leurs réponses et leurs fichiers, sont effacées définitivement. Cette action est irréversible.",
+      eraseConfirm: "Supprimer",
+      eraseCancel: "Annuler",
+      erased: (count) =>
+        count === 1 ? "1 demande effacée." : `${count} demandes effacées.`,
+      eraseFailed: "Vos données n'ont pas été supprimées. Réessayez.",
     },
     errors: {
       title: "Vos demandes n'ont pas pu être chargées",
