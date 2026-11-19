@@ -17,15 +17,14 @@ invariants.
   `config`, `element`), listed in `files`; they must import nothing but each other (no `react`,
   no `react-hook-form`, no generated CSS). If `index.d.ts` starts to reach another file, add it to
   `files` and keep the throwaway-tsconfig check (`skipLibCheck: false`, no react installed) clean.
-- Release (never npmjs; no publish workflow): from an up-to-date `develop` worktree, bump
-  `version` in `package.json`, merge that PR, then `bun run verify && bun run release`
-  (`scripts/publish.ts`). It dual-publishes: npm.softistx.com first (primary, `publishConfig`,
-  token `NPM_REGISTRY_PUBLISH_TOKEN`), then GitHub Packages (kept for 30 days from 2026-11-14,
-  token `GITHUB_TOKEN` or `gh auth token` with `write:packages`), skipping a registry that already
-  has the version. Then tag: `git tag v<version> && git push origin v<version>`, and check the
-  version on both: `npm view @softistx/pulsarix-widget version --registry https://npm.softistx.com`
-  and `--registry https://npm.pkg.github.com`. Installs read `@softistx` from npm.softistx.com
-  (`bunfig.toml`, `$NPM_REGISTRY_TOKEN`).
+- Release (npmjs, public, CI only; no local publish): from an up-to-date `develop` worktree, bump
+  `version` in `package.json`, merge that PR, then tag it: `git tag v<version> && git push origin v<version>`.
+  `.github/workflows/publish.yml` (tags `v*` and `**@*`, a published release, or `workflow_dispatch`; concurrency
+  group = commit sha; only a commit on `develop`) runs `bun run verify`, then `bun run release`
+  (`scripts/publish.ts`, secret `NPM_TOKEN`), which skips a version already on npmjs. Check it
+  afterwards: `npm view @softistx/pulsarix-widget version`. `publishConfig` is npmjs with public
+  access. Installs of `@softistx/material` still read npm.softistx.com (`bunfig.toml`,
+  `$NPM_REGISTRY_TOKEN`).
 - `mount()` is a singleton while its element is attached.
 
 ## Develop
