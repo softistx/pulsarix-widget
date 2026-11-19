@@ -5,6 +5,10 @@ import { fetchUnread } from "./api";
  * The launcher's unread count: read when the widget mounts, when the identity changes and each
  * time the dialog closes (it is the panel's own read that updates it while the dialog is open).
  * A failed read leaves the last count; a missing identity clears it.
+ *
+ * The returned setter is the `useState` setter, so it is stable for the life of the component:
+ * the panel and the thread may depend on it without refetching. (The panel and the thread also
+ * hold the callback in a ref, so a caller passing an unstable one cannot loop either.)
  */
 export function useUnread({
   apiBase,

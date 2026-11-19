@@ -1,41 +1,25 @@
 import {
   Alert,
-  Badge,
   Button,
   ChipGroupField,
-  ConfirmDialog,
   DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   EmptyState,
-  ListRow,
   SkeletonText,
-  SwitchField,
 } from "@softistx/material/embed";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { IntakeError } from "../api";
+import { type ReactNode, useState } from "react";
 import type { Locale } from "../config";
 import type { Messages } from "../messages";
-import {
-  eraseMyData,
-  fetchMyRequests,
-  type MyRequests,
-  type PublicState,
-  type RequestCounts,
-  type RequestFilter,
-  type RequestSummary,
-  setRequestEmails,
-} from "./api";
-import { REQUESTS_MESSAGES, type RequestsMessages } from "./messages";
+import type { RequestCounts, RequestFilter, RequestSummary } from "./api";
+import { errorText } from "./error-text";
+import { REQUESTS_MESSAGES } from "./messages";
+import { Privacy } from "./privacy";
+import { RequestList } from "./request-list";
 import Thread from "./thread";
+import { useRequestList } from "./use-request-list";
 
 const FILTERS: RequestFilter[] = ["OPEN", "RESOLVED", "DECLINED", "ALL"];
 const COUNT_KEY: Record<RequestFilter, keyof RequestCounts> = {
@@ -44,13 +28,6 @@ const COUNT_KEY: Record<RequestFilter, keyof RequestCounts> = {
   DECLINED: "declined",
   ALL: "all",
 };
-const STATE_TONE = {
-  received: "neutral",
-  inProgress: "info",
-  resolved: "success",
-  declined: "warning",
-} as const satisfies Record<PublicState, string>;
-
 export interface RequestsPanelProps {
   messages: Messages;
   locale: Locale;
@@ -59,7 +36,10 @@ export interface RequestsPanelProps {
   identity: string;
   /** Rendered in the dialog's header, under the description (the tabs). */
   headerExtra?: ReactNode;
-  /** The unread count over every request, as the API last said it (the launcher's badge). */
+  /**
+   * The unread count over every request, as the API last said it (the launcher's badge). It is
+   * called from the list's read, and any identity is fine: the panel keeps it in a ref.
+   */
   onUnread: (count: number) => void;
   /** A team reply arrived while a thread was open. */
   onReply?: (detail: { requestId: string }) => void;
@@ -68,27 +48,6 @@ export interface RequestsPanelProps {
   onClose: () => void;
   /** The "New request" action of the first-use state. */
   onNewRequest: () => void;
-}
-
-type Load =
-  | { status: "loading" }
-  | { status: "ready" }
-  | { status: "error"; error: IntakeError };
-
-/** The words of a failed read; the API's own code is never shown. */
-function errorText(text: RequestsMessages, error: IntakeError): string {
-  switch (error.kind) {
-    case "identity":
-      return text.errors.identity;
-    case "unavailable":
-      return text.errors.unavailable;
-    case "rate-limited":
-      return text.errors.rateLimited;
-    case "network":
-      return text.errors.network;
-    default:
-      return text.errors.unknown;
-  }
 }
 
 /**
@@ -110,137 +69,18 @@ export default function RequestsPanel({
   onNewRequest,
 }: RequestsPanelProps) {
   const text = REQUESTS_MESSAGES[locale];
-  const [filter, setFilter] = useState<RequestFilter>("OPEN");
-  const [counts, setCounts] = useState<RequestCounts | null>(null);
-  const [nodes, setNodes] = useState<RequestSummary[]>([]);
-  const [next, setNext] = useState<{ cursor: string | null; more: boolean }>({
-    cursor: null,
-    more: false,
+  const list = useRequestList({
+    apiBase,
+    projectKey,
+    identity,
+    locale,
+    onUnread,
   });
-  const [load, setLoad] = useState<Load>({ status: "loading" });
-  const [paging, setPaging] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+  const { filter, counts, nodes, load } = list;
   // The request whose thread is open; the list stays mounted behind it, so its filter holds.
   const [opened, setOpened] = useState<RequestSummary | null>(null);
-  const aborted = useRef<AbortController | null>(null);
-  // The e-mail choice (optimistic) and "Delete my data".
-  const [emailsOn, setEmailsOn] = useState(true);
-  const [emailsError, setEmailsError] = useState(false);
-  const saving = useRef(false);
-  const [savingEmails, setSavingEmails] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [erased, setErased] = useState<number | null>(null);
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
-
-  const read = useCallback(
-    async (after: string | null) => {
-      aborted.current?.abort();
-      const controller = new AbortController();
-      aborted.current = controller;
-      if (!apiBase || !projectKey) {
-        setLoad({
-          status: "error",
-          error: new IntakeError("config", "config"),
-        });
-        return;
-      }
-      try {
-        const page: MyRequests = await fetchMyRequests({
-          apiBase,
-          publicKey: projectKey,
-          identity,
-          locale,
-          filter,
-          after,
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted) return;
-        setCounts(page.counts);
-        if (page.counts.all > 0) setErased(null);
-        if (!saving.current) setEmailsOn(page.emailsOn);
-        onUnread(page.unread);
-        setNodes((rows) => (after ? [...rows, ...page.nodes] : page.nodes));
-        setNext({ cursor: page.endCursor, more: page.hasNextPage });
-        setLoad({ status: "ready" });
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        setLoad({
-          status: "error",
-          error:
-            error instanceof IntakeError
-              ? error
-              : new IntakeError("unknown", "unknown"),
-        });
-      } finally {
-        if (!controller.signal.aborted) setPaging(false);
-      }
-    },
-    [apiBase, projectKey, identity, locale, filter, onUnread],
-  );
-
-  // A filter (or a retry) starts a fresh read: its rows replace the old ones.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` only re-runs the read
-  useEffect(() => {
-    setLoad({ status: "loading" });
-    setNodes([]);
-    void read(null);
-    return () => aborted.current?.abort();
-  }, [read, attempt]);
-
-  const stateBadge = (state: PublicState) => (
-    <Badge variant="soft" tone={STATE_TONE[state]}>
-      {text.states[state]}
-    </Badge>
-  );
   const total = counts?.all ?? null;
 
-  const callBase = () =>
-    apiBase && projectKey
-      ? { apiBase, publicKey: projectKey, identity, locale }
-      : null;
-
-  async function changeEmails(next: boolean) {
-    const base = callBase();
-    if (!base) return;
-    const before = emailsOn;
-    saving.current = true;
-    setSavingEmails(true);
-    setEmailsError(false);
-    setEmailsOn(next);
-    try {
-      await setRequestEmails({ ...base, on: next });
-    } catch {
-      setEmailsOn(before);
-      setEmailsError(true);
-    } finally {
-      saving.current = false;
-      setSavingEmails(false);
-    }
-  }
-
-  /** Throws the words of the failure, which the confirm dialog shows and stays open on. */
-  async function eraseAll() {
-    const base = callBase();
-    if (!base) throw new Error(text.privacy.eraseFailed);
-    let result: { requests: number };
-    try {
-      result = await eraseMyData(base);
-    } catch (error) {
-      throw new Error(
-        error instanceof IntakeError && error.kind !== "unknown"
-          ? errorText(text, error)
-          : text.privacy.eraseFailed,
-      );
-    }
-    aborted.current?.abort();
-    setNodes([]);
-    setCounts({ open: 0, resolved: 0, declined: 0, all: 0 });
-    setNext({ cursor: null, more: false });
-    setLoad({ status: "ready" });
-    setErased(result.requests);
-    onUnread(0);
-    onErase?.({ requests: result.requests });
-  }
   if (opened && apiBase && projectKey)
     return (
       <Thread
@@ -255,7 +95,7 @@ export default function RequestsPanel({
         onBack={() => {
           setOpened(null);
           // The thread may have changed the state, the counts and the unread marks.
-          setAttempt((n) => n + 1);
+          list.reload();
         }}
       />
     );
@@ -275,7 +115,7 @@ export default function RequestsPanel({
               overflow="scroll-phone"
               value={filter}
               onValueChange={(value) =>
-                value && setFilter(value as RequestFilter)
+                value && list.setFilter(value as RequestFilter)
               }
               options={FILTERS.map((value) => ({
                 value,
@@ -297,7 +137,7 @@ export default function RequestsPanel({
                         type="button"
                         variant="tonal"
                         size="sm"
-                        onClick={() => setAttempt((n) => n + 1)}
+                        onClick={list.reload}
                       >
                         {text.retry}
                       </Button>
@@ -305,10 +145,10 @@ export default function RequestsPanel({
                   })}
             />
           ) : null}
-          {erased !== null ? (
+          {list.erased !== null ? (
             <Alert
               variant="success"
-              description={text.privacy.erased(erased)}
+              description={text.privacy.erased(list.erased)}
             />
           ) : null}
           {load.status === "loading" ? (
@@ -339,114 +179,40 @@ export default function RequestsPanel({
             )
           ) : null}
           {nodes.length > 0 ? (
-            <ul
-              aria-label={text.filters[filter]}
-              className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-2 p-0"
-            >
-              {nodes.map((request) => (
-                <li
-                  key={request.id}
-                  // A container, so the badge moves by the list's width, not the window's.
-                  className="@container min-w-0 rounded-lg bg-card"
-                >
-                  <button
-                    type="button"
-                    aria-label={text.open(request.title)}
-                    onClick={() => setOpened(request)}
-                    className="block w-full cursor-pointer rounded-lg text-left"
-                  >
-                    <ListRow
-                      unread={request.unread > 0}
-                      title={request.title}
-                      meta={
-                        <>
-                          <span className="@md:hidden">
-                            {stateBadge(request.publicState)}{" "}
-                          </span>
-                          {[
-                            date.format(new Date(request.createdAt)),
-                            request.type
-                              ? messages.choices.type[
-                                  request.type as keyof typeof messages.choices.type
-                                ]
-                              : null,
-                            request.impact
-                              ? messages.choices.impact[
-                                  request.impact as keyof typeof messages.choices.impact
-                                ]
-                              : null,
-                            request.unread > 0
-                              ? text.newReplies(request.unread)
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </>
-                      }
-                      badge={
-                        <span className="hidden @md:inline-flex">
-                          {stateBadge(request.publicState)}
-                        </span>
-                      }
-                    />
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <RequestList
+              messages={messages}
+              locale={locale}
+              label={text.filters[filter]}
+              nodes={nodes}
+              onOpen={setOpened}
+            />
           ) : null}
-          {next.more && load.status === "ready" ? (
+          {list.hasMore && load.status === "ready" ? (
             <Button
               type="button"
               variant="tonal"
-              loading={paging}
+              loading={list.paging}
               className="justify-self-center"
-              onClick={() => {
-                setPaging(true);
-                void read(next.cursor);
-              }}
+              onClick={list.more}
             >
               {text.more}
             </Button>
           ) : null}
           {load.status === "ready" && (total ?? 0) > 0 ? (
-            <div className="grid min-w-0 gap-3 border-border border-t pt-4">
-              <SwitchField
-                variant="plain"
-                label={text.privacy.emails}
-                helperText={
-                  emailsError
-                    ? text.privacy.emailsFailed
-                    : text.privacy.emailsHint
-                }
-                error={emailsError}
-                checked={emailsOn}
-                disabled={savingEmails}
-                onCheckedChange={(next) => void changeEmails(next === true)}
-              />
-              <Button
-                type="button"
-                variant="outlined"
-                color="error"
-                className="justify-self-start"
-                onClick={() => setConfirming(true)}
-              >
-                {text.privacy.erase}
-              </Button>
-            </div>
+            <Privacy
+              locale={locale}
+              apiBase={apiBase}
+              projectKey={projectKey}
+              identity={identity}
+              emailsOn={list.emailsOn}
+              onErased={(requests) => {
+                list.empty(requests);
+                onErase?.({ requests });
+              }}
+            />
           ) : null}
         </div>
       </DialogBody>
-      <ConfirmDialog
-        open={confirming}
-        onOpenChange={setConfirming}
-        title={text.privacy.eraseTitle}
-        description={text.privacy.eraseBody}
-        confirmLabel={text.privacy.eraseConfirm}
-        cancelLabel={text.privacy.eraseCancel}
-        variant="destructive"
-        tone="danger"
-        onConfirm={eraseAll}
-      />
       <DialogFooter>
         <Button type="button" variant="tonal" onClick={onClose}>
           {messages.close}

@@ -408,6 +408,21 @@ try {
       !!box && box.width <= width && box.x >= 0,
       `identified, ${width}px: the dialog fits the window`,
     );
+    // The pane's button sits inside the dialog, under the tabs, not clipped out of it.
+    const upload = await page
+      .getByRole("button", { name: "Upload an image" })
+      .boundingBox();
+    // (On a phone the pane is below the form and the body scrolls: only the wide layout is checked.)
+    check(
+      width < 1000 ||
+        (!!box &&
+          !!upload &&
+          upload.y >= box.y &&
+          upload.y + upload.height <= box.y + box.height &&
+          upload.x >= box.x &&
+          upload.x + upload.width <= box.x + box.width),
+      `identified, ${width}px: the screenshot pane's button is inside the dialog`,
+    );
     await page.getByRole("tab", { name: /My requests/ }).click();
     await page.getByText("The pay button does nothing").waitFor();
     check(
