@@ -127,6 +127,7 @@ export default function RequestsPanel({
   const [emailsOn, setEmailsOn] = useState(true);
   const [emailsError, setEmailsError] = useState(false);
   const saving = useRef(false);
+  const [savingEmails, setSavingEmails] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [erased, setErased] = useState<number | null>(null);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
@@ -155,6 +156,7 @@ export default function RequestsPanel({
         });
         if (controller.signal.aborted) return;
         setCounts(page.counts);
+        if (page.counts.all > 0) setErased(null);
         if (!saving.current) setEmailsOn(page.emailsOn);
         onUnread(page.unread);
         setNodes((rows) => (after ? [...rows, ...page.nodes] : page.nodes));
@@ -202,6 +204,7 @@ export default function RequestsPanel({
     if (!base) return;
     const before = emailsOn;
     saving.current = true;
+    setSavingEmails(true);
     setEmailsError(false);
     setEmailsOn(next);
     try {
@@ -211,6 +214,7 @@ export default function RequestsPanel({
       setEmailsError(true);
     } finally {
       saving.current = false;
+      setSavingEmails(false);
     }
   }
 
@@ -416,6 +420,7 @@ export default function RequestsPanel({
                 }
                 error={emailsError}
                 checked={emailsOn}
+                disabled={savingEmails}
                 onCheckedChange={(next) => void changeEmails(next === true)}
               />
               <Button

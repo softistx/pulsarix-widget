@@ -182,6 +182,19 @@ describe("Delete my data", () => {
     expect(screen.queryByRole("switch")).toBeNull();
   });
 
+  test("an expired session on erase keeps the dialog open with its words", async () => {
+    stub({ erase: () => ({ status: 401 }) });
+    await openList();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Delete my data" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Delete" }),
+    );
+    await screen.findByText(/session expired/);
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+  });
+
   test("a refused erase keeps the dialog open with the reason and keeps the list", async () => {
     stub({ erase: () => ({ status: 429 }) });
     const erased: unknown[] = [];
