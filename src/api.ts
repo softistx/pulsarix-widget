@@ -1,5 +1,8 @@
 /** The public intake client: the persisted `submitClientReport` operation on `/public/graphql`. */
 
+/** The header the host's identity token travels in, never in a URL. */
+export const IDENTITY_HEADER = "x-pulsarix-identity";
+
 /** A file the report will carry, as `submitClientReport` wants it declared (plan A12). */
 export interface DeclaredFile {
   role: "screenshot" | "file";
@@ -15,6 +18,9 @@ export interface FileTicket {
   ticket: string;
 }
 
+export type ReportImpact = "blocking" | "annoying" | "minor";
+export type ReportType = "bug" | "question" | "suggestion";
+
 export interface ReportInput {
   title: string;
   description: string;
@@ -26,6 +32,8 @@ export interface ReportInput {
   files?: DeclaredFile[];
   /** Flat strings the host page stored with the report (`metadata`). */
   metadata?: { key: string; value: string }[];
+  impact?: ReportImpact;
+  type?: ReportType;
 }
 
 export interface SubmittedReport {
@@ -38,6 +46,7 @@ export interface SubmittedReport {
 /** What went wrong, as far as the form tells the reporter. */
 export type ErrorKind =
   | "config" // no project key or no API base: nothing was sent
+  | "identity" // 401: the identity token is missing, forged or expired
   | "rejected" // unknown or disabled key, origin not allowed: retrying cannot help
   | "unavailable" // 503: the rate limits cannot be checked, try later
   | "rate-limited" // 429
@@ -75,6 +84,8 @@ const FILE_CODES = new Set([
 
 function kindOf(status: number, code: string): ErrorKind {
   if (FILE_CODES.has(code.replace("intake.errors.", ""))) return "files";
+  if (status === 401 || code === "intake.errors.identity-invalid")
+    return "identity";
   if (status === 404 || status === 403) return "rejected";
   if (status === 503) return "unavailable";
   if (status === 429) return "rate-limited";
@@ -83,40 +94,34 @@ function kindOf(status: number, code: string): ErrorKind {
   return "unknown";
 }
 
-export interface SubmitOptions {
-  apiBase: string;
-  publicKey: string;
-  input: ReportInput;
-  fetch?: typeof fetch;
-  signal?: AbortSignal;
-}
-
-export async function submitReport({
+/** One persisted operation on `/public/graphql`: its data, or an `IntakeError`. */
+export async function publicCall<T>({
   apiBase,
-  publicKey,
-  input,
+  id,
+  variables,
+  locale,
+  identity,
   fetch: doFetch = fetch,
   signal,
-}: SubmitOptions): Promise<SubmittedReport> {
-  const { email, files, metadata, ...rest } = input;
-  const variables = {
-    publicKey,
-    input: {
-      ...rest,
-      ...(email ? { email } : {}),
-      ...(files?.length ? { files } : {}),
-      ...(metadata?.length ? { metadata } : {}),
-    },
-  };
+}: {
+  apiBase: string;
+  id: string;
+  variables: object;
+  locale: string;
+  identity?: string | null;
+  fetch?: typeof fetch;
+  signal?: AbortSignal;
+}): Promise<T> {
   let response: Response;
   try {
     response = await doFetch(`${apiBase.replace(/\/+$/, "")}/public/graphql`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "accept-language": input.locale,
+        "accept-language": locale,
+        ...(identity ? { [IDENTITY_HEADER]: identity } : {}),
       },
-      body: JSON.stringify({ id: "submitClientReport", variables }),
+      body: JSON.stringify({ id, variables }),
       credentials: "omit",
       signal,
     });
@@ -124,14 +129,8 @@ export async function submitReport({
     if (signal?.aborted) throw error;
     throw new IntakeError("network", "network");
   }
-  let body: {
-    data?: {
-      submitClientReport?: Omit<SubmittedReport, "files"> & {
-        files?: FileTicket[];
-      };
-    };
-    errors?: GraphQLErrorBody[];
-  } | null = null;
+  let body: { data?: Record<string, T>; errors?: GraphQLErrorBody[] } | null =
+    null;
   try {
     body = await response.json();
   } catch {
@@ -146,8 +145,49 @@ export async function submitReport({
       failure?.extensions?.retryAfter,
     );
   }
-  const report = body?.data?.submitClientReport;
-  if (!report) throw new IntakeError("unknown", "empty-response");
+  const data = body?.data?.[id];
+  if (!data) throw new IntakeError("unknown", "empty-response");
+  return data;
+}
+
+export interface SubmitOptions {
+  apiBase: string;
+  publicKey: string;
+  input: ReportInput;
+  /** The host's identity token: the report is then the reporter's own, listed in My requests. */
+  identity?: string | null;
+  fetch?: typeof fetch;
+  signal?: AbortSignal;
+}
+
+export async function submitReport({
+  apiBase,
+  publicKey,
+  input,
+  identity,
+  fetch,
+  signal,
+}: SubmitOptions): Promise<SubmittedReport> {
+  const { email, files, metadata, ...rest } = input;
+  const report = await publicCall<
+    Omit<SubmittedReport, "files"> & { files?: FileTicket[] }
+  >({
+    apiBase,
+    id: "submitClientReport",
+    variables: {
+      publicKey,
+      input: {
+        ...rest,
+        ...(email ? { email } : {}),
+        ...(files?.length ? { files } : {}),
+        ...(metadata?.length ? { metadata } : {}),
+      },
+    },
+    locale: input.locale,
+    identity,
+    fetch,
+    signal,
+  });
   return { ...report, files: report.files ?? [] };
 }
 

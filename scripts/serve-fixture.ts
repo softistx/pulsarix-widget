@@ -4,6 +4,12 @@
  *   /baseline  the same page without the widget (the reference for the leak test)
  *   /dist/*    the build output
  *   /strict    the same page under a strict CSP (no inline script, no `blob:` image source)
+ *   /strict-identified  the strict page with an identity token
+ *   /strict-limited  the same, its token gets a 429 on the e-mail choice and "Delete my data"
+ *   /identified, /identified-empty, /identified-expired  the page with an identity token (six
+ *              requests, none, a refused token); `myRequests` is stubbed beside the intake
+ *   GET /public/live/requests  the live stream stub; GET /__live (open, opened, closed streams)
+ *              and POST /__team-reply {id, body} (a team reply reaches the open streams)
  *   POST /public/graphql  a stub of the API's intake (tickets for declared files included)
  *   PUT /public/media/report-files/:slot  a stub of the upload by ticket (a file named
  *              "fail…" gets a 500, so that the retry and the partial failure can be seen, one
@@ -11,6 +17,7 @@
  *   GET /__puts  what the stub received: [{ slot, name, bytes, type }]
  */
 import { join } from "node:path";
+import { createRequestsStub } from "./fixture-requests";
 
 const root = join(import.meta.dir, "..");
 
@@ -18,16 +25,48 @@ const root = join(import.meta.dir, "..");
 const STRICT_CSP =
   "default-src 'none'; script-src 'self'; style-src 'nonce-host'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'";
 
+/** The pages that hand the loader an identity token. */
+const IDENTITIES: Record<string, string> = {
+  "/identified": "fixture.token",
+  "/identified-empty": "empty.token",
+  "/identified-expired": "expired.token",
+  "/strict-identified": "fixture.token",
+  "/strict-limited": "limited.token",
+};
+
 export function serveFixture(port = 0) {
   /** slot -> the declared name, to answer the PUT with what the stub knows of it. */
   const slots = new Map<string, string>();
+  const requests = createRequestsStub();
   const puts: { slot: string; name: string; bytes: number; type: string }[] =
     [];
   return Bun.serve({
     port,
+    // The live stream stays open between its pings.
+    idleTimeout: 60,
     async fetch(request) {
       const url = new URL(request.url);
       if (url.pathname === "/__puts") return Response.json(puts);
+      // What the live stream did, and a way for a spec to make the team answer.
+      if (url.pathname === "/__live")
+        return Response.json({
+          open: requests.streamCount(),
+          ...requests.stats,
+        });
+      // What the privacy writes (the e-mail choice, erase) did, for the specs.
+      if (url.pathname === "/__privacy") return Response.json(requests.calls);
+      if (url.pathname === "/__team-reply" && request.method === "POST") {
+        const { id, body } = (await request.json()) as {
+          id: string;
+          body: string;
+        };
+        return Response.json({ ok: requests.teamReplies(id, body) });
+      }
+      if (url.pathname === "/public/live/requests")
+        return requests.live(
+          request.headers.get("x-pulsarix-identity"),
+          request.signal,
+        );
       if (
         url.pathname.startsWith("/public/media/report-files/") &&
         request.method === "PUT"
@@ -65,6 +104,9 @@ export function serveFixture(port = 0) {
         const body = (await request.json()) as {
           id?: string;
           variables?: {
+            filter?: string;
+            first?: number;
+            after?: string;
             input?: {
               email?: string;
               title?: string;
@@ -72,6 +114,17 @@ export function serveFixture(port = 0) {
             };
           };
         };
+        const answered = requests.answer(
+          body.id ?? "",
+          request.headers.get("x-pulsarix-identity"),
+          body.variables ?? {},
+          (name) => {
+            const slot = `slot-${slots.size + 1}`;
+            slots.set(slot, name);
+            return { slot, role: "file", ticket: `ticket-${slot}` };
+          },
+        );
+        if (answered) return answered;
         if (body.id === "widgetConfig")
           return Response.json({
             data: {
@@ -111,21 +164,21 @@ export function serveFixture(port = 0) {
           },
         });
       }
-      if (["/", "/baseline", "/strict"].includes(url.pathname)) {
+      const identity = IDENTITIES[url.pathname];
+      if (["/", "/baseline", "/strict"].includes(url.pathname) || identity) {
         const html = await Bun.file(join(root, "fixtures/host.html")).text();
         const loader =
           url.pathname !== "/baseline"
-            ? '<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"></script>'
+            ? `<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"${identity ? ` data-identity="${identity}"` : ""}></script>`
             : "";
         // The host's own `<style>` carries the nonce; any style the widget injected would not.
-        const page =
-          url.pathname === "/strict"
-            ? html.replace("<style>", '<style nonce="host">')
-            : html;
+        const page = url.pathname.startsWith("/strict")
+          ? html.replace("<style>", '<style nonce="host">')
+          : html;
         return new Response(page.replace("<!--LOADER-->", loader), {
           headers: {
             "content-type": "text/html; charset=utf-8",
-            ...(url.pathname === "/strict"
+            ...(url.pathname.startsWith("/strict")
               ? { "content-security-policy": STRICT_CSP }
               : {}),
           },

@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox } from "@softistx/material/embed";
+import { Alert, Button, Checkbox, Spinner } from "@softistx/material/embed";
 import {
   lazy,
   type ReactNode,
@@ -135,7 +135,10 @@ export function ScreenshotPane({
   const status = (
     <div role="status" aria-live="polite" className="empty:hidden">
       {busy ? (
-        <p className="sr-only">{t.capturing}</p>
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Spinner aria-hidden="true" className="size-4" />
+          {t.capturing}
+        </div>
       ) : notice ? (
         <Alert variant="warning" description={notice} />
       ) : null}
@@ -145,12 +148,16 @@ export function ScreenshotPane({
   let body: ReactNode;
   if (source) {
     body = (
-      <section aria-label={t.editorLabel} className="min-h-0">
+      <section aria-label={t.editorLabel} className="min-h-0 md:h-full">
         <Suspense
           fallback={
-            <p role="status" className="text-muted-foreground text-sm">
+            <div
+              role="status"
+              className="flex items-center gap-2 text-muted-foreground text-sm"
+            >
+              <Spinner aria-hidden="true" className="size-4" />
               {t.loadingEditor}
-            </p>
+            </div>
           }
         >
           <Editor

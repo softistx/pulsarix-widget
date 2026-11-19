@@ -23,6 +23,7 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     privacyUrl: null,
     prefill: { email: "", title: "" },
     metadata: [],
+    identity: null,
   });
 });
 
@@ -164,4 +165,13 @@ test("metadata: control characters are stripped, duplicate keys and empty keys d
     }),
   );
   expect(wide.map((e) => e.key)).toEqual(["a", "c"]);
+});
+
+test("identity: a token of two dot-separated parts is taken, anything else is null", () => {
+  expect(read({ identity: "abc_1-2.def-3_4" }).identity).toBe(
+    "abc_1-2.def-3_4",
+  );
+  for (const bad of ["", "nodot", "a.b.c", "a b.c", `${"a".repeat(4096)}.b`]) {
+    expect(read({ identity: bad }).identity).toBeNull();
+  }
 });

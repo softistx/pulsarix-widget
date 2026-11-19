@@ -37,7 +37,10 @@ own privacy page, shown after the privacy line), `data-prefill-email` and `data-
 values of the form), `data-metadata` (a JSON object of strings stored with each report: at most 20 entries,
 keys of 64 characters, values of 512, 2 KB in all; the rest is dropped).
 
-In script, the same are `privacyUrl`, `prefill: { email, title }` and `metadata: { plan: "pro" }`.
+`data-identity` (the signed token of the signed-in user, see "Identified reporters"), changed later with
+`PulsarixWidget.identify(token)` and `PulsarixWidget.identify(null)` at sign-out.
+
+In script, the same are `identity`, `privacyUrl`, `prefill: { email, title }` and `metadata: { plan: "pro" }`.
 What the reporter typed is kept when the dialog is closed by accident (a click outside, Escape) and comes
 back at the next opening; a sent report clears it.
 
@@ -101,9 +104,10 @@ A script-tag loader and an npm import are two separate instances: use one route 
 | `position` | `"bottom-right" \| "bottom-left"` | `"bottom-right"` |
 | `accentColor` | hex string | none: the built-in `lavande` theme |
 | `launcher` | `boolean` | `true` (`false` hides the floating button) |
+| `identity` | `string \| null` | none: today's form only (see "Identified reporters") |
 | `target` | `Element` | `document.body` |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `on(name, callback)` (returns the function that
+`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
 
 ## The report form
@@ -128,6 +132,49 @@ and returns focus to the launcher (or to whatever opened it).
   never the query string or the fragment), the browser and the e-mail (if given) are sent with
   the report; the form says so.
 
+## Identified reporters
+
+Give the widget the token your server signed for the signed-in user (`data-identity`,
+`identity` in `init` / `mount`, or `PulsarixWidget.identify(token)` after sign-in; call
+`identify(null)` at sign-out). The secret that signs the token stays on your server and never
+reaches the browser; the widget only sends the token, in the `x-pulsarix-identity` header, and
+never in a URL. A malformed token is ignored. A token given with `identify()` or `mount({ identity })`
+is kept in the widget's memory and is not written to the page; a token in `data-identity` is an
+attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
+
+- Without a token the dialog is today's form, with no tabs.
+- With one, the dialog has two tabs, New request and My requests. My requests is one list with
+  filter chips and their counts (Open by default, Resolved, Declined, All); requests with
+  unread replies come first, and the list is read again each time the dialog opens.
+- The launcher and the My requests tab show the unread count.
+- Opening a request shows its thread: the original message, then the replies of the team (plain
+  text, with their file names). The reporter can reply, with up to three files sent the same way as
+  a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.
+  A declined request is read-only and shows its reason. Opening a thread marks it read.
+- While a thread is open the widget reads `GET /public/live/requests` with `fetch` (the identity in
+  the header; an `EventSource` cannot send one) so a team reply appears at once, and stops reading
+  when the thread closes. The page's CSP needs `connect-src` for the widget's API origin only.
+- **Expired or refused token**: when the API refuses the token (a 401 on a read, a 401 or 403 on
+  the live stream) or the stream ends with `expired`, the list or the open thread shows the session-expired message and the page hears `pulsarix:error` once with the code
+  (`intake.errors.identity-invalid`,
+  `intake.errors.identity-expired` or `http-<status>`). Call `identify(newToken)` to sign in again.
+  The live stream reconnects after a drop with a pause that doubles up to 30 s, and never after
+  `expired`, a 401, 403, 404 or 429.
+- **E-mails about my requests**: a switch at the foot of My requests, on or off as the API
+  says (`emailsOn`). It flips at once and is sent to the API (`setRequestEmails`); if that fails it
+  goes back with a message. The choice applies to every request of the reporter under your key.
+- **Delete my data**: a button at the foot of My requests opens a confirmation (Cancel on the
+  left, Delete on the right). Confirming erases every request of the reporter under your key
+  (`eraseMyData`), with their replies and files; the list is emptied, the dialog says how many
+  were erased and the unread count goes to 0. A refusal (expired token, rate limit) keeps the
+  confirmation open with the reason. Erasing cannot be undone. The page hears
+  `pulsarix:erase` with `detail: { requests }`, the number of requests erased, followed by
+  `pulsarix:unread` with `{ count: 0 }`.
+- A token the API refuses (expired or forged) shows a message in My requests; reload the page
+  to get a fresh one.
+- Everyone (identified or not) can give an optional type (bug, question, suggestion) and an
+  impact (blocking, annoying, minor) in the form's Details group.
+
 ## Screenshots
 
 A report can carry one optional screenshot, never taken without a click (and a per-report
@@ -145,7 +192,8 @@ choice). The right pane of the dialog offers:
   with `data-capture-unmask`.
 
 The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
-an arrow, a box, text and a solid "Redact" box: redacted pixels are one opaque colour. Only the flattened
+an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
+picture before it is kept. Only the flattened
 export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
 revoked and no media track stays live. Retake and Remove are offered. A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
@@ -155,7 +203,10 @@ Events, on the element and through `on(name, cb)`: `pulsarix:ready` (asynchronou
 so a listener added right after `mount()` hears it; it fires even when the key is missing, then
 `pulsarix:error` with `config` follows), `pulsarix:open`,
 `pulsarix:close`, `pulsarix:submit` (`detail: { reportId, files }`, one `{ name, role, type, size,
-uploaded }` per file sent with the report) and `pulsarix:error`
+uploaded }` per file sent with the report), `pulsarix:reply` (`detail: { requestId }`, the team
+replied to one of the reporter's requests), `pulsarix:unread` (`detail: { count }`, the reporter's
+unread replies changed), `pulsarix:erase` (`detail: { requests }`, the reporter erased their
+data) and `pulsarix:error`
 (`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
 
 ```ts
@@ -201,6 +252,13 @@ the report goes out.
   modal is open, the dialog's scroll lock adds a transient style element and focus guards
   to the document; both are removed on close.
 - Fonts: `@font-face` is ignored in a shadow root. The widget uses the system font stack.
+
+## Strict CSP and the requests thread
+
+The requests thread's scroll area injects one `<style>` element into the shadow root. Under a strict
+`style-src`, give your page a nonce: a `style` or `script` element carrying `nonce`, or
+`<meta property="csp-nonce" content="...">`. The widget reads it and puts it on that element. The
+form, the dialog and the screenshot editor need no nonce.
 
 ## Serving (script-tag integrators)
 

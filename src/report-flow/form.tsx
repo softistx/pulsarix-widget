@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  ChipGroupField,
   DialogAside,
   DialogBody,
   DialogDescription,
@@ -12,7 +13,7 @@ import {
   TextFormField,
 } from "@softistx/material/embed";
 import type { FormEventHandler, ReactNode, Ref } from "react";
-import type { Control } from "react-hook-form";
+import { type Control, Controller } from "react-hook-form";
 import type { IntakeError } from "../api";
 import type { Messages } from "../messages";
 import { ScreenshotPane } from "../screenshot/pane";
@@ -25,6 +26,8 @@ import {
 import { failureText } from "./failure-text";
 
 const FORM_ID = "pulsarix-report-form";
+const TYPES = ["bug", "question", "suggestion"] as const;
+const IMPACTS = ["blocking", "annoying", "minor"] as const;
 
 export function Form({
   messages,
@@ -44,6 +47,7 @@ export function Form({
   maskText,
   onEditing,
   privacyUrl,
+  headerExtra,
 }: {
   messages: Messages;
   projectName: string | null;
@@ -64,6 +68,8 @@ export function Form({
   onEditing?: (editing: boolean) => void;
   /** The integrator's privacy page, linked after the privacy line. */
   privacyUrl?: string | null;
+  /** In the header under the description: the identified reporter's tabs. */
+  headerExtra?: ReactNode;
 }) {
   return (
     <>
@@ -80,6 +86,7 @@ export function Form({
         <DialogDescription>
           {projectName ? messages.introFor(projectName) : messages.intro}
         </DialogDescription>
+        {headerExtra}
       </DialogHeader>
       <DialogBody role="region" aria-label={messages.title}>
         <form
@@ -116,6 +123,51 @@ export function Form({
               maxRows={10}
               maxLength={DESCRIPTION_MAX}
               required
+            />
+          </section>
+          <hr className="border-border border-t" />
+          <section
+            aria-labelledby={`${FORM_ID}-details`}
+            className="grid content-start gap-4"
+          >
+            <h3
+              id={`${FORM_ID}-details`}
+              className="font-semibold text-foreground text-sm"
+            >
+              {messages.sections.details}
+            </h3>
+            {/* Single-choice and optional: chips on a full row, pressing the chosen one clears it. */}
+            <Controller
+              control={control}
+              name="type"
+              render={({ field }) => (
+                <ChipGroupField
+                  label={messages.fields.type}
+                  deselectable
+                  value={field.value || null}
+                  onValueChange={(value) => field.onChange(value ?? "")}
+                  options={TYPES.map((value) => ({
+                    value,
+                    label: messages.choices.type[value],
+                  }))}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="impact"
+              render={({ field }) => (
+                <ChipGroupField
+                  label={messages.fields.impact}
+                  deselectable
+                  value={field.value || null}
+                  onValueChange={(value) => field.onChange(value ?? "")}
+                  options={IMPACTS.map((value) => ({
+                    value,
+                    label: messages.choices.impact[value],
+                  }))}
+                />
+              )}
             />
           </section>
           <hr className="border-border border-t" />

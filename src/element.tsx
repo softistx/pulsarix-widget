@@ -1,7 +1,12 @@
 import { adoptStyles } from "@softistx/material/embed";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
-import { OBSERVED_ATTRIBUTES, readConfig, type WidgetConfig } from "./config";
+import {
+  identityOf,
+  OBSERVED_ATTRIBUTES,
+  readConfig,
+  type WidgetConfig,
+} from "./config";
 import widgetCss from "./generated/widget-css";
 import { MESSAGES } from "./messages";
 import { themeCssFor, themeNameFor } from "./theme";
@@ -13,6 +18,9 @@ export type WidgetEvent =
   | "pulsarix:open"
   | "pulsarix:close"
   | "pulsarix:submit"
+  | "pulsarix:reply"
+  | "pulsarix:unread"
+  | "pulsarix:erase"
   | "pulsarix:error";
 
 /**
@@ -32,8 +40,17 @@ export class PulsarixWidgetElement extends HTMLElement {
   #media: MediaQueryList | null = null;
   #onScheme = () => this.#render();
 
+  /**
+   * The token given by `identify()` / `mount({ identity })`. It is kept here, not written as an
+   * attribute, so it does not sit in the page's DOM; only a declarative `data-identity` does.
+   */
+  #identity: string | null = null;
+
   get config(): WidgetConfig {
-    return readConfig((name) => this.getAttribute(name));
+    const config = readConfig((name) => this.getAttribute(name));
+    return this.#identity
+      ? { ...config, identity: identityOf(this.#identity) ?? config.identity }
+      : config;
   }
 
   get isOpen(): boolean {
@@ -70,6 +87,17 @@ export class PulsarixWidgetElement extends HTMLElement {
 
   attributeChangedCallback() {
     if (this.#root) this.#render();
+  }
+
+  /**
+   * Signs the reporter in with the identity token the host's server signed, or out with `null`
+   * (on the host's sign-out): the dialog then shows or drops New request and My requests.
+   */
+  identify(token: string | null) {
+    this.#identity = token || null;
+    // Signing out drops a declarative `data-identity` too.
+    if (!token) this.removeAttribute("identity");
+    this.#render();
   }
 
   open() {
@@ -123,9 +151,13 @@ export class PulsarixWidgetElement extends HTMLElement {
         prefill={config.prefill}
         metadata={config.metadata}
         privacyUrl={config.privacyUrl}
+        identity={config.identity}
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
+        onReply={(detail) => this.#emit("pulsarix:reply", detail)}
+        onUnreadChange={(detail) => this.#emit("pulsarix:unread", detail)}
+        onErase={(detail) => this.#emit("pulsarix:erase", detail)}
         onError={(detail) => this.#emit("pulsarix:error", detail)}
       />,
     );
@@ -156,6 +188,11 @@ export interface MountOptions {
   metadata?: Record<string, string | number | boolean>;
   /** Link to your own privacy page, shown after the privacy line (http or https). */
   privacyUrl?: string;
+  /**
+   * The identity token your server signed for the signed-in user (`<payload>.<signature>`).
+   * With it the widget shows New request and My requests; change it later with `identify()`.
+   */
+  identity?: string;
   /** Where to append the element; `document.body` by default. */
   target?: Element;
 }
@@ -164,6 +201,8 @@ export interface WidgetHandle {
   element: PulsarixWidgetElement;
   open(): void;
   close(): void;
+  /** Signs the reporter in with a signed identity token, or out with `null`. */
+  identify(token: string | null): void;
   destroy(): void;
   on(name: WidgetEvent, callback: (event: CustomEvent) => void): () => void;
 }
@@ -201,12 +240,14 @@ export function mount(options: MountOptions): WidgetHandle {
     element.setAttribute("prefill-title", options.prefill.title);
   if (options.metadata)
     element.setAttribute("metadata", JSON.stringify(options.metadata));
+  if (options.identity) element.identify(options.identity);
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
+    identify: (token) => element.identify(token),
     destroy: () => element.remove(),
     on(name, callback) {
       const listener = (event: Event) => callback(event as CustomEvent);

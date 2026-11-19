@@ -19,11 +19,13 @@ interface InitOptions {
   privacyUrl?: string;
   prefill?: { email?: string; title?: string };
   metadata?: unknown;
+  identity?: string;
 }
 
 interface Handle {
   open(): void;
   close(): void;
+  identify(token: string | null): void;
   destroy(): void;
   on(name: string, cb: (e: CustomEvent) => void): () => void;
 }
@@ -78,6 +80,7 @@ window.PulsarixWidget = {
   init,
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
+  identify: (token: string | null) => whenReady((h) => h.identify(token)),
   destroy: () => {
     generation++;
     handle?.destroy();
@@ -116,5 +119,6 @@ if (data?.projectKey) {
         ? { email: data.prefillEmail, title: data.prefillTitle }
         : undefined,
     metadata: parseJson(data.metadata),
+    identity: data.identity,
   });
 }

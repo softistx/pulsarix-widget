@@ -1,5 +1,6 @@
 /** The report's limits (plan section 11) and the form's resolver. */
 import type { FieldErrors, Resolver } from "react-hook-form";
+import type { ReportImpact, ReportType } from "./api";
 import type { Messages } from "./messages";
 
 export const TITLE_MAX = 200;
@@ -10,6 +11,9 @@ export interface ReportValues {
   title: string;
   description: string;
   email: string;
+  /** Optional chips; "" while none is chosen. */
+  type: ReportType | "";
+  impact: ReportImpact | "";
 }
 
 const EMAIL = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)*\.[A-Za-z]{2,}$/;

@@ -12,6 +12,7 @@ interface Api {
   init(o: { projectKey: string }): Promise<void>;
   open(): void;
   close(): void;
+  identify(token: string | null): void;
   destroy(): void;
 }
 const pulsarix = () =>
@@ -62,10 +63,11 @@ test("calls before the bundle loads are queued and replayed on mount", async () 
   expect(api.init({ projectKey: "pk_live_abc" })).toBe(loading);
   api.open();
   api.close();
+  api.identify("a.b");
   expect(opened).toEqual([]);
   release();
   await loading;
-  expect(opened).toEqual(["open", "close"]);
+  expect(opened).toEqual(["open", "close", "identify:a.b"]);
   api.destroy();
 });
 

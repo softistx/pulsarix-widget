@@ -1,46 +1,27 @@
 import {
-  Button,
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
   I18nProvider,
   PortalContainerProvider,
 } from "@softistx/material/embed";
-import { useRef, useState } from "react";
-import type { Locale, MetadataEntry, Position } from "./config";
-import type { Messages } from "./messages";
-import { ReportFlow, type SubmitDetail } from "./report-flow";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { WidgetProject } from "./api";
+import type { AppProps } from "./app-props";
+import { DialogTabs } from "./dialog-tabs";
+import { Launcher } from "./launcher";
+import { ReportFlow } from "./report-flow";
+import { useUnread } from "./requests/use-unread";
 import { themeNameFor } from "./theme";
 import type { ReportValues } from "./validation";
 
-export interface AppProps {
-  /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
-  themeName?: string;
-  messages: Messages;
-  locale: Locale;
-  projectKey: string | null;
-  apiBase: string | null;
-  dark: boolean;
-  open: boolean;
-  launcher: boolean;
-  position: Position;
-  /** The screenshot's mask-text option starts on. */
-  maskText?: boolean;
-  /** `data-attachments="false"` hides the screenshot pane and the files. */
-  attachments?: boolean;
-  /** Starting values of the form (`prefill-email`, `prefill-title`). */
-  prefill?: { email: string; title: string };
-  /** Flat strings stored with each report. */
-  metadata?: MetadataEntry[];
-  /** The integrator's privacy page, linked in the privacy line. */
-  privacyUrl?: string | null;
-  onOpenChange: (open: boolean) => void;
-  onSubmitted: (detail: SubmitDetail) => void;
-  onError: (detail: { code: string }) => void;
-  /** Specs only: the API's minimum fill time is waited out otherwise. */
-  minFillMs?: number;
-  /** Specs only: the wait before an upload's one retry. */
-  retryDelayMs?: number;
-}
+// "My requests" is its own chunk: a reporter with no identity never downloads it.
+const loadRequests = () => import("./requests/panel");
+const RequestsPanel = lazy(loadRequests);
+
+export type { AppProps } from "./app-props";
 
 /**
  * The widget's tree. Its root element carries the theme scope and the dark class,
@@ -62,8 +43,12 @@ export function App({
   prefill,
   metadata,
   privacyUrl,
+  identity = null,
   onOpenChange,
   onSubmitted,
+  onReply,
+  onUnreadChange,
+  onErase,
   onError,
   minFillMs,
   retryDelayMs,
@@ -72,9 +57,39 @@ export function App({
   const [done, setDone] = useState(false);
   // Without the screenshot pane and files (the page or the key turned them off) it is one column too.
   const [controls, setControls] = useState(attachments);
-  const stacked = done || !controls;
   // While the screenshot editor is open the pane widens: the editor needs more than a preview.
   const [editing, setEditing] = useState(false);
+  // The key's config survives a tab switch (the form remounts), not a close.
+  const [project, setProject] = useState<WidgetProject | null>(null);
+  const identified = !!identity && !!projectKey && !!apiBase;
+  const [tab, setTab] = useState<"new" | "requests">("new");
+  const showing = identified ? tab : "new";
+  // The list is one column, like the confirmation.
+  const stacked = done || !controls || showing === "requests";
+  const [unread, setUnread] = useUnread({
+    apiBase,
+    projectKey,
+    identity,
+    locale,
+    open,
+  });
+  const announced = useRef(0);
+  useEffect(() => {
+    if (unread === announced.current) return;
+    announced.current = unread;
+    onUnreadChange?.({ count: unread });
+  }, [unread, onUnreadChange]);
+  // The list's chunk is fetched as soon as an identified reporter opens the dialog.
+  useEffect(() => {
+    if (open && identified) void loadRequests();
+  }, [open, identified]);
+  // A dialog opens on the form; the list is one tab away.
+  useEffect(() => {
+    if (!open) {
+      setTab("new");
+      setProject(null);
+    }
+  }, [open]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
@@ -82,6 +97,78 @@ export function App({
   // The typed text outlives the dialog (its content unmounts on close): a close by accident,
   // a click outside or Escape, keeps it for the next opening. A sent report clears it.
   const draft = useRef<ReportValues | null>(null);
+  const tabs = (
+    <DialogTabs
+      messages={messages}
+      unread={unread}
+      value={showing}
+      onValueChange={(next) => {
+        // The form unmounts with its screenshot: the editor is closed with it.
+        setEditing(false);
+        setTab(next);
+      }}
+    />
+  );
+  const body = (
+    <>
+      {showing === "requests" && identity ? (
+        <Suspense
+          fallback={
+            <>
+              <DialogHeader>
+                <DialogTitle>{messages.title}</DialogTitle>
+                {tabs}
+              </DialogHeader>
+              <DialogBody>{null}</DialogBody>
+            </>
+          }
+        >
+          <RequestsPanel
+            messages={messages}
+            locale={locale}
+            apiBase={apiBase}
+            projectKey={projectKey}
+            identity={identity}
+            headerExtra={tabs}
+            onUnread={setUnread}
+            onReply={onReply}
+            onError={onError}
+            onErase={onErase}
+            onClose={() => onOpenChange(false)}
+            onNewRequest={() => {
+              setEditing(false);
+              setTab("new");
+            }}
+          />
+        </Suspense>
+      ) : (
+        <ReportFlow
+          messages={messages}
+          locale={locale}
+          projectKey={projectKey}
+          apiBase={apiBase}
+          onSubmitted={onSubmitted}
+          onError={onError}
+          minFillMs={minFillMs}
+          retryDelayMs={retryDelayMs}
+          maskText={maskText}
+          onDone={setDone}
+          onEditing={setEditing}
+          attachments={attachments}
+          prefill={prefill}
+          metadata={metadata}
+          privacyUrl={privacyUrl}
+          draft={draft}
+          identity={identity}
+          headerExtra={identified ? tabs : undefined}
+          project={project}
+          onProject={setProject}
+          onControls={setControls}
+          onClose={() => onOpenChange(false)}
+        />
+      )}
+    </>
+  );
   return (
     <div
       ref={setRoot}
@@ -101,26 +188,16 @@ export function App({
         >
           <PortalContainerProvider container={root}>
             {launcher ? (
-              <div
-                // Hidden, not unmounted, while the dialog is open: on a phone the dialog
-                // covers the screen and a sliver of the launcher showed behind it, and the
-                // button must stay so that focus can return to it on close.
-                hidden={open}
-                className={
-                  position === "bottom-left"
-                    ? "fixed bottom-4 left-4 z-40"
-                    : "fixed right-4 bottom-4 z-40"
-                }
-              >
-                <Button
-                  onClick={(event) => {
-                    opener.current = event.currentTarget;
-                    onOpenChange(true);
-                  }}
-                >
-                  {messages.launcher}
-                </Button>
-              </div>
+              <Launcher
+                messages={messages}
+                position={position}
+                open={open}
+                unread={unread}
+                onOpen={(button) => {
+                  opener.current = button;
+                  onOpenChange(true);
+                }}
+              />
             ) : null}
             <Dialog open={open} onOpenChange={onOpenChange}>
               <DialogContent
@@ -140,26 +217,7 @@ export function App({
                   opener.current.focus();
                 }}
               >
-                <ReportFlow
-                  messages={messages}
-                  locale={locale}
-                  projectKey={projectKey}
-                  apiBase={apiBase}
-                  onSubmitted={onSubmitted}
-                  onError={onError}
-                  minFillMs={minFillMs}
-                  retryDelayMs={retryDelayMs}
-                  maskText={maskText}
-                  onDone={setDone}
-                  onEditing={setEditing}
-                  attachments={attachments}
-                  prefill={prefill}
-                  metadata={metadata}
-                  privacyUrl={privacyUrl}
-                  draft={draft}
-                  onControls={setControls}
-                  onClose={() => onOpenChange(false)}
-                />
+                {body}
               </DialogContent>
             </Dialog>
           </PortalContainerProvider>
