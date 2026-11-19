@@ -72,6 +72,15 @@ export class PulsarixWidgetElement extends HTMLElement {
     if (this.#root) this.#render();
   }
 
+  /**
+   * Signs the reporter in with the identity token the host's server signed, or out with `null`
+   * (on the host's sign-out): the dialog then shows or drops New request and My requests.
+   */
+  identify(token: string | null) {
+    if (token) this.setAttribute("identity", token);
+    else this.removeAttribute("identity");
+  }
+
   open() {
     this.#setOpen(true);
   }
@@ -123,6 +132,7 @@ export class PulsarixWidgetElement extends HTMLElement {
         prefill={config.prefill}
         metadata={config.metadata}
         privacyUrl={config.privacyUrl}
+        identity={config.identity}
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
@@ -156,6 +166,11 @@ export interface MountOptions {
   metadata?: Record<string, string | number | boolean>;
   /** Link to your own privacy page, shown after the privacy line (http or https). */
   privacyUrl?: string;
+  /**
+   * The identity token your server signed for the signed-in user (`<payload>.<signature>`).
+   * With it the widget shows New request and My requests; change it later with `identify()`.
+   */
+  identity?: string;
   /** Where to append the element; `document.body` by default. */
   target?: Element;
 }
@@ -164,6 +179,8 @@ export interface WidgetHandle {
   element: PulsarixWidgetElement;
   open(): void;
   close(): void;
+  /** Signs the reporter in with a signed identity token, or out with `null`. */
+  identify(token: string | null): void;
   destroy(): void;
   on(name: WidgetEvent, callback: (event: CustomEvent) => void): () => void;
 }
@@ -201,12 +218,14 @@ export function mount(options: MountOptions): WidgetHandle {
     element.setAttribute("prefill-title", options.prefill.title);
   if (options.metadata)
     element.setAttribute("metadata", JSON.stringify(options.metadata));
+  if (options.identity) element.setAttribute("identity", options.identity);
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
+    identify: (token) => element.identify(token),
     destroy: () => element.remove(),
     on(name, callback) {
       const listener = (event: Event) => callback(event as CustomEvent);

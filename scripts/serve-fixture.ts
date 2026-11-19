@@ -4,6 +4,8 @@
  *   /baseline  the same page without the widget (the reference for the leak test)
  *   /dist/*    the build output
  *   /strict    the same page under a strict CSP (no inline script, no `blob:` image source)
+ *   /identified, /identified-empty, /identified-expired  the page with an identity token (six
+ *              requests, none, a refused token); `myRequests` is stubbed beside the intake
  *   POST /public/graphql  a stub of the API's intake (tickets for declared files included)
  *   PUT /public/media/report-files/:slot  a stub of the upload by ticket (a file named
  *              "fail…" gets a 500, so that the retry and the partial failure can be seen, one
@@ -11,12 +13,20 @@
  *   GET /__puts  what the stub received: [{ slot, name, bytes, type }]
  */
 import { join } from "node:path";
+import { answerMyRequests } from "./fixture-requests";
 
 const root = join(import.meta.dir, "..");
 
 /** Every connection the page may make is to its own origin: that is the whole policy a host needs. */
 const STRICT_CSP =
   "default-src 'none'; script-src 'self'; style-src 'nonce-host'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'";
+
+/** The pages that hand the loader an identity token. */
+const IDENTITIES: Record<string, string> = {
+  "/identified": "fixture.token",
+  "/identified-empty": "empty.token",
+  "/identified-expired": "expired.token",
+};
 
 export function serveFixture(port = 0) {
   /** slot -> the declared name, to answer the PUT with what the stub knows of it. */
@@ -65,6 +75,9 @@ export function serveFixture(port = 0) {
         const body = (await request.json()) as {
           id?: string;
           variables?: {
+            filter?: string;
+            first?: number;
+            after?: string;
             input?: {
               email?: string;
               title?: string;
@@ -72,6 +85,11 @@ export function serveFixture(port = 0) {
             };
           };
         };
+        if (body.id === "myRequests")
+          return answerMyRequests(
+            request.headers.get("x-pulsarix-identity"),
+            body.variables ?? {},
+          );
         if (body.id === "widgetConfig")
           return Response.json({
             data: {
@@ -111,11 +129,12 @@ export function serveFixture(port = 0) {
           },
         });
       }
-      if (["/", "/baseline", "/strict"].includes(url.pathname)) {
+      const identity = IDENTITIES[url.pathname];
+      if (["/", "/baseline", "/strict"].includes(url.pathname) || identity) {
         const html = await Bun.file(join(root, "fixtures/host.html")).text();
         const loader =
           url.pathname !== "/baseline"
-            ? '<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"></script>'
+            ? `<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"${identity ? ` data-identity="${identity}"` : ""}></script>`
             : "";
         // The host's own `<style>` carries the nonce; any style the widget injected would not.
         const page =

@@ -23,6 +23,11 @@ export interface WidgetConfig {
   prefill: { email: string; title: string };
   /** Flat strings stored with the report (`metadata`, a JSON object), within the API's limits. */
   metadata: MetadataEntry[];
+  /**
+   * The signed identity token the host's server made for its signed-in user, or null (no
+   * "My requests", today's form only). `identify()` sets and clears it at run time.
+   */
+  identity: string | null;
 }
 
 export interface MetadataEntry {
@@ -50,6 +55,7 @@ export const OBSERVED_ATTRIBUTES = [
   "prefill-email",
   "prefill-title",
   "metadata",
+  "identity",
 ] as const;
 
 function oneOf<T extends string>(
@@ -88,6 +94,15 @@ export function privacyUrlOf(value: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * An identity token (`<payload>.<signature>`, both base64url) or null. Anything else is dropped,
+ * so a stray character can never break a request header.
+ */
+export function identityOf(value: string | null): string | null {
+  const token = value?.trim() ?? "";
+  return token.length <= 4_096 && /^[\w-]+\.[\w-]+$/.test(token) ? token : null;
 }
 
 const encoder = new TextEncoder();
@@ -156,5 +171,6 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
       title: (get("prefill-title") ?? "").trim().slice(0, 200),
     },
     metadata: metadataOf(get("metadata")),
+    identity: identityOf(get("identity")),
   };
 }

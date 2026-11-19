@@ -8,6 +8,8 @@ export function failureText(messages: Messages, error: IntakeError): string {
       return text.config;
     case "rejected":
       return text.rejected;
+    case "identity":
+      return text.identity;
     case "unavailable":
       return text.unavailable;
     case "rate-limited":

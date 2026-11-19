@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   fetchWidgetConfig,
   IntakeError,
   type ReportInput,
   submitReport,
+  type WidgetProject,
 } from "../api";
 import type { Locale, MetadataEntry } from "../config";
 import { fitScreenshot, MAX_TOTAL_BYTES, screenshotName } from "../files/rules";
@@ -64,6 +65,15 @@ export interface ReportFlowProps {
    * a close by accident must not lose the text. Cleared once the report is sent.
    */
   draft?: { current: ReportValues | null };
+  /** The host's identity token: the report is the reporter's own and shows in My requests. */
+  identity?: string | null;
+  /** Rendered in the dialog's header, under the description (the identified reporter's tabs). */
+  headerExtra?: ReactNode;
+  /** The key's project, when the owner of the dialog already read it (a tab switch remounts this). */
+  project?: WidgetProject | null;
+  onProject?: (project: WidgetProject | null) => void;
+  /** Told once a report is saved, so that a list showing My requests can refresh. */
+  onSaved?: () => void;
 }
 
 /**
@@ -89,6 +99,11 @@ export function ReportFlow({
   metadata,
   privacyUrl,
   draft,
+  identity,
+  headerExtra,
+  onSaved,
+  project,
+  onProject,
 }: ReportFlowProps) {
   const openedAt = useRef(Date.now());
   const honeypot = useRef<HTMLInputElement>(null);
@@ -102,15 +117,21 @@ export function ReportFlow({
     return () => controller.abort();
   }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
-  const [projectName, setProjectName] = useState<string | null>(null);
-  // The key's own switch (`attachmentsEnabled`): unknown counts as off, so the controls
-  // never flash. They show once the config says so; an API that does not send it, or a
-  // failed config read, leaves them off (v1 behaviour, see `fetchWidgetConfig`).
-  const [keyAttachments, setKeyAttachments] = useState(false);
-  const controls = attachments && keyAttachments;
+  // The key's own config (`attachmentsEnabled`, the project's name): unknown counts as off, so
+  // the controls never flash. They show once the config says so; an API that does not send it,
+  // or a failed config read, leaves them off (v1 behaviour, see `fetchWidgetConfig`).
+  const [own, setOwn] = useState<{
+    read: boolean;
+    config: WidgetProject | null;
+  }>({
+    read: project !== undefined && project !== null,
+    config: project ?? null,
+  });
+  const projectName = own.config?.projectName ?? null;
+  const controls = attachments && (own.config?.attachments ?? false);
   useEffect(() => onControls?.(controls), [controls, onControls]);
   useEffect(() => {
-    if (!projectKey || !apiBase) return;
+    if (!projectKey || !apiBase || own.read) return;
     const controller = new AbortController();
     void fetchWidgetConfig({
       apiBase,
@@ -119,11 +140,11 @@ export function ReportFlow({
       signal: controller.signal,
     }).then((config) => {
       if (controller.signal.aborted) return;
-      setProjectName(config?.projectName ?? null);
-      setKeyAttachments(config?.attachments ?? false);
+      setOwn({ read: true, config });
+      onProject?.(config);
     });
     return () => controller.abort();
-  }, [apiBase, projectKey, locale]);
+  }, [apiBase, projectKey, locale, own.read, onProject]);
   // The flattened export of the annotated screenshot (W2c sends it); nothing else of the capture lives on.
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [sent, setSent] = useState<{
@@ -147,6 +168,8 @@ export function ReportFlow({
       title: prefill?.title ?? "",
       description: "",
       email: prefill?.email ?? "",
+      type: "",
+      impact: "",
     },
     resolver,
   });
@@ -158,6 +181,8 @@ export function ReportFlow({
         title: values.title ?? "",
         description: values.description ?? "",
         email: values.email ?? "",
+        type: values.type ?? "",
+        impact: values.impact ?? "",
       };
     });
     return () => subscription.unsubscribe();
@@ -218,6 +243,8 @@ export function ReportFlow({
           ? undefined
           : (location.origin + location.pathname).slice(0, 2_048),
       locale,
+      ...(values.type ? { type: values.type } : {}),
+      ...(values.impact ? { impact: values.impact } : {}),
       website: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,
       ...(metadata?.length ? { metadata } : {}),
@@ -233,6 +260,7 @@ export function ReportFlow({
         apiBase,
         publicKey: projectKey,
         input,
+        identity,
         signal: aborted.current.signal,
       });
       const progress = (id: string, percent: number) =>
@@ -280,6 +308,7 @@ export function ReportFlow({
       const uploads = [...leftOut, ...results];
       // The report exists: the draft is spent, whether or not the dialog is still open.
       if (draft) draft.current = null;
+      onSaved?.();
       if (!aborted.current.signal.aborted)
         setSent({ tracking: report.tracking, uploads });
       onSubmitted({
@@ -350,6 +379,7 @@ export function ReportFlow({
       maskText={maskText}
       onEditing={onEditing}
       privacyUrl={privacyUrl}
+      headerExtra={headerExtra}
     />
   );
 }

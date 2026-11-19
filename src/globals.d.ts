@@ -14,9 +14,11 @@ interface Window {
       privacyUrl?: string;
       prefill?: { email?: string; title?: string };
       metadata?: Record<string, string | number | boolean>;
+      identity?: string;
     }): Promise<void>;
     open(): void;
     close(): void;
+    identify(token: string | null): void;
     destroy(): void;
     on(name: string, cb: (e: CustomEvent) => void): () => void;
   };
