@@ -91,6 +91,9 @@ export function privacyUrlOf(value: string | null): string | null {
 }
 
 const encoder = new TextEncoder();
+const stripControl = (text: string) =>
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: that is the point
+  text.replace(/[\u0000-\u001f\u007f]/g, "");
 
 /**
  * A JSON object of strings (numbers and booleans are written as text) into the entries the API
@@ -108,6 +111,7 @@ export function metadataOf(value: string | null): MetadataEntry[] {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
     return [];
   const entries: MetadataEntry[] = [];
+  const seen = new Set<string>();
   let bytes = 0;
   for (const [rawKey, raw] of Object.entries(parsed)) {
     if (entries.length >= METADATA_MAX_ENTRIES) break;
@@ -117,12 +121,14 @@ export function metadataOf(value: string | null): MetadataEntry[] {
       typeof raw !== "boolean"
     )
       continue;
-    const key = rawKey.trim().slice(0, METADATA_KEY_MAX);
-    const text = String(raw).slice(0, METADATA_VALUE_MAX);
-    if (!key) continue;
+    // Control characters are stripped, as the API does: a key left empty would refuse the report.
+    const key = stripControl(rawKey).trim().slice(0, METADATA_KEY_MAX);
+    const text = stripControl(String(raw)).slice(0, METADATA_VALUE_MAX);
+    if (!key || seen.has(key)) continue;
     const size = encoder.encode(key).length + encoder.encode(text).length;
     if (bytes + size > METADATA_MAX_BYTES) continue;
     bytes += size;
+    seen.add(key);
     entries.push({ key, value: text });
   }
   return entries;

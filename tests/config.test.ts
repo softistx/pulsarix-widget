@@ -145,3 +145,23 @@ test("metadata: flat values only, within the API's limits", () => {
     kept.reduce((n, e) => n + e.key.length + e.value.length, 0),
   ).toBeLessThanOrEqual(2_048);
 });
+
+test("metadata: control characters are stripped, duplicate keys and empty keys dropped, bytes counted", () => {
+  expect(
+    metadataOf(
+      JSON.stringify({ "\u0001": "x", a: "1", " a": "2", b: "v\u0000w" }),
+    ),
+  ).toEqual([
+    { key: "a", value: "1" },
+    { key: "b", value: "vw" },
+  ]);
+  // Values are cut at 512 characters (1 KB of emoji): the second one no longer fits in 2 KB.
+  const wide = metadataOf(
+    JSON.stringify({
+      a: "\u{1F600}".repeat(300),
+      b: "\u{1F600}".repeat(300),
+      c: "x",
+    }),
+  );
+  expect(wide.map((e) => e.key)).toEqual(["a", "c"]);
+});
