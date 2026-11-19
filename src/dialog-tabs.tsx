@@ -1,4 +1,10 @@
-import { Badge, Tabs, TabsList, TabsTrigger } from "@softistx/material/embed";
+import {
+  Badge,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@softistx/material/embed";
 import type { Messages } from "./messages";
 
 /** The identified reporter's two tabs; the unread count rides on "My requests". */
@@ -28,12 +34,20 @@ export function DialogTabs({
           {messages.tabs.myRequests}
           {unread > 0 ? (
             <Badge size="sm" variant="error" className="ml-1.5">
-              {unread > 99 ? "99+" : unread}
+              <span aria-hidden="true">{unread > 99 ? "99+" : unread}</span>
               <span className="sr-only"> {messages.unreadReplies(unread)}</span>
             </Badge>
           ) : null}
         </TabsTrigger>
       </TabsList>
+      {/*
+        The views below the tabs are the dialog's own parts, which cannot sit inside the root
+        (they would stop being the dialog's grid items). Each trigger still controls a real
+        tabpanel: these two stay mounted and empty, and only the selected one is not hidden.
+      */}
+      {(["new", "requests"] as const).map((tab) => (
+        <TabsContent key={tab} value={tab} forceMount className="sr-only" />
+      ))}
     </Tabs>
   );
 }

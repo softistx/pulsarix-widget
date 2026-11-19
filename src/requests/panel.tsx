@@ -43,6 +43,8 @@ export interface RequestsPanelProps {
   onUnread: (count: number) => void;
   /** A team reply arrived while a thread was open. */
   onReply?: (detail: { requestId: string }) => void;
+  /** The identity was refused or expired (the page hears `pulsarix:error`). */
+  onError?: (detail: { code: string }) => void;
   /** "Delete my data" erased this many requests (the page hears `pulsarix:erase`). */
   onErase?: (detail: { requests: number }) => void;
   onClose: () => void;
@@ -64,6 +66,7 @@ export default function RequestsPanel({
   headerExtra,
   onUnread,
   onReply,
+  onError,
   onErase,
   onClose,
   onNewRequest,
@@ -75,6 +78,7 @@ export default function RequestsPanel({
     identity,
     locale,
     onUnread,
+    onError,
   });
   const { filter, counts, nodes, load } = list;
   // The request whose thread is open; the list stays mounted behind it, so its filter holds.
@@ -92,6 +96,7 @@ export default function RequestsPanel({
         title={opened.title}
         onUnread={onUnread}
         onReply={(detail) => onReply?.(detail)}
+        onError={(detail) => onError?.(detail)}
         onBack={() => {
           setOpened(null);
           // The thread may have changed the state, the counts and the unread marks.

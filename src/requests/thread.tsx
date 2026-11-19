@@ -25,7 +25,6 @@ import { putFile } from "../files/upload";
 import {
   fetchRequest,
   markRequestRead,
-  type PublicState,
   type RequestDetail,
   reopenRequest,
   replyToRequest,
@@ -34,13 +33,7 @@ import {
 import { streamRequests } from "./live";
 import { REQUESTS_MESSAGES } from "./messages";
 import { pageNonce } from "./nonce";
-
-const STATE_TONE = {
-  received: "neutral",
-  inProgress: "info",
-  resolved: "success",
-  declined: "warning",
-} as const satisfies Record<PublicState, string>;
+import { STATE_TONE } from "./state-tone";
 
 export interface ThreadProps {
   locale: Locale;
@@ -54,6 +47,8 @@ export interface ThreadProps {
   onUnread: (count: number) => void;
   /** A team reply arrived in a request (the page hears `pulsarix:reply`). */
   onReply: (detail: { requestId: string }) => void;
+  /** The token was refused or expired (the page hears `pulsarix:error`). */
+  onError: (detail: { code: string }) => void;
   onBack: () => void;
 }
 
@@ -79,6 +74,7 @@ export default function Thread({
   title,
   onUnread,
   onReply,
+  onError,
   onBack,
 }: ThreadProps) {
   const text = REQUESTS_MESSAGES[locale];
@@ -98,12 +94,26 @@ export default function Thread({
     timeStyle: "short",
   });
   // The page's callbacks change on every render; the stream must not restart for that.
-  const hear = useRef({ onUnread, onReply });
-  hear.current = { onUnread, onReply };
+  const hear = useRef({ onUnread, onReply, onError });
+  hear.current = { onUnread, onReply, onError };
+  // Only the newest read may write: an older one that lands late is dropped.
+  const reads = useRef(0);
+  // The page hears an identity failure once per thread, whichever of the read or the stream sees it first.
+  const reported = useRef(false);
+  const tell = useCallback((code: string) => {
+    if (reported.current) return;
+    reported.current = true;
+    hear.current.onError({ code });
+  }, []);
+  // The unread count last heard for each other request, so a reply is heard when it grows.
+  const heard = useRef(new Map<string, number>());
   const call = { apiBase, publicKey: projectKey, identity, locale };
 
   /** Reads the thread; marks it read when team replies wait in it. */
   const read = useCallback(async () => {
+    const turn = ++reads.current;
+    const current = () =>
+      !aborted.current.signal.aborted && turn === reads.current;
     try {
       const next = await fetchRequest({
         apiBase,
@@ -113,7 +123,7 @@ export default function Thread({
         id: requestId,
         signal: aborted.current.signal,
       });
-      if (aborted.current.signal.aborted) return;
+      if (!current()) return;
       setDetail(next);
       setLoad({ status: "ready" });
       const team = next.thread.filter((m) => m.from === "team").length;
@@ -129,19 +139,23 @@ export default function Thread({
           id: requestId,
           signal: aborted.current.signal,
         });
-        if (!aborted.current.signal.aborted) hear.current.onUnread(read.count);
+        if (current()) hear.current.onUnread(read.count);
       }
     } catch (error) {
-      if (aborted.current.signal.aborted) return;
-      setLoad({ status: "error", error: failure(error) });
+      if (!current()) return;
+      const failed = failure(error);
+      setLoad({ status: "error", error: failed });
+      if (failed.kind === "identity") tell(failed.code);
     }
-  }, [apiBase, projectKey, identity, locale, requestId]);
+  }, [apiBase, projectKey, identity, locale, requestId, tell]);
 
   // The thread is read on mount and the stream runs until it unmounts (close, back).
   useEffect(() => {
     const controller = new AbortController();
     aborted.current = controller;
     seen.current = null;
+    heard.current.clear();
+    reported.current = false;
     void read();
     void streamRequests({
       apiBase,
@@ -153,13 +167,28 @@ export default function Thread({
         if (event.type === "unread") hear.current.onUnread(event.count);
         else if (event.type === "updated") {
           if (event.id === requestId) void read();
-          else if (event.unread > 0)
-            hear.current.onReply({ requestId: event.id });
+          else {
+            const before = heard.current.get(event.id) ?? 0;
+            heard.current.set(event.id, event.unread);
+            if (event.unread > before)
+              hear.current.onReply({ requestId: event.id });
+          }
+        } else {
+          // The token expired (`expired`) or was refused (401, 403): the thread says so.
+          const code =
+            event.type === "expired"
+              ? "intake.errors.identity-expired"
+              : `http-${event.status}`;
+          setLoad({
+            status: "error",
+            error: new IntakeError("identity", code),
+          });
+          tell(code);
         }
       },
     });
     return () => controller.abort();
-  }, [apiBase, projectKey, identity, requestId, read]);
+  }, [apiBase, projectKey, identity, requestId, read, tell]);
 
   const errorText = (error: IntakeError) => {
     if (error.code.endsWith("reopen-expired")) return t.errors.reopenExpired;

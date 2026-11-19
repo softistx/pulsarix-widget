@@ -138,7 +138,9 @@ Give the widget the token your server signed for the signed-in user (`data-ident
 `identity` in `init` / `mount`, or `PulsarixWidget.identify(token)` after sign-in; call
 `identify(null)` at sign-out). The secret that signs the token stays on your server and never
 reaches the browser; the widget only sends the token, in the `x-pulsarix-identity` header, and
-never in a URL. A malformed token is ignored.
+never in a URL. A malformed token is ignored. A token given with `identify()` or `mount({ identity })`
+is kept in the widget's memory and is not written to the page; a token in `data-identity` is an
+attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
 
 - Without a token the dialog is today's form, with no tabs.
 - With one, the dialog has two tabs, New request and My requests. My requests is one list with
@@ -152,6 +154,12 @@ never in a URL. A malformed token is ignored.
 - While a thread is open the widget reads `GET /public/live/requests` with `fetch` (the identity in
   the header; an `EventSource` cannot send one) so a team reply appears at once, and stops reading
   when the thread closes. The page's CSP needs `connect-src` for the widget's API origin only.
+- **Expired or refused token**: when the API refuses the token (a 401 on a read, a 401 or 403 on
+  the live stream) or the stream ends with `expired`, the list or the open thread shows the session-expired message and the page hears `pulsarix:error` once with the code
+  (`intake.errors.identity-invalid`,
+  `intake.errors.identity-expired` or `http-<status>`). Call `identify(newToken)` to sign in again.
+  The live stream reconnects after a drop with a pause that doubles up to 30 s, and never after
+  `expired`, a 401, 403, 404 or 429.
 - **E-mails about my requests**: a switch at the foot of My requests, on or off as the API
   says (`emailsOn`). It flips at once and is sent to the API (`setRequestEmails`); if that fails it
   goes back with a message. The choice applies to every request of the reporter under your key.

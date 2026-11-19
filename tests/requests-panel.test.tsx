@@ -68,6 +68,7 @@ function answer(nodes: unknown[], extra: object = {}, status = 200) {
   }) as unknown as typeof fetch;
 }
 
+let errors: { code: string }[] = [];
 const props = (identity: string | null) => ({
   messages: MESSAGES.en,
   locale: "en" as const,
@@ -79,11 +80,12 @@ const props = (identity: string | null) => ({
   identity,
   onOpenChange: () => {},
   onSubmitted: () => {},
-  onError: () => {},
+  onError: (d: { code: string }) => errors.push(d),
 });
 
 beforeEach(() => {
   calls = [];
+  errors = [];
 });
 afterEach(() => {
   cleanup();
@@ -183,5 +185,96 @@ describe("My requests", () => {
     );
     await screen.findByText(/Your session expired/);
     expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
+  });
+
+  test("a refused identity tells the page", async () => {
+    answer([], {}, 401);
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    await screen.findByText(/Your session expired/);
+    expect(errors).toEqual([{ code: "intake.errors.identity-invalid" }]);
+  });
+
+  test("a row is named by its title, state and new replies", async () => {
+    answer([row("r1", "Billing question", 3)]);
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    const button = await screen.findByRole("button", {
+      name: /Open request: Billing question/,
+    });
+    expect(button.getAttribute("aria-label")).toMatch(/Received/);
+    expect(button.getAttribute("aria-label")).toMatch(/3/);
+  });
+
+  test("each tab controls a real tabpanel that it labels", async () => {
+    answer([]);
+    render(<App {...props("a.b")} open />);
+    const tabs = await screen.findAllByRole("tab");
+    for (const tab of tabs) {
+      const panel = document.getElementById(
+        tab.getAttribute("aria-controls") ?? "",
+      );
+      expect(panel?.getAttribute("role")).toBe("tabpanel");
+      expect(panel?.getAttribute("aria-labelledby")).toBe(tab.id);
+    }
+  });
+
+  test("the unread count in the tab is announced once", async () => {
+    answer([row("r1", "Billing question", 2)]);
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    await screen.findByRole("button", { name: /Billing question/ });
+    const tab = screen.getByRole("tab", { name: /My requests/ });
+    await waitFor(() => expect(tab.textContent).toMatch(/2/));
+    expect(tab.querySelector('[aria-hidden="true"]')?.textContent).toBe("2");
+    expect(tab.textContent?.match(/2/g)).toHaveLength(2);
+  });
+
+  test("Show more reads the next page with its cursor and appends it", async () => {
+    const pages: Array<string | null> = [];
+    globalThis.fetch = (async (_url: unknown, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      if (body.id === "widgetConfig")
+        return new Response(
+          JSON.stringify({
+            data: { widgetConfig: { name: "Shop", attachments: true } },
+          }),
+        );
+      const after = (body.variables.after as string | null) ?? null;
+      pages.push(after);
+      const first = after === null;
+      return new Response(
+        JSON.stringify({
+          data: {
+            myRequests: {
+              nodes: first
+                ? [row("r1", "First page")]
+                : [row("r2", "Second page")],
+              counts: { open: 2, resolved: 0, declined: 0, all: 2 },
+              unread: 0,
+              emailsOn: true,
+              endCursor: first ? "c1" : null,
+              hasNextPage: first,
+            },
+          },
+        }),
+      );
+    }) as unknown as typeof fetch;
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    await screen.findByRole("button", { name: /First page/ });
+    await userEvent.click(screen.getByRole("button", { name: "Show more" }));
+    await screen.findByRole("button", { name: /Second page/ });
+    expect(screen.getByRole("button", { name: /First page/ })).toBeTruthy();
+    expect(pages).toEqual([null, "c1"]);
+    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
   });
 });

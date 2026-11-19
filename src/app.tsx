@@ -132,6 +132,7 @@ export function App({
             headerExtra={tabs}
             onUnread={setUnread}
             onReply={onReply}
+            onError={onError}
             onErase={onErase}
             onClose={() => onOpenChange(false)}
             onNewRequest={() => {

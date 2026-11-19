@@ -3,13 +3,7 @@ import type { Locale } from "../config";
 import type { Messages } from "../messages";
 import type { PublicState, RequestSummary } from "./api";
 import { REQUESTS_MESSAGES } from "./messages";
-
-const STATE_TONE = {
-  received: "neutral",
-  inProgress: "info",
-  resolved: "success",
-  declined: "warning",
-} as const satisfies Record<PublicState, string>;
+import { STATE_TONE } from "./state-tone";
 
 export interface RequestListProps {
   messages: Messages;
@@ -51,7 +45,13 @@ export function RequestList({
         >
           <button
             type="button"
-            aria-label={text.open(request.title)}
+            aria-label={[
+              text.open(request.title),
+              text.states[request.publicState],
+              request.unread > 0 ? text.newReplies(request.unread) : null,
+            ]
+              .filter(Boolean)
+              .join(", ")}
             onClick={() => onOpen(request)}
             className="block w-full cursor-pointer rounded-lg text-left"
           >
