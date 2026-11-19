@@ -1,6 +1,3 @@
-[install.scopes]
-"@softistx" = { url = "https://npm.softistx.com/", token = "$NPM_REGISTRY_TOKEN" }
-
 [test]
 # happy-dom for the component specs (tests/setup.ts).
 preload = ["./tests/setup.ts"]

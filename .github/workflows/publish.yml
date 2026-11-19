@@ -1,0 +1,49 @@
+name: Publish
+
+# Publishes @softistx/pulsarix-widget to npmjs (public). Runs only from a tag, a
+# published release or a manual dispatch, never on a push to a branch or a PR.
+# The release owner bumps `version` in a PR, then tags an up-to-date `develop`
+# commit (`git tag v<x.y.z> && git push origin v<x.y.z>`). CI never tags.
+# scripts/publish.ts skips a version already on npm, so a rerun does nothing.
+on:
+  push:
+    tags: ["v*", "**@*"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Only a commit already on develop publishes.
+      - name: Require the commit on develop
+        run: |
+          git fetch --no-tags origin develop
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/develop || { echo "::error::$GITHUB_SHA is not on develop"; exit 1; }
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      # Lint, build, typecheck, unit tests and the loader size budget (the artifact checks).
+      - run: bun run verify
+      - name: Publish
+        run: bun run release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
