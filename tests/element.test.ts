@@ -21,14 +21,19 @@ describe("mount", () => {
     expect(ready.length).toBe(1);
   });
 
-  test("identify sets and clears the identity attribute; a malformed token reads as none", () => {
+  test("identify keeps the token out of the DOM; a malformed token reads as none; data-identity still works", () => {
     handle = mount({ projectKey: "pk_live_abc", identity: "a.b" });
-    expect(handle.element.getAttribute("identity")).toBe("a.b");
+    expect(handle.element.hasAttribute("identity")).toBe(false);
     expect(handle.element.config.identity).toBe("a.b");
     handle.identify("c.d");
+    expect(handle.element.hasAttribute("identity")).toBe(false);
     expect(handle.element.config.identity).toBe("c.d");
     handle.identify("not a token");
     expect(handle.element.config.identity).toBeNull();
+    handle.identify(null);
+    expect(handle.element.config.identity).toBeNull();
+    handle.element.setAttribute("identity", "e.f");
+    expect(handle.element.config.identity).toBe("e.f");
     handle.identify(null);
     expect(handle.element.hasAttribute("identity")).toBe(false);
   });

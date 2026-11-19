@@ -1,7 +1,12 @@
 import { adoptStyles } from "@softistx/material/embed";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
-import { OBSERVED_ATTRIBUTES, readConfig, type WidgetConfig } from "./config";
+import {
+  identityOf,
+  OBSERVED_ATTRIBUTES,
+  readConfig,
+  type WidgetConfig,
+} from "./config";
 import widgetCss from "./generated/widget-css";
 import { MESSAGES } from "./messages";
 import { themeCssFor, themeNameFor } from "./theme";
@@ -35,8 +40,17 @@ export class PulsarixWidgetElement extends HTMLElement {
   #media: MediaQueryList | null = null;
   #onScheme = () => this.#render();
 
+  /**
+   * The token given by `identify()` / `mount({ identity })`. It is kept here, not written as an
+   * attribute, so it does not sit in the page's DOM; only a declarative `data-identity` does.
+   */
+  #identity: string | null = null;
+
   get config(): WidgetConfig {
-    return readConfig((name) => this.getAttribute(name));
+    const config = readConfig((name) => this.getAttribute(name));
+    return this.#identity
+      ? { ...config, identity: identityOf(this.#identity) ?? config.identity }
+      : config;
   }
 
   get isOpen(): boolean {
@@ -80,8 +94,10 @@ export class PulsarixWidgetElement extends HTMLElement {
    * (on the host's sign-out): the dialog then shows or drops New request and My requests.
    */
   identify(token: string | null) {
-    if (token) this.setAttribute("identity", token);
-    else this.removeAttribute("identity");
+    this.#identity = token || null;
+    // Signing out drops a declarative `data-identity` too.
+    if (!token) this.removeAttribute("identity");
+    this.#render();
   }
 
   open() {
@@ -224,7 +240,7 @@ export function mount(options: MountOptions): WidgetHandle {
     element.setAttribute("prefill-title", options.prefill.title);
   if (options.metadata)
     element.setAttribute("metadata", JSON.stringify(options.metadata));
-  if (options.identity) element.setAttribute("identity", options.identity);
+  if (options.identity) element.identify(options.identity);
   if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {

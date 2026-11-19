@@ -26,12 +26,15 @@ export function useRequestList({
   identity,
   locale,
   onUnread,
+  onError,
 }: {
   apiBase: string | null;
   projectKey: string | null;
   identity: string;
   locale: Locale;
   onUnread: (count: number) => void;
+  /** The identity was refused or expired. */
+  onError?: (detail: { code: string }) => void;
 }) {
   const [filter, setFilter] = useState<RequestFilter>("OPEN");
   const [counts, setCounts] = useState<RequestCounts | null>(null);
@@ -49,6 +52,8 @@ export function useRequestList({
   const aborted = useRef<AbortController | null>(null);
   const unread = useRef(onUnread);
   unread.current = onUnread;
+  const fail = useRef(onError);
+  fail.current = onError;
 
   const read = useCallback(
     async (after: string | null) => {
@@ -82,13 +87,12 @@ export function useRequestList({
         setLoad({ status: "ready" });
       } catch (error) {
         if (controller.signal.aborted) return;
-        setLoad({
-          status: "error",
-          error:
-            error instanceof IntakeError
-              ? error
-              : new IntakeError("unknown", "unknown"),
-        });
+        const failed =
+          error instanceof IntakeError
+            ? error
+            : new IntakeError("unknown", "unknown");
+        setLoad({ status: "error", error: failed });
+        if (failed.kind === "identity") fail.current?.({ code: failed.code });
       } finally {
         if (!controller.signal.aborted) setPaging(false);
       }

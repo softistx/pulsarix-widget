@@ -17,6 +17,9 @@ let detail: Record<string, unknown>;
 let list: Record<string, unknown>[];
 let failWith: { id: string; status: number; code: string } | null;
 let streams: { identity: string | null; signal: AbortSignal | null }[];
+let liveStatus: number | null;
+let errors: { code: string }[];
+let gate: { id: string; release: Promise<void> } | null;
 let pushLive: ((text: string) => void) | null;
 
 const message = (id: string, from: string, body: string, files = []) => ({
@@ -79,6 +82,7 @@ function install() {
   globalThis.fetch = (async (url: string, init: RequestInit) => {
     const headers = (init.headers ?? {}) as Record<string, string>;
     if (String(url).includes("/public/live/requests")) {
+      if (liveStatus) return new Response("no", { status: liveStatus });
       streams.push({
         identity: headers["x-pulsarix-identity"] ?? null,
         signal: init.signal ?? null,
@@ -101,6 +105,14 @@ function install() {
     }
     const body = JSON.parse(String(init.body));
     calls.push({ id: body.id, variables: body.variables });
+    if (gate && gate.id === body.id) {
+      // Only the first read waits; it answers with the thread as it was then.
+      const held = gate;
+      gate = null;
+      const snapshot = detail;
+      await held.release;
+      return new Response(JSON.stringify({ data: { [body.id]: snapshot } }));
+    }
     const ok = (data: object) =>
       new Response(JSON.stringify({ data: { [body.id]: data } }));
     if (failWith && failWith.id === body.id)
@@ -173,7 +185,7 @@ const props = () => ({
   open: true,
   onOpenChange: () => {},
   onSubmitted: () => {},
-  onError: () => {},
+  onError: (d: { code: string }) => errors.push(d),
   onReply: (d: unknown) => replies.push(d),
   onUnreadChange: (d: unknown) => unreads.push(d),
 });
@@ -196,6 +208,9 @@ beforeEach(() => {
   puts = [];
   streams = [];
   pushLive = null;
+  liveStatus = null;
+  errors = [];
+  gate = null;
   replies = [];
   unreads = [];
   failWith = null;
@@ -435,5 +450,91 @@ describe("request thread", () => {
     );
     await screen.findByRole("button", { name: /Open request/ });
     expect(streams).toHaveLength(0);
+  });
+
+  test("an expired token ends the stream, shows the identity error and tells the page", async () => {
+    await openThread();
+    await screen.findByText("Under Account, then Billing.");
+    await waitFor(() => expect(pushLive).not.toBeNull());
+    pushLive?.("event: expired\ndata: {}\n\n");
+    await screen.findByText(/Your session expired/);
+    expect(errors).toEqual([{ code: "intake.errors.identity-expired" }]);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(streams).toHaveLength(1);
+  });
+
+  test("a stream refused with 401 shows the identity error and tells the page", async () => {
+    liveStatus = 401;
+    await openThread();
+    await screen.findByText(/Your session expired/);
+    expect(errors).toEqual([{ code: "http-401" }]);
+  });
+
+  test("a thread read refused for its identity tells the page", async () => {
+    failWith = { id: "request", status: 401, code: "identity-invalid" };
+    await openThread();
+    await screen.findByText(/Your session expired/);
+    expect(errors).toEqual([{ code: "intake.errors.identity-invalid" }]);
+  });
+
+  test("a thread that cannot be read says so and offers no composer", async () => {
+    failWith = { id: "request", status: 503, code: "unavailable" };
+    await openThread();
+    await screen.findByText(/busy right now/);
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  test("a failed reply keeps the typed text and shows the error", async () => {
+    await openThread();
+    await screen.findByText("Under Account, then Billing.");
+    failWith = { id: "replyToRequest", status: 429, code: "rate-limited" };
+    const box = await screen.findByRole("textbox");
+    await userEvent.type(box, "Hello again");
+    await userEvent.click(screen.getByRole("button", { name: /Send/ }));
+    await screen.findByText(/Too many requests/);
+    expect((box as HTMLTextAreaElement).value).toBe("Hello again");
+  });
+
+  test("an older read that lands late cannot overwrite a newer one", async () => {
+    let release = () => {};
+    gate = {
+      id: "request",
+      release: new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+    };
+    await openThread();
+    await waitFor(() => expect(pushLive).not.toBeNull());
+    // The first read is held; a newer one answers with the team's second message.
+    detail = {
+      ...detail,
+      thread: [
+        ...(detail.thread as unknown[]),
+        message("m2", "team", "Newest answer."),
+      ],
+    };
+    pushLive?.(
+      'event: request.updated\ndata: {"id":"r2","publicState":"received","unread":1}\n\n',
+    );
+    await screen.findByText("Newest answer.");
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("Newest answer.")).toBeTruthy();
+  });
+
+  test("a reply in another request is heard only when its unread count grows", async () => {
+    await openThread();
+    await waitFor(() => expect(pushLive).not.toBeNull());
+    const other = (unread: number) =>
+      `event: request.updated\ndata: {"id":"r9","publicState":"received","unread":${unread}}\n\n`;
+    pushLive?.(other(1));
+    await waitFor(() => expect(replies).toContainEqual({ requestId: "r9" }));
+    replies.length = 0;
+    pushLive?.(other(1));
+    pushLive?.(other(0));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(replies).toHaveLength(0);
+    pushLive?.(other(1));
+    await waitFor(() => expect(replies).toHaveLength(1));
   });
 });
