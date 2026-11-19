@@ -180,3 +180,28 @@ export function markRequestRead({
     variables: { publicKey, id },
   });
 }
+
+/** The e-mail choice: applies to every request of the identity under this key. */
+export function setRequestEmails({
+  publicKey,
+  on,
+  ...rest
+}: CallBase & { on: boolean }): Promise<boolean> {
+  return publicCall<boolean>({
+    ...rest,
+    id: "setRequestEmails",
+    variables: { publicKey, on },
+  });
+}
+
+/** Erases every request of the identity under this key; answers how many went. */
+export function eraseMyData({
+  publicKey,
+  ...rest
+}: CallBase): Promise<{ requests: number }> {
+  return publicCall<{ requests: number }>({
+    ...rest,
+    id: "eraseMyData",
+    variables: { publicKey },
+  });
+}

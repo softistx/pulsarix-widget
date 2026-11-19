@@ -15,6 +15,7 @@ export type WidgetEvent =
   | "pulsarix:submit"
   | "pulsarix:reply"
   | "pulsarix:unread"
+  | "pulsarix:erase"
   | "pulsarix:error";
 
 /**
@@ -140,6 +141,7 @@ export class PulsarixWidgetElement extends HTMLElement {
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
         onReply={(detail) => this.#emit("pulsarix:reply", detail)}
         onUnreadChange={(detail) => this.#emit("pulsarix:unread", detail)}
+        onErase={(detail) => this.#emit("pulsarix:erase", detail)}
         onError={(detail) => this.#emit("pulsarix:error", detail)}
       />,
     );

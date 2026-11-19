@@ -222,6 +222,7 @@ interface Vars {
   filter?: string;
   first?: number;
   after?: string;
+  on?: boolean;
   id?: string;
   input?: { body?: string; files?: { name: string }[] };
 }
@@ -240,8 +241,12 @@ export function createRequestsStub() {
       write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   };
   let counter = 100;
+  /** The e-mail choice, per stub (so per server), shared by every identity. */
+  let emailsOn = true;
+  const calls = { setRequestEmails: [] as boolean[], eraseMyData: 0 };
 
   return {
+    calls,
     stats,
     streamCount: () => streams.size,
     /** A team reply lands: the open streams hear `request.updated` and `unread`. */
@@ -318,10 +323,29 @@ export function createRequestsStub() {
         "resolveRequest",
         "reopenRequest",
         "markRequestRead",
+        "setRequestEmails",
+        "eraseMyData",
       ];
       if (!names.includes(op)) return null;
       if (!identity || identity.startsWith("expired")) return refused();
       const rows = rowsFor(identity);
+      // `limited.token` gets the API's 429 on the two privacy writes (the error states).
+      if (
+        (op === "setRequestEmails" || op === "eraseMyData") &&
+        identity.startsWith("limited")
+      )
+        return failure(429, "rate-limited");
+      if (op === "setRequestEmails") {
+        emailsOn = variables.on === true;
+        calls.setRequestEmails.push(emailsOn);
+        return Response.json({ data: { setRequestEmails: true } });
+      }
+      if (op === "eraseMyData") {
+        calls.eraseMyData++;
+        const requests = rows.length;
+        if (rows === all) all.length = 0;
+        return Response.json({ data: { eraseMyData: { requests } } });
+      }
       if (op === "myRequests") {
         const open = rows.filter((r) => matches("OPEN", r.publicState)).length;
         const resolved = rows.filter(
@@ -347,7 +371,7 @@ export function createRequestsStub() {
               nodes: page.map(summary),
               counts: { open, resolved, declined, all: rows.length },
               unread: unreadOf(rows),
-              emailsOn: true,
+              emailsOn,
               endCursor: page.at(-1)?.id ?? null,
               hasNextPage: start + page.length < sorted.length,
             },
@@ -367,7 +391,7 @@ export function createRequestsStub() {
               canReply: row.publicState !== "declined",
               canReopen: row.publicState === "resolved" && row.canReopen,
               resolvedAt: row.resolvedAt,
-              emailsOn: true,
+              emailsOn,
             },
           },
         });

@@ -15,7 +15,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@softistx/material": "^3.249.0",
+    "@softistx/material": "^3.250.1",
     "@softistx/material-core": "^0.95.0",
     "@tailwindcss/cli": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
@@ -38,13 +38,14 @@
     "typecheck": "bun check",
     "test": "bun test",
     "size": "bun scripts/check-size.ts",
-    "test:browser": "bun scripts/leak-test.ts && bun scripts/screenshot-test.ts && bun scripts/files-test.ts && bun scripts/thread-test.ts",
+    "test:browser": "bun scripts/leak-test.ts && bun scripts/screenshot-test.ts && bun scripts/files-test.ts && bun scripts/thread-test.ts && bun scripts/privacy-test.ts",
     "fixture": "bun scripts/serve-fixture.ts",
     "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size",
     "release": "bun scripts/publish.ts",
     "capture": "bun scripts/capture.ts",
     "capture:requests": "bun scripts/capture-requests.ts",
-    "capture:thread": "bun scripts/capture-thread.ts"
+    "capture:thread": "bun scripts/capture-thread.ts",
+    "capture:privacy": "bun scripts/capture-privacy.ts"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",

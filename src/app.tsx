@@ -52,6 +52,8 @@ export interface AppProps {
   onSubmitted: (detail: SubmitDetail) => void;
   /** A team reply arrived (`pulsarix:reply`), heard while a thread is open. */
   onReply?: (detail: { requestId: string }) => void;
+  /** "Delete my data" erased the reporter's requests (`pulsarix:erase`). */
+  onErase?: (detail: { requests: number }) => void;
   /** The unread count changed (`pulsarix:unread`). */
   onUnreadChange?: (detail: { count: number }) => void;
   onError: (detail: { code: string }) => void;
@@ -86,6 +88,7 @@ export function App({
   onSubmitted,
   onReply,
   onUnreadChange,
+  onErase,
   onError,
   minFillMs,
   retryDelayMs,
@@ -171,6 +174,7 @@ export function App({
             headerExtra={tabs}
             onUnread={setUnread}
             onReply={onReply}
+            onErase={onErase}
             onClose={() => onOpenChange(false)}
             onNewRequest={() => {
               setEditing(false);

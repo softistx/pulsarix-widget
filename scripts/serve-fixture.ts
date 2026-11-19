@@ -5,6 +5,7 @@
  *   /dist/*    the build output
  *   /strict    the same page under a strict CSP (no inline script, no `blob:` image source)
  *   /strict-identified  the strict page with an identity token
+ *   /strict-limited  the same, its token gets a 429 on the e-mail choice and "Delete my data"
  *   /identified, /identified-empty, /identified-expired  the page with an identity token (six
  *              requests, none, a refused token); `myRequests` is stubbed beside the intake
  *   GET /public/live/requests  the live stream stub; GET /__live (open, opened, closed streams)
@@ -30,6 +31,7 @@ const IDENTITIES: Record<string, string> = {
   "/identified-empty": "empty.token",
   "/identified-expired": "expired.token",
   "/strict-identified": "fixture.token",
+  "/strict-limited": "limited.token",
 };
 
 export function serveFixture(port = 0) {
@@ -51,6 +53,8 @@ export function serveFixture(port = 0) {
           open: requests.streamCount(),
           ...requests.stats,
         });
+      // What the privacy writes (the e-mail choice, erase) did, for the specs.
+      if (url.pathname === "/__privacy") return Response.json(requests.calls);
       if (url.pathname === "/__team-reply" && request.method === "POST") {
         const { id, body } = (await request.json()) as {
           id: string;

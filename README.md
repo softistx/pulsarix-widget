@@ -158,6 +158,16 @@ never in a URL. A malformed token is ignored.
 - While a thread is open the widget reads `GET /public/live/requests` with `fetch` (the identity in
   the header; an `EventSource` cannot send one) so a team reply appears at once, and stops reading
   when the thread closes. The page's CSP needs `connect-src` for the widget's API origin only.
+- **E-mails about my requests**: a switch at the foot of My requests, on or off as the API
+  says (`emailsOn`). It flips at once and is sent to the API (`setRequestEmails`); if that fails it
+  goes back with a message. The choice applies to every request of the reporter under your key.
+- **Delete my data**: a button at the foot of My requests opens a confirmation (Cancel on the
+  left, Delete on the right). Confirming erases every request of the reporter under your key
+  (`eraseMyData`), with their replies and files; the list is emptied, the dialog says how many
+  were erased and the unread count goes to 0. A refusal (expired token, rate limit) keeps the
+  confirmation open with the reason. Erasing cannot be undone. The page hears
+  `pulsarix:erase` with `detail: { requests }`, the number of requests erased, followed by
+  `pulsarix:unread` with `{ count: 0 }`.
 - A token the API refuses (expired or forged) shows a message in My requests; reload the page
   to get a fresh one.
 - Everyone (identified or not) can give an optional type (bug, question, suggestion) and an
@@ -193,7 +203,8 @@ so a listener added right after `mount()` hears it; it fires even when the key i
 `pulsarix:close`, `pulsarix:submit` (`detail: { reportId, files }`, one `{ name, role, type, size,
 uploaded }` per file sent with the report), `pulsarix:reply` (`detail: { requestId }`, the team
 replied to one of the reporter's requests), `pulsarix:unread` (`detail: { count }`, the reporter's
-unread replies changed) and `pulsarix:error`
+unread replies changed), `pulsarix:erase` (`detail: { requests }`, the reporter erased their
+data) and `pulsarix:error`
 (`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
 
 ```ts
