@@ -1,79 +1,16 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import {
-  fetchWidgetConfig,
-  IntakeError,
-  type ReportInput,
-  submitReport,
-  type WidgetProject,
-} from "../api";
-import type { Locale, MetadataEntry } from "../config";
-import { fitScreenshot, MAX_TOTAL_BYTES, screenshotName } from "../files/rules";
+import { useEffect, useRef, useState } from "react";
+import { IntakeError, submitReport } from "../api";
+import { MAX_TOTAL_BYTES, screenshotName } from "../files/rules";
 import { AttachmentsSection } from "../files/section";
-import { type PutResult, putFile, type UploadFailure } from "../files/upload";
 import { type Entry, useAttachments } from "../files/use-attachments";
-import type { Messages } from "../messages";
-import { type ReportValues, resolverFor } from "../validation";
 import { Confirmation, type UploadOutcome } from "./confirmation";
 import { Form } from "./form";
+import { buildInput, collectUploads, uploadAll } from "./send";
+import { MIN_FILL_MS, type ReportFlowProps } from "./types";
+import { useProject } from "./use-project";
+import { useReportForm } from "./use-report-form";
 
-/** The API refuses a report sent faster than this after the form opened (`MIN_FILL_MS`). */
-export const MIN_FILL_MS = 3_000;
-
-/** What `pulsarix:submit` carries: the report, and what became of each file. */
-export interface SubmitDetail {
-  reportId: string;
-  files: {
-    name: string;
-    role: "screenshot" | "file";
-    type: string;
-    size: number;
-    uploaded: boolean;
-  }[];
-}
-
-export interface ReportFlowProps {
-  messages: Messages;
-  locale: Locale;
-  projectKey: string | null;
-  apiBase: string | null;
-  onSubmitted: (detail: SubmitDetail) => void;
-  onError: (detail: { code: string }) => void;
-  onClose: () => void;
-  /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
-  onDone?: (done: boolean) => void;
-  /** Told when the screenshot editor opens or closes (the dialog widens its pane). */
-  onEditing?: (editing: boolean) => void;
-  /** Overridable for specs; the API's own minimum otherwise. */
-  minFillMs?: number;
-  /** The screenshot's mask-text option starts on (`data-mask-text="true"`). */
-  maskText?: boolean;
-  /** `data-attachments="false"` turns the screenshot and file controls off. */
-  attachments?: boolean;
-  /** Told whether the controls show (the key's own switch is known once its config is read). */
-  onControls?: (shown: boolean) => void;
-  /** Wait before an upload's one retry; specs shorten it. */
-  retryDelayMs?: number;
-  /** Starting values of the form, used when there is no kept draft. */
-  prefill?: { email: string; title: string };
-  /** Flat strings stored with the report. */
-  metadata?: MetadataEntry[];
-  /** The integrator's privacy page, linked in the privacy line. */
-  privacyUrl?: string | null;
-  /**
-   * What was typed, kept by the owner of the dialog: closing the dialog unmounts the flow, and
-   * a close by accident must not lose the text. Cleared once the report is sent.
-   */
-  draft?: { current: ReportValues | null };
-  /** The host's identity token: the report is the reporter's own and shows in My requests. */
-  identity?: string | null;
-  /** Rendered in the dialog's header, under the description (the identified reporter's tabs). */
-  headerExtra?: ReactNode;
-  /** The key's project, when the owner of the dialog already read it (a tab switch remounts this). */
-  project?: WidgetProject | null;
-  onProject?: (project: WidgetProject | null) => void;
-  /** Told once a report is saved, so that a list showing My requests can refresh. */
-}
+export { MIN_FILL_MS, type ReportFlowProps, type SubmitDetail } from "./types";
 
 /**
  * The dialog's content: the report form, then the confirmation. It lives inside the
@@ -115,34 +52,15 @@ export function ReportFlow({
     return () => controller.abort();
   }, []);
   const [failure, setFailure] = useState<IntakeError | null>(null);
-  // The key's own config (`attachmentsEnabled`, the project's name): unknown counts as off, so
-  // the controls never flash. They show once the config says so; an API that does not send it,
-  // or a failed config read, leaves them off (v1 behaviour, see `fetchWidgetConfig`).
-  const [own, setOwn] = useState<{
-    read: boolean;
-    config: WidgetProject | null;
-  }>({
-    read: project !== undefined && project !== null,
-    config: project ?? null,
+  const { projectName, controls } = useProject({
+    apiBase,
+    projectKey,
+    locale,
+    project,
+    attachments,
+    onProject,
+    onControls,
   });
-  const projectName = own.config?.projectName ?? null;
-  const controls = attachments && (own.config?.attachments ?? false);
-  useEffect(() => onControls?.(controls), [controls, onControls]);
-  useEffect(() => {
-    if (!projectKey || !apiBase || own.read) return;
-    const controller = new AbortController();
-    void fetchWidgetConfig({
-      apiBase,
-      publicKey: projectKey,
-      locale,
-      signal: controller.signal,
-    }).then((config) => {
-      if (controller.signal.aborted) return;
-      setOwn({ read: true, config });
-      onProject?.(config);
-    });
-    return () => controller.abort();
-  }, [apiBase, projectKey, locale, own.read, onProject]);
   // The flattened export of the annotated screenshot (W2c sends it); nothing else of the capture lives on.
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [sent, setSent] = useState<{
@@ -160,31 +78,11 @@ export function ReportFlow({
   useEffect(() => {
     if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
   }, [failure]);
-  const resolver = useMemo(() => resolverFor(messages.errors), [messages]);
-  const { control, handleSubmit, formState, watch } = useForm<ReportValues>({
-    defaultValues: draft?.current ?? {
-      title: prefill?.title ?? "",
-      description: "",
-      email: prefill?.email ?? "",
-      type: "",
-      impact: "",
-    },
-    resolver,
+  const { control, handleSubmit, formState } = useReportForm({
+    messages,
+    draft,
+    prefill,
   });
-  // Every keystroke lands in the kept draft; the confirmation clears it.
-  useEffect(() => {
-    if (!draft) return;
-    const subscription = watch((values) => {
-      draft.current = {
-        title: values.title ?? "",
-        description: values.description ?? "",
-        email: values.email ?? "",
-        type: values.type ?? "",
-        impact: values.impact ?? "",
-      };
-    });
-    return () => subscription.unsubscribe();
-  }, [draft, watch]);
 
   useEffect(() => {
     if (sent) done.current?.focus();
@@ -205,54 +103,20 @@ export function ReportFlow({
     const wait = minFillMs - (Date.now() - openedAt.current);
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
     if (aborted.current.signal.aborted) return;
-    // What goes up besides the text. A screenshot too big for 5 MB is squeezed once, or left out.
-    const toSend: { id: string; role: "screenshot" | "file"; file: File }[] =
-      [];
-    const leftOut: UploadOutcome[] = [];
-    if (controls && screenshot) {
-      const fitted = await fitScreenshot(screenshot);
-      if (fitted)
-        toSend.push({ id: "screenshot", role: "screenshot", file: fitted });
-      else
-        leftOut.push({
-          name: messages.files.screenshot,
-          role: "screenshot",
-          type: screenshot.type,
-          size: screenshot.size,
-          ok: false,
-          reason: "size",
-        });
-    }
-    if (controls)
-      for (const entry of files.ready)
-        toSend.push({ id: entry.id, role: "file", file: entry.file });
-    const nameOf = (item: (typeof toSend)[number]) =>
-      item.role === "screenshot"
-        ? screenshotName(item.file.type)
-        : item.file.name;
-    const input: ReportInput = {
-      title: values.title.trim(),
-      description: values.description.trim(),
-      email: values.email.trim(),
-      // Origin and path only: the query string and the fragment can carry a host page's tokens.
-      // None from a `file://` page or a sandboxed frame, whose origin is the string "null".
-      pageUrl:
-        location.origin === "null"
-          ? undefined
-          : (location.origin + location.pathname).slice(0, 2_048),
+    const { toSend, leftOut } = await collectUploads({
+      controls,
+      screenshot,
+      ready: files.ready,
+      messages,
+    });
+    const input = buildInput({
+      values,
       locale,
-      ...(values.type ? { type: values.type } : {}),
-      ...(values.impact ? { impact: values.impact } : {}),
-      website: honeypot.current?.value ?? "",
+      metadata,
+      honeypot: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,
-      ...(metadata?.length ? { metadata } : {}),
-      files: toSend.map((item) => ({
-        role: item.role,
-        name: nameOf(item),
-        type: item.file.type,
-        size: item.file.size,
-      })),
-    };
+      toSend,
+    });
     try {
       const report = await submitReport({
         apiBase,
@@ -270,36 +134,15 @@ export function ReportFlow({
         setShotRow({ id: "screenshot", file: first.file, progress: 0 });
       for (const item of toSend)
         if (item.id !== "screenshot") progress(item.id, 0);
-      const results: UploadOutcome[] = await Promise.all(
-        toSend.map(async (item, index): Promise<UploadOutcome> => {
-          const ticket = report.files[index];
-          const done = (
-            result: PutResult | { ok: false; reason: UploadFailure },
-          ) => ({
-            name:
-              item.role === "screenshot"
-                ? messages.files.screenshot
-                : item.file.name,
-            role: item.role,
-            type: item.file.type,
-            size: item.file.size,
-            ...result,
-          });
-          if (!ticket || ticket.role !== item.role)
-            return done({ ok: false, reason: "unknown" });
-          return done(
-            await putFile({
-              apiBase,
-              slot: ticket.slot,
-              ticket: ticket.ticket,
-              file: item.file,
-              onProgress: (percent) => progress(item.id, percent),
-              signal: aborted.current.signal,
-              retryDelayMs,
-            }),
-          );
-        }),
-      );
+      const results = await uploadAll({
+        apiBase,
+        report,
+        toSend,
+        messages,
+        onProgress: progress,
+        signal: aborted.current.signal,
+        retryDelayMs,
+      });
       // A close before submitReport resolves aborts it and emits nothing (accepted: the
       // report may not exist). From here on the report is saved: `pulsarix:submit` fires once even if the dialog closed during
       // the PUTs (those were aborted and read as not uploaded); only the confirmation is skipped.
