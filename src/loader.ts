@@ -16,6 +16,9 @@ interface InitOptions {
   launcher?: boolean;
   maskText?: boolean;
   attachments?: boolean;
+  privacyUrl?: string;
+  prefill?: { email?: string; title?: string };
+  metadata?: unknown;
 }
 
 interface Handle {
@@ -23,6 +26,15 @@ interface Handle {
   close(): void;
   destroy(): void;
   on(name: string, cb: (e: CustomEvent) => void): () => void;
+}
+
+function parseJson(text: string | undefined): unknown {
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }
 
 const script = document.currentScript as HTMLScriptElement | null;
@@ -98,5 +110,11 @@ if (data?.projectKey) {
     launcher: data.launcher === "false" ? false : undefined,
     maskText: data.maskText === "true" ? true : undefined,
     attachments: data.attachments === "false" ? false : undefined,
+    privacyUrl: data.privacyUrl,
+    prefill:
+      data.prefillEmail || data.prefillTitle
+        ? { email: data.prefillEmail, title: data.prefillTitle }
+        : undefined,
+    metadata: parseJson(data.metadata),
   });
 }

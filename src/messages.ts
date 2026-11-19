@@ -62,6 +62,8 @@ export interface Messages {
     emailHint: string;
   };
   privacy: string;
+  /** The link text to the integrator's privacy page. */
+  privacyLink: string;
   submit: string;
   /** @deprecated Unused since material 3.239: the busy submit button keeps its label. */
   submitting: string;
@@ -165,6 +167,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     },
     privacy:
       "Your e-mail, if given, the address of this page and your browser are sent with the report.",
+    privacyLink: "Privacy policy",
     submit: "Send report",
     submitting: "Sending...",
     errors: {
@@ -274,6 +277,7 @@ export const MESSAGES: Record<Locale, Messages> = {
     },
     privacy:
       "Votre e-mail, s'il est donné, l'adresse de cette page et votre navigateur sont envoyés avec le signalement.",
+    privacyLink: "Politique de confidentialité",
     submit: "Envoyer",
     submitting: "Envoi...",
     errors: {

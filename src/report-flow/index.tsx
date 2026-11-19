@@ -6,7 +6,7 @@ import {
   type ReportInput,
   submitReport,
 } from "../api";
-import type { Locale } from "../config";
+import type { Locale, MetadataEntry } from "../config";
 import { fitScreenshot, MAX_TOTAL_BYTES, screenshotName } from "../files/rules";
 import { AttachmentsSection } from "../files/section";
 import { type PutResult, putFile, type UploadFailure } from "../files/upload";
@@ -53,6 +53,17 @@ export interface ReportFlowProps {
   onControls?: (shown: boolean) => void;
   /** Wait before an upload's one retry; specs shorten it. */
   retryDelayMs?: number;
+  /** Starting values of the form, used when there is no kept draft. */
+  prefill?: { email: string; title: string };
+  /** Flat strings stored with the report. */
+  metadata?: MetadataEntry[];
+  /** The integrator's privacy page, linked in the privacy line. */
+  privacyUrl?: string | null;
+  /**
+   * What was typed, kept by the owner of the dialog: closing the dialog unmounts the flow, and
+   * a close by accident must not lose the text. Cleared once the report is sent.
+   */
+  draft?: { current: ReportValues | null };
 }
 
 /**
@@ -74,6 +85,10 @@ export function ReportFlow({
   attachments = true,
   onControls,
   retryDelayMs,
+  prefill,
+  metadata,
+  privacyUrl,
+  draft,
 }: ReportFlowProps) {
   const openedAt = useRef(Date.now());
   const honeypot = useRef<HTMLInputElement>(null);
@@ -127,10 +142,26 @@ export function ReportFlow({
     if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
   }, [failure]);
   const resolver = useMemo(() => resolverFor(messages.errors), [messages]);
-  const { control, handleSubmit, formState } = useForm<ReportValues>({
-    defaultValues: { title: "", description: "", email: "" },
+  const { control, handleSubmit, formState, watch } = useForm<ReportValues>({
+    defaultValues: draft?.current ?? {
+      title: prefill?.title ?? "",
+      description: "",
+      email: prefill?.email ?? "",
+    },
     resolver,
   });
+  // Every keystroke lands in the kept draft; the confirmation clears it.
+  useEffect(() => {
+    if (!draft) return;
+    const subscription = watch((values) => {
+      draft.current = {
+        title: values.title ?? "",
+        description: values.description ?? "",
+        email: values.email ?? "",
+      };
+    });
+    return () => subscription.unsubscribe();
+  }, [draft, watch]);
 
   useEffect(() => {
     if (sent) done.current?.focus();
@@ -189,6 +220,7 @@ export function ReportFlow({
       locale,
       website: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,
+      ...(metadata?.length ? { metadata } : {}),
       files: toSend.map((item) => ({
         role: item.role,
         name: nameOf(item),
@@ -246,6 +278,8 @@ export function ReportFlow({
       // report may not exist). From here on the report is saved: `pulsarix:submit` fires once even if the dialog closed during
       // the PUTs (those were aborted and read as not uploaded); only the confirmation is skipped.
       const uploads = [...leftOut, ...results];
+      // The report exists: the draft is spent, whether or not the dialog is still open.
+      if (draft) draft.current = null;
       if (!aborted.current.signal.aborted)
         setSent({ tracking: report.tracking, uploads });
       onSubmitted({
@@ -315,6 +349,7 @@ export function ReportFlow({
       onScreenshot={setScreenshot}
       maskText={maskText}
       onEditing={onEditing}
+      privacyUrl={privacyUrl}
     />
   );
 }

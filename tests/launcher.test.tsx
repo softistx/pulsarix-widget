@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { App } from "../src/app";
 import { MESSAGES } from "../src/messages";
 
@@ -38,5 +40,44 @@ describe("the launcher", () => {
     expect(launcherBox().hidden).toBe(true);
     view.rerender(<App {...props} open={false} />);
     expect(launcherBox().hidden).toBe(false);
+  });
+});
+
+describe("focus", () => {
+  test("opening from the launcher then pressing Escape puts focus back on it", async () => {
+    function Host() {
+      const [open, setOpen] = useState(false);
+      return (
+        <App
+          messages={MESSAGES.en}
+          locale="en"
+          projectKey="pk_live_abc"
+          apiBase="https://pulsarix.test"
+          dark={false}
+          launcher
+          position="bottom-right"
+          open={open}
+          onOpenChange={setOpen}
+          onSubmitted={() => {}}
+          onError={() => {}}
+        />
+      );
+    }
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ data: { widgetConfig: null } }), {
+        status: 200,
+      })) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    render(<Host />);
+    const launcher = await screen.findByRole("button", {
+      name: MESSAGES.en.launcher,
+    });
+    await user.click(launcher);
+    await screen.findByRole("dialog");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(launcher));
+    globalThis.fetch = realFetch;
   });
 });
