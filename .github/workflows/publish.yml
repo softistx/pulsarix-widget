@@ -24,10 +24,6 @@ jobs:
     name: Publish
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 20
-    env:
-      # @softistx/material (a devDependency) is still installed from npm.softistx.com:
-      # bunfig.toml reads this token.
-      NPM_REGISTRY_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:

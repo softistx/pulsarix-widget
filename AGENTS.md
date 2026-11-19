@@ -23,8 +23,8 @@ invariants.
   group = commit sha; only a commit on `develop`) runs `bun run verify`, then `bun run release`
   (`scripts/publish.ts`, secret `NPM_TOKEN`), which skips a version already on npmjs. Check it
   afterwards: `npm view @softistx/pulsarix-widget version`. `publishConfig` is npmjs with public
-  access. Installs of `@softistx/material` still read npm.softistx.com (`bunfig.toml`,
-  `$NPM_REGISTRY_TOKEN`).
+  access. npmjs only, through `publish.yml`: `@softistx/*` installs from registry.npmjs.org
+  too, with no scope override in `bunfig.toml`.
 - `mount()` is a singleton while its element is attached.
 
 ## Develop

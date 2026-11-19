@@ -19,9 +19,6 @@ jobs:
     name: Verify
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 20
-    env:
-      # @softistx/* comes from npm.softistx.com: bunfig.toml reads this token.
-      NPM_REGISTRY_TOKEN: ${{ secrets.NPM_REGISTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
