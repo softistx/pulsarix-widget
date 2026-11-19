@@ -29,6 +29,7 @@ import {
   type RequestSummary,
 } from "./api";
 import { REQUESTS_MESSAGES, type RequestsMessages } from "./messages";
+import Thread from "./thread";
 
 const FILTERS: RequestFilter[] = ["OPEN", "RESOLVED", "DECLINED", "ALL"];
 const COUNT_KEY: Record<RequestFilter, keyof RequestCounts> = {
@@ -54,6 +55,8 @@ export interface RequestsPanelProps {
   headerExtra?: ReactNode;
   /** The unread count over every request, as the API last said it (the launcher's badge). */
   onUnread: (count: number) => void;
+  /** A team reply arrived while a thread was open. */
+  onReply?: (detail: { requestId: string }) => void;
   onClose: () => void;
   /** The "New request" action of the first-use state. */
   onNewRequest: () => void;
@@ -93,6 +96,7 @@ export default function RequestsPanel({
   identity,
   headerExtra,
   onUnread,
+  onReply,
   onClose,
   onNewRequest,
 }: RequestsPanelProps) {
@@ -107,6 +111,8 @@ export default function RequestsPanel({
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [paging, setPaging] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // The request whose thread is open; the list stays mounted behind it, so its filter holds.
+  const [opened, setOpened] = useState<RequestSummary | null>(null);
   const aborted = useRef<AbortController | null>(null);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
@@ -163,7 +169,30 @@ export default function RequestsPanel({
     return () => aborted.current?.abort();
   }, [read, attempt]);
 
+  const stateBadge = (state: PublicState) => (
+    <Badge variant="soft" tone={STATE_TONE[state]}>
+      {text.states[state]}
+    </Badge>
+  );
   const total = counts?.all ?? null;
+  if (opened && apiBase && projectKey)
+    return (
+      <Thread
+        locale={locale}
+        apiBase={apiBase}
+        projectKey={projectKey}
+        identity={identity}
+        requestId={opened.id}
+        title={opened.title}
+        onUnread={onUnread}
+        onReply={(detail) => onReply?.(detail)}
+        onBack={() => {
+          setOpened(null);
+          // The thread may have changed the state, the counts and the unread marks.
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
   return (
     <>
       <DialogHeader>
@@ -240,37 +269,52 @@ export default function RequestsPanel({
               className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-2 p-0"
             >
               {nodes.map((request) => (
-                <li key={request.id} className="min-w-0 rounded-lg bg-card">
-                  <ListRow
-                    unread={request.unread > 0}
-                    title={request.title}
-                    meta={[
-                      date.format(new Date(request.createdAt)),
-                      request.type
-                        ? messages.choices.type[
-                            request.type as keyof typeof messages.choices.type
+                <li
+                  key={request.id}
+                  // A container, so the badge moves by the list's width, not the window's.
+                  className="@container min-w-0 rounded-lg bg-card"
+                >
+                  <button
+                    type="button"
+                    aria-label={text.open(request.title)}
+                    onClick={() => setOpened(request)}
+                    className="block w-full cursor-pointer rounded-lg text-left"
+                  >
+                    <ListRow
+                      unread={request.unread > 0}
+                      title={request.title}
+                      meta={
+                        <>
+                          <span className="@md:hidden">
+                            {stateBadge(request.publicState)}{" "}
+                          </span>
+                          {[
+                            date.format(new Date(request.createdAt)),
+                            request.type
+                              ? messages.choices.type[
+                                  request.type as keyof typeof messages.choices.type
+                                ]
+                              : null,
+                            request.impact
+                              ? messages.choices.impact[
+                                  request.impact as keyof typeof messages.choices.impact
+                                ]
+                              : null,
+                            request.unread > 0
+                              ? text.newReplies(request.unread)
+                              : null,
                           ]
-                        : null,
-                      request.impact
-                        ? messages.choices.impact[
-                            request.impact as keyof typeof messages.choices.impact
-                          ]
-                        : null,
-                      request.unread > 0
-                        ? text.newReplies(request.unread)
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    badge={
-                      <Badge
-                        variant="soft"
-                        tone={STATE_TONE[request.publicState]}
-                      >
-                        {text.states[request.publicState]}
-                      </Badge>
-                    }
-                  />
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </>
+                      }
+                      badge={
+                        <span className="hidden @md:inline-flex">
+                          {stateBadge(request.publicState)}
+                        </span>
+                      }
+                    />
+                  </button>
                 </li>
               ))}
             </ul>

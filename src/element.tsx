@@ -13,6 +13,8 @@ export type WidgetEvent =
   | "pulsarix:open"
   | "pulsarix:close"
   | "pulsarix:submit"
+  | "pulsarix:reply"
+  | "pulsarix:unread"
   | "pulsarix:error";
 
 /**
@@ -136,6 +138,8 @@ export class PulsarixWidgetElement extends HTMLElement {
         position={config.position}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
+        onReply={(detail) => this.#emit("pulsarix:reply", detail)}
+        onUnreadChange={(detail) => this.#emit("pulsarix:unread", detail)}
         onError={(detail) => this.#emit("pulsarix:error", detail)}
       />,
     );

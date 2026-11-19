@@ -15,6 +15,34 @@ export interface RequestsMessages {
   newReplies: (count: number) => string;
   more: string;
   retry: string;
+  /** Opening a request: its thread. */
+  open: (title: string) => string;
+  thread: {
+    back: string;
+    label: string;
+    you: string;
+    team: string;
+    placeholder: string;
+    send: string;
+    attach: string;
+    loading: string;
+    resolve: string;
+    reopen: string;
+    resolvedNote: (date: string) => string;
+    reopenExpired: string;
+    declinedTitle: string;
+    declinedNoReason: string;
+    readOnly: string;
+    attachments: string;
+    needText: string;
+    filesFailed: (names: string) => string;
+    errors: {
+      title: string;
+      declined: string;
+      reopenExpired: string;
+      files: string;
+    };
+  };
   errors: {
     title: string;
     identity: string;
@@ -56,6 +84,37 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       count === 1 ? "1 new reply" : `${count} new replies`,
     more: "Show more",
     retry: "Try again",
+    open: (title) => `Open request: ${title}`,
+    thread: {
+      back: "Back",
+      label: "Conversation",
+      you: "You",
+      team: "Team",
+      placeholder: "Write a reply...",
+      send: "Send",
+      attach: "Attach files",
+      loading: "Loading the conversation...",
+      resolve: "Resolve",
+      reopen: "Reopen",
+      resolvedNote: (date) => `You marked this resolved on ${date}.`,
+      reopenExpired:
+        "This request was resolved more than 30 days ago and can no longer be reopened. Send a new request instead.",
+      declinedTitle: "This request was declined",
+      declinedNoReason: "The team gave no reason.",
+      readOnly: "A declined request is read-only.",
+      attachments: "Attachments",
+      needText: "Write a message to go with your files.",
+      filesFailed: (names) =>
+        `Your reply was sent, but these files did not upload: ${names}.`,
+      errors: {
+        title: "That did not work",
+        declined: "This request was declined: it takes no reply.",
+        reopenExpired:
+          "This request can no longer be reopened (30 days passed).",
+        files:
+          "A file was refused (PNG, JPEG, WebP or PDF, 5 MB each, 3 files).",
+      },
+    },
     errors: {
       title: "Your requests could not be loaded",
       identity:
@@ -96,6 +155,39 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       count === 1 ? "1 nouvelle réponse" : `${count} nouvelles réponses`,
     more: "Afficher plus",
     retry: "Réessayer",
+    open: (title) => `Ouvrir la demande : ${title}`,
+    thread: {
+      back: "Retour",
+      label: "Conversation",
+      you: "Vous",
+      team: "Équipe",
+      placeholder: "Écrire une réponse...",
+      send: "Envoyer",
+      attach: "Joindre des fichiers",
+      loading: "Chargement de la conversation...",
+      resolve: "Résoudre",
+      reopen: "Rouvrir",
+      resolvedNote: (date) =>
+        `Vous avez marqué cette demande comme résolue le ${date}.`,
+      reopenExpired:
+        "Cette demande est résolue depuis plus de 30 jours et ne peut plus être rouverte. Envoyez une nouvelle demande.",
+      declinedTitle: "Cette demande a été refusée",
+      declinedNoReason: "L'équipe n'a donné aucune raison.",
+      readOnly: "Une demande refusée est en lecture seule.",
+      attachments: "Pièces jointes",
+      needText: "Écrivez un message pour accompagner vos fichiers.",
+      filesFailed: (names) =>
+        `Votre réponse est envoyée, mais ces fichiers n'ont pas été transférés : ${names}.`,
+      errors: {
+        title: "Cela n'a pas fonctionné",
+        declined:
+          "Cette demande a été refusée : elle n'accepte pas de réponse.",
+        reopenExpired:
+          "Cette demande ne peut plus être rouverte (30 jours écoulés).",
+        files:
+          "Un fichier a été refusé (PNG, JPEG, WebP ou PDF, 5 Mo chacun, 3 fichiers).",
+      },
+    },
     errors: {
       title: "Vos demandes n'ont pas pu être chargées",
       identity:
