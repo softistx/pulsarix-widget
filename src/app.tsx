@@ -1,16 +1,29 @@
 import {
+  Badge,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
   I18nProvider,
   PortalContainerProvider,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from "@softistx/material/embed";
-import { useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { WidgetProject } from "./api";
 import type { Locale, MetadataEntry, Position } from "./config";
 import type { Messages } from "./messages";
 import { ReportFlow, type SubmitDetail } from "./report-flow";
+import { useUnread } from "./requests/use-unread";
 import { themeNameFor } from "./theme";
 import type { ReportValues } from "./validation";
+
+// "My requests" is its own chunk: a reporter with no identity never downloads it.
+const loadRequests = () => import("./requests/panel");
+const RequestsPanel = lazy(loadRequests);
 
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
@@ -33,6 +46,8 @@ export interface AppProps {
   metadata?: MetadataEntry[];
   /** The integrator's privacy page, linked in the privacy line. */
   privacyUrl?: string | null;
+  /** The host's signed identity token; with it the dialog has New request and My requests tabs. */
+  identity?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;
   onError: (detail: { code: string }) => void;
@@ -62,6 +77,7 @@ export function App({
   prefill,
   metadata,
   privacyUrl,
+  identity = null,
   onOpenChange,
   onSubmitted,
   onError,
@@ -72,9 +88,33 @@ export function App({
   const [done, setDone] = useState(false);
   // Without the screenshot pane and files (the page or the key turned them off) it is one column too.
   const [controls, setControls] = useState(attachments);
-  const stacked = done || !controls;
   // While the screenshot editor is open the pane widens: the editor needs more than a preview.
   const [editing, setEditing] = useState(false);
+  // The key's config survives a tab switch (the form remounts), not a close.
+  const [project, setProject] = useState<WidgetProject | null>(null);
+  const identified = !!identity && !!projectKey && !!apiBase;
+  const [tab, setTab] = useState<"new" | "requests">("new");
+  const showing = identified ? tab : "new";
+  // The list is one column, like the confirmation.
+  const stacked = done || !controls || showing === "requests";
+  const [unread, setUnread] = useUnread({
+    apiBase,
+    projectKey,
+    identity,
+    locale,
+    open,
+  });
+  // The list's chunk is fetched as soon as an identified reporter opens the dialog.
+  useEffect(() => {
+    if (open && identified) void loadRequests();
+  }, [open, identified]);
+  // A dialog opens on the form; the list is one tab away.
+  useEffect(() => {
+    if (!open) {
+      setTab("new");
+      setProject(null);
+    }
+  }, [open]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
@@ -82,6 +122,95 @@ export function App({
   // The typed text outlives the dialog (its content unmounts on close): a close by accident,
   // a click outside or Escape, keeps it for the next opening. A sent report clears it.
   const draft = useRef<ReportValues | null>(null);
+  const tabs = (
+    <TabsList aria-label={messages.tabs.label}>
+      <TabsTrigger value="new">{messages.tabs.newRequest}</TabsTrigger>
+      <TabsTrigger value="requests">
+        {messages.tabs.myRequests}
+        {unread > 0 ? (
+          <Badge size="sm" variant="error" className="ml-1.5">
+            {unread > 99 ? "99+" : unread}
+            <span className="sr-only"> {messages.unreadReplies(unread)}</span>
+          </Badge>
+        ) : null}
+      </TabsTrigger>
+    </TabsList>
+  );
+  const body = (
+    <>
+      {showing === "requests" && identity ? (
+        <Suspense
+          fallback={
+            <>
+              <DialogHeader>
+                <DialogTitle>{messages.title}</DialogTitle>
+                {tabs}
+              </DialogHeader>
+              <DialogBody>{null}</DialogBody>
+            </>
+          }
+        >
+          <RequestsPanel
+            messages={messages}
+            locale={locale}
+            apiBase={apiBase}
+            projectKey={projectKey}
+            identity={identity}
+            headerExtra={tabs}
+            onUnread={setUnread}
+            onClose={() => onOpenChange(false)}
+            onNewRequest={() => {
+              setEditing(false);
+              setTab("new");
+            }}
+          />
+        </Suspense>
+      ) : (
+        <ReportFlow
+          messages={messages}
+          locale={locale}
+          projectKey={projectKey}
+          apiBase={apiBase}
+          onSubmitted={onSubmitted}
+          onError={onError}
+          minFillMs={minFillMs}
+          retryDelayMs={retryDelayMs}
+          maskText={maskText}
+          onDone={setDone}
+          onEditing={setEditing}
+          attachments={attachments}
+          prefill={prefill}
+          metadata={metadata}
+          privacyUrl={privacyUrl}
+          draft={draft}
+          identity={identity}
+          headerExtra={identified ? tabs : undefined}
+          project={project}
+          onProject={setProject}
+          onControls={setControls}
+          onClose={() => onOpenChange(false)}
+        />
+      )}
+    </>
+  );
+  const content = identified ? (
+    <Tabs
+      value={showing}
+      activationMode="manual"
+      onValueChange={(value) => {
+        // The form unmounts with its screenshot: the editor is closed with it.
+        setEditing(false);
+        setTab(value === "requests" ? "requests" : "new");
+      }}
+      // No box of its own: the dialog's header, body and footer stay its grid items.
+      className="contents"
+    >
+      {body}
+    </Tabs>
+  ) : (
+    body
+  );
+
   return (
     <div
       ref={setRoot}
@@ -119,7 +248,21 @@ export function App({
                   }}
                 >
                   {messages.launcher}
+                  {unread > 0 ? (
+                    <span className="sr-only">
+                      {messages.unreadReplies(unread)}
+                    </span>
+                  ) : null}
                 </Button>
+                {unread > 0 ? (
+                  <Badge
+                    aria-hidden="true"
+                    variant="error"
+                    className="pointer-events-none absolute -top-2 -right-2"
+                  >
+                    {unread > 99 ? "99+" : unread}
+                  </Badge>
+                ) : null}
               </div>
             ) : null}
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,26 +283,7 @@ export function App({
                   opener.current.focus();
                 }}
               >
-                <ReportFlow
-                  messages={messages}
-                  locale={locale}
-                  projectKey={projectKey}
-                  apiBase={apiBase}
-                  onSubmitted={onSubmitted}
-                  onError={onError}
-                  minFillMs={minFillMs}
-                  retryDelayMs={retryDelayMs}
-                  maskText={maskText}
-                  onDone={setDone}
-                  onEditing={setEditing}
-                  attachments={attachments}
-                  prefill={prefill}
-                  metadata={metadata}
-                  privacyUrl={privacyUrl}
-                  draft={draft}
-                  onControls={setControls}
-                  onClose={() => onOpenChange(false)}
-                />
+                {content}
               </DialogContent>
             </Dialog>
           </PortalContainerProvider>

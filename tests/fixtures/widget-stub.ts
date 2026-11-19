@@ -10,6 +10,8 @@ export function mount() {
   return {
     open: () => state.__stubOpened?.push("open"),
     close: () => state.__stubOpened?.push("close"),
+    identify: (token: string | null) =>
+      state.__stubOpened?.push(`identify:${token}`),
     destroy() {},
     on: () => () => {},
   };

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { IntakeError, submitReport } from "../src/api";
+import { fetchMyRequests, fetchUnread } from "../src/requests/api";
 
 const input = {
   title: "t",
@@ -75,4 +76,73 @@ test("a fetch that throws is a network failure", async () => {
     }) as unknown as typeof fetch,
   }).catch((e) => e);
   expect(error.kind).toBe("network");
+});
+
+test("the identity travels in its header, impact and type in the input", async () => {
+  let init: RequestInit | undefined;
+  let body: { variables: { input: Record<string, unknown> } } | undefined;
+  await submitReport({
+    ...base,
+    identity: "a.b",
+    input: { ...input, impact: "blocking", type: "bug" },
+    fetch: (async (_url: string, i: RequestInit) => {
+      init = i;
+      body = JSON.parse(String(i.body));
+      return new Response(
+        JSON.stringify({
+          data: { submitClientReport: { reportId: "x", tracking: true } },
+        }),
+      );
+    }) as unknown as typeof fetch,
+  });
+  const sent = init as RequestInit;
+  expect((sent.headers as Record<string, string>)["x-pulsarix-identity"]).toBe(
+    "a.b",
+  );
+  expect(sent.credentials).toBe("omit");
+  expect(body?.variables.input).toMatchObject({
+    impact: "blocking",
+    type: "bug",
+  });
+});
+
+test("a 401 is an identity failure", async () => {
+  const error = await submitReport({
+    ...base,
+    fetch: refusal(401, "intake.errors.identity-invalid"),
+  }).catch((e) => e);
+  expect(error.kind).toBe("identity");
+});
+
+test("fetchMyRequests sends the filter, page size and cursor; fetchUnread asks for one row", async () => {
+  const bodies: Array<{ id: string; variables: Record<string, unknown> }> = [];
+  const page = {
+    nodes: [],
+    counts: { open: 0, resolved: 0, declined: 0, all: 0 },
+    unread: 4,
+    emailsOn: false,
+    endCursor: null,
+    hasNextPage: false,
+  };
+  const fetch = (async (_url: string, i: RequestInit) => {
+    bodies.push(JSON.parse(String(i.body)));
+    return new Response(JSON.stringify({ data: { myRequests: page } }));
+  }) as unknown as typeof globalThis.fetch;
+  const opts = {
+    apiBase: "https://p.test/",
+    publicKey: "pk",
+    identity: "a.b",
+    locale: "en",
+    fetch,
+  };
+  await fetchMyRequests({ ...opts, filter: "RESOLVED", after: "c1" });
+  expect(bodies[0]?.id).toBe("myRequests");
+  expect(bodies[0]?.variables).toEqual({
+    publicKey: "pk",
+    filter: "RESOLVED",
+    first: 20,
+    after: "c1",
+  });
+  expect(await fetchUnread(opts)).toBe(4);
+  expect(bodies[1]?.variables.first).toBe(1);
 });

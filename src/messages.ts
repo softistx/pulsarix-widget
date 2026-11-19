@@ -2,12 +2,21 @@ import type { Locale } from "./config";
 
 export interface Messages {
   launcher: string;
+  /** The launcher's accessible addition while replies wait: "3 unread replies". */
+  unreadReplies: (count: number) => string;
   title: string;
   intro: string;
   /** The intro once the project's name is known. */
   introFor: (project: string) => string;
   close: string;
-  sections: { problem: string; files: string; contact: string };
+  sections: {
+    problem: string;
+    details: string;
+    files: string;
+    contact: string;
+  };
+  /** The two tabs of an identified reporter. */
+  tabs: { label: string; newRequest: string; myRequests: string };
   aside: { title: string; empty: string };
   screenshot: {
     add: string;
@@ -60,6 +69,13 @@ export interface Messages {
     descriptionHint: string;
     email: string;
     emailHint: string;
+    type: string;
+    impact: string;
+  };
+  /** The optional chips of the form (`type`, `impact`). */
+  choices: {
+    type: { bug: string; question: string; suggestion: string };
+    impact: { blocking: string; annoying: string; minor: string };
   };
   privacy: string;
   /** The link text to the integrator's privacy page. */
@@ -78,6 +94,7 @@ export interface Messages {
     summary: string;
     config: string;
     rejected: string;
+    identity: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;
     invalid: string;
@@ -99,12 +116,24 @@ export interface Messages {
 export const MESSAGES: Record<Locale, Messages> = {
   en: {
     launcher: "Report a problem",
+    unreadReplies: (count) =>
+      `${count} unread ${count === 1 ? "reply" : "replies"}`,
     title: "Report a problem",
     intro: "Tell us what went wrong and we will look into it.",
     introFor: (project) =>
       `Tell us what went wrong in ${project} and we will look into it.`,
     close: "Close",
-    sections: { problem: "The problem", files: "Files", contact: "Follow-up" },
+    sections: {
+      problem: "The problem",
+      details: "Details",
+      files: "Files",
+      contact: "Follow-up",
+    },
+    tabs: {
+      label: "Report or follow a request",
+      newRequest: "New request",
+      myRequests: "My requests",
+    },
     aside: {
       title: "Screenshot",
       empty: "A screenshot of the page will show here.",
@@ -164,6 +193,12 @@ export const MESSAGES: Record<Locale, Messages> = {
       descriptionHint: "What you did and saw",
       email: "Your e-mail (optional)",
       emailHint: "To get a link to your report",
+      type: "Type (optional)",
+      impact: "How much it blocks you (optional)",
+    },
+    choices: {
+      type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
+      impact: { blocking: "Blocking", annoying: "Annoying", minor: "Minor" },
     },
     privacy:
       "Your e-mail, if given, the address of this page and your browser are sent with the report.",
@@ -183,6 +218,8 @@ export const MESSAGES: Record<Locale, Messages> = {
       config: "This form is not set up correctly. Tell the owner of this site.",
       rejected:
         "This form cannot take reports from this site. Tell the owner of this site.",
+      identity:
+        "Your session expired. Reload the page and sign in again, then send the report.",
       unavailable: "The service is busy right now. Try again in a moment.",
       rateLimited: (minutes) =>
         `Too many reports from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
@@ -209,12 +246,24 @@ export const MESSAGES: Record<Locale, Messages> = {
   },
   fr: {
     launcher: "Signaler un problème",
+    unreadReplies: (count) =>
+      `${count} réponse${count === 1 ? "" : "s"} non lue${count === 1 ? "" : "s"}`,
     title: "Signaler un problème",
     intro: "Dites-nous ce qui ne va pas, nous allons regarder.",
     introFor: (project) =>
       `Dites-nous ce qui ne va pas dans ${project}, nous allons regarder.`,
     close: "Fermer",
-    sections: { problem: "Le problème", files: "Fichiers", contact: "Suivi" },
+    sections: {
+      problem: "Le problème",
+      details: "Détails",
+      files: "Fichiers",
+      contact: "Suivi",
+    },
+    tabs: {
+      label: "Signaler ou suivre une demande",
+      newRequest: "Nouvelle demande",
+      myRequests: "Mes demandes",
+    },
     aside: {
       title: "Capture d'écran",
       empty: "Une capture d'écran de la page s'affichera ici.",
@@ -274,6 +323,12 @@ export const MESSAGES: Record<Locale, Messages> = {
       descriptionHint: "Ce que vous avez fait et vu",
       email: "Votre e-mail (facultatif)",
       emailHint: "Ajoutez-le pour recevoir un lien de suivi",
+      type: "Type (facultatif)",
+      impact: "Gravité pour vous (facultatif)",
+    },
+    choices: {
+      type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
+      impact: { blocking: "Bloquant", annoying: "Gênant", minor: "Mineur" },
     },
     privacy:
       "Votre e-mail, s'il est donné, l'adresse de cette page et votre navigateur sont envoyés avec le signalement.",
@@ -294,6 +349,8 @@ export const MESSAGES: Record<Locale, Messages> = {
         "Ce formulaire est mal configuré. Prévenez le responsable du site.",
       rejected:
         "Ce formulaire n'accepte pas de signalements depuis ce site. Prévenez le responsable du site.",
+      identity:
+        "Votre session a expiré. Rechargez la page et reconnectez-vous, puis envoyez le signalement.",
       unavailable: "Le service est occupé. Réessayez dans un instant.",
       rateLimited: (minutes) =>
         `Trop de signalements depuis ici. Réessayez dans ${minutes} minute${minutes === 1 ? "" : "s"}.`,

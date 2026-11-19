@@ -43,7 +43,10 @@ own privacy page, shown after the privacy line), `data-prefill-email` and `data-
 values of the form), `data-metadata` (a JSON object of strings stored with each report: at most 20 entries,
 keys of 64 characters, values of 512, 2 KB in all; the rest is dropped).
 
-In script, the same are `privacyUrl`, `prefill: { email, title }` and `metadata: { plan: "pro" }`.
+`data-identity` (the signed token of the signed-in user, see "Identified reporters"), changed later with
+`PulsarixWidget.identify(token)` and `PulsarixWidget.identify(null)` at sign-out.
+
+In script, the same are `identity`, `privacyUrl`, `prefill: { email, title }` and `metadata: { plan: "pro" }`.
 What the reporter typed is kept when the dialog is closed by accident (a click outside, Escape) and comes
 back at the next opening; a sent report clears it.
 
@@ -107,9 +110,10 @@ A script-tag loader and an npm import are two separate instances: use one route 
 | `position` | `"bottom-right" \| "bottom-left"` | `"bottom-right"` |
 | `accentColor` | hex string | none: the built-in `lavande` theme |
 | `launcher` | `boolean` | `true` (`false` hides the floating button) |
+| `identity` | `string \| null` | none: today's form only (see "Identified reporters") |
 | `target` | `Element` | `document.body` |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `on(name, callback)` (returns the function that
+`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
 
 ## The report form
@@ -133,6 +137,24 @@ and returns focus to the launcher (or to whatever opened it).
 - Locales: English (default) and French, from `locale`. The page address (origin and path only,
   never the query string or the fragment), the browser and the e-mail (if given) are sent with
   the report; the form says so.
+
+## Identified reporters
+
+Give the widget the token your server signed for the signed-in user (`data-identity`,
+`identity` in `init` / `mount`, or `PulsarixWidget.identify(token)` after sign-in; call
+`identify(null)` at sign-out). The secret that signs the token stays on your server and never
+reaches the browser; the widget only sends the token, in the `x-pulsarix-identity` header, and
+never in a URL. A malformed token is ignored.
+
+- Without a token the dialog is today's form, with no tabs.
+- With one, the dialog has two tabs, New request and My requests. My requests is one list with
+  filter chips and their counts (Open by default, Resolved, Declined, All); requests with
+  unread replies come first, and the list is read again each time the dialog opens.
+- The launcher and the My requests tab show the unread count.
+- A token the API refuses (expired or forged) shows a message in My requests; reload the page
+  to get a fresh one.
+- Everyone (identified or not) can give an optional type (bug, question, suggestion) and an
+  impact (blocking, annoying, minor) in the form's Details group.
 
 ## Screenshots
 

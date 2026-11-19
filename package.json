@@ -42,7 +42,8 @@
     "fixture": "bun scripts/serve-fixture.ts",
     "verify": "bun run lint && bun run build && bun run typecheck && bun run test && bun run size",
     "release": "bun scripts/publish.ts",
-    "capture": "bun scripts/capture.ts"
+    "capture": "bun scripts/capture.ts",
+    "capture:requests": "bun scripts/capture-requests.ts"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
