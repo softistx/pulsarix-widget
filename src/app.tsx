@@ -50,6 +50,10 @@ export interface AppProps {
   identity?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;
+  /** A team reply arrived (`pulsarix:reply`), heard while a thread is open. */
+  onReply?: (detail: { requestId: string }) => void;
+  /** The unread count changed (`pulsarix:unread`). */
+  onUnreadChange?: (detail: { count: number }) => void;
   onError: (detail: { code: string }) => void;
   /** Specs only: the API's minimum fill time is waited out otherwise. */
   minFillMs?: number;
@@ -80,6 +84,8 @@ export function App({
   identity = null,
   onOpenChange,
   onSubmitted,
+  onReply,
+  onUnreadChange,
   onError,
   minFillMs,
   retryDelayMs,
@@ -104,6 +110,12 @@ export function App({
     locale,
     open,
   });
+  const announced = useRef(0);
+  useEffect(() => {
+    if (unread === announced.current) return;
+    announced.current = unread;
+    onUnreadChange?.({ count: unread });
+  }, [unread, onUnreadChange]);
   // The list's chunk is fetched as soon as an identified reporter opens the dialog.
   useEffect(() => {
     if (open && identified) void loadRequests();
@@ -158,6 +170,7 @@ export function App({
             identity={identity}
             headerExtra={tabs}
             onUnread={setUnread}
+            onReply={onReply}
             onClose={() => onOpenChange(false)}
             onNewRequest={() => {
               setEditing(false);

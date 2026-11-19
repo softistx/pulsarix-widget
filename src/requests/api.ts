@@ -1,5 +1,5 @@
 /** The reporter's side of the public endpoint that "My requests" reads (plan section 19, A17). */
-import { publicCall } from "../api";
+import { type DeclaredFile, type FileTicket, publicCall } from "../api";
 
 export type PublicState = "received" | "inProgress" | "resolved" | "declined";
 export type RequestFilter = "OPEN" | "RESOLVED" | "DECLINED" | "ALL";
@@ -72,4 +72,111 @@ export async function fetchUnread(
 ): Promise<number> {
   const page = await fetchMyRequests({ ...options, first: 1 });
   return page.unread;
+}
+
+export interface RequestFileRef {
+  id: string;
+  name: string;
+  /** Needs the identity header to read, so the thread shows the name only. */
+  thumbnailUrl: string | null;
+}
+
+export interface ThreadMessage {
+  id: string;
+  from: "reporter" | "team";
+  body: string;
+  at: string;
+  files: RequestFileRef[];
+}
+
+export interface RequestDetail extends RequestSummary {
+  description: string;
+  thread: ThreadMessage[];
+  files: RequestFileRef[];
+  canReply: boolean;
+  canReopen: boolean;
+  resolvedAt: string | null;
+  emailsOn: boolean;
+}
+
+interface CallBase {
+  apiBase: string;
+  publicKey: string;
+  identity: string;
+  locale: string;
+  fetch?: typeof globalThis.fetch;
+  signal?: AbortSignal;
+}
+
+/** One request with its thread. */
+export function fetchRequest({
+  id,
+  publicKey,
+  ...rest
+}: CallBase & { id: string }): Promise<RequestDetail> {
+  return publicCall<RequestDetail>({
+    ...rest,
+    id: "request",
+    variables: { publicKey, id },
+  });
+}
+
+/** The reply's text is saved; each declared file then goes up by its ticket (the W2c path). */
+export function replyToRequest({
+  id,
+  publicKey,
+  body,
+  files,
+  ...rest
+}: CallBase & {
+  id: string;
+  body: string;
+  files: DeclaredFile[];
+}): Promise<{ messageId: string; files: FileTicket[] }> {
+  return publicCall({
+    ...rest,
+    id: "replyToRequest",
+    variables: {
+      publicKey,
+      id,
+      input: { body, ...(files.length ? { files } : {}) },
+    },
+  });
+}
+
+export function resolveRequest({
+  id,
+  publicKey,
+  ...rest
+}: CallBase & { id: string }): Promise<RequestSummary> {
+  return publicCall<RequestSummary>({
+    ...rest,
+    id: "resolveRequest",
+    variables: { publicKey, id },
+  });
+}
+
+export function reopenRequest({
+  id,
+  publicKey,
+  ...rest
+}: CallBase & { id: string }): Promise<RequestSummary> {
+  return publicCall<RequestSummary>({
+    ...rest,
+    id: "reopenRequest",
+    variables: { publicKey, id },
+  });
+}
+
+/** Marks the thread read; answers the unread count over every request. */
+export function markRequestRead({
+  id,
+  publicKey,
+  ...rest
+}: CallBase & { id: string }): Promise<{ count: number }> {
+  return publicCall<{ count: number }>({
+    ...rest,
+    id: "markRequestRead",
+    variables: { publicKey, id },
+  });
 }

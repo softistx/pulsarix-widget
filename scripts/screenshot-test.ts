@@ -64,6 +64,8 @@ async function open(
     height?: number;
     userAgent?: string;
     init?: string;
+    /** The fixture page; `/` by default, `/identified` for the tabbed layout. */
+    path?: string;
   },
   base: string,
 ): Promise<{ page: Page; context: BrowserContext; errors: string[] }> {
@@ -76,7 +78,7 @@ async function open(
   const page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await page.goto(`${base}/`);
+  await page.goto(`${base}${options.path ?? "/"}`);
   await page.waitForFunction(() =>
     document
       .querySelector("pulsarix-widget")
@@ -382,7 +384,41 @@ try {
     await context.close();
   }
 
-  // 4. A phone: no screen capture, the upload alone.
+  // 4. The identified layout (New request and My requests tabs): the screenshot pane still
+  // sits beside the form, and tabs and the pane fit together at 1440 px and on a phone.
+  for (const [width, height] of [
+    [1440, 900],
+    [360, 780],
+  ] as const) {
+    const { page, context } = await open(
+      browser,
+      { width, height, path: "/identified" },
+      base,
+    );
+    check(
+      (await page.getByRole("tab").count()) === 2,
+      `identified, ${width}px: the dialog has the two tabs`,
+    );
+    check(
+      await page.getByRole("button", { name: "Upload an image" }).isVisible(),
+      `identified, ${width}px: the screenshot pane is offered under the tabs`,
+    );
+    const box = await page.getByRole("dialog").boundingBox();
+    check(
+      !!box && box.width <= width && box.x >= 0,
+      `identified, ${width}px: the dialog fits the window`,
+    );
+    await page.getByRole("tab", { name: /My requests/ }).click();
+    await page.getByText("The pay button does nothing").waitFor();
+    check(
+      (await page.getByRole("button", { name: "Upload an image" }).count()) ===
+        0,
+      `identified, ${width}px: My requests drops the screenshot pane`,
+    );
+    await context.close();
+  }
+
+  // 5. A phone: no screen capture, the upload alone.
   {
     const { page, context } = await open(
       browser,

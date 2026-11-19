@@ -151,6 +151,13 @@ never in a URL. A malformed token is ignored.
   filter chips and their counts (Open by default, Resolved, Declined, All); requests with
   unread replies come first, and the list is read again each time the dialog opens.
 - The launcher and the My requests tab show the unread count.
+- Opening a request shows its thread: the original message, then the replies of the team (plain
+  text, with their file names). The reporter can reply, with up to three files sent the same way as
+  a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.
+  A declined request is read-only and shows its reason. Opening a thread marks it read.
+- While a thread is open the widget reads `GET /public/live/requests` with `fetch` (the identity in
+  the header; an `EventSource` cannot send one) so a team reply appears at once, and stops reading
+  when the thread closes. The page's CSP needs `connect-src` for the widget's API origin only.
 - A token the API refuses (expired or forged) shows a message in My requests; reload the page
   to get a fresh one.
 - Everyone (identified or not) can give an optional type (bug, question, suggestion) and an
@@ -183,7 +190,9 @@ Events, on the element and through `on(name, cb)`: `pulsarix:ready` (asynchronou
 so a listener added right after `mount()` hears it; it fires even when the key is missing, then
 `pulsarix:error` with `config` follows), `pulsarix:open`,
 `pulsarix:close`, `pulsarix:submit` (`detail: { reportId, files }`, one `{ name, role, type, size,
-uploaded }` per file sent with the report) and `pulsarix:error`
+uploaded }` per file sent with the report), `pulsarix:reply` (`detail: { requestId }`, the team
+replied to one of the reporter's requests), `pulsarix:unread` (`detail: { count }`, the reporter's
+unread replies changed) and `pulsarix:error`
 (`detail: { code }`, the API's `intake.errors.*` code, or `network`, `config`, `http-<status>`).
 
 ```ts
