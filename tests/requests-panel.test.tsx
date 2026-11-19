@@ -137,6 +137,44 @@ describe("My requests", () => {
     await screen.findByRole("textbox", { name: /Title/ });
   });
 
+  test("a filter with no request shows the search empty state, not the first-use one", async () => {
+    answer([], { counts: { open: 0, resolved: 0, declined: 0, all: 3 } });
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    await screen.findByText("No open requests.");
+    expect(screen.queryByText("No requests yet")).toBeNull();
+    expect(screen.queryByRole("button", { name: /New request/ })).toBeNull();
+  });
+
+  test("while the list loads, a busy status with a skeleton stands in", async () => {
+    answer([row("r1", "Pay button broken")]);
+    const fetchNow = globalThis.fetch;
+    let release: () => void = () => {};
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    globalThis.fetch = (async (url: unknown, init: RequestInit) => {
+      if (JSON.parse(String(init.body)).id === "myRequests") await held;
+      return fetchNow(url as string, init);
+    }) as unknown as typeof fetch;
+    render(<App {...props("a.b")} open />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    const busy = await screen.findByText("Loading your requests...");
+    expect(busy.closest('[role="status"]')?.getAttribute("aria-busy")).toBe(
+      "true",
+    );
+    expect(screen.getAllByRole("status").some((s) => s.contains(busy))).toBe(
+      true,
+    );
+    release();
+    await screen.findByText("Pay button broken");
+    expect(screen.queryByText("Loading your requests...")).toBeNull();
+  });
+
   test("a bad identity shows an alert without a retry", async () => {
     answer([], {}, 401);
     render(<App {...props("a.b")} open />);

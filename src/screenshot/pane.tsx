@@ -148,7 +148,7 @@ export function ScreenshotPane({
   let body: ReactNode;
   if (source) {
     body = (
-      <section aria-label={t.editorLabel} className="min-h-0">
+      <section aria-label={t.editorLabel} className="min-h-0 md:h-full">
         <Suspense
           fallback={
             <div
