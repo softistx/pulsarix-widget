@@ -73,7 +73,6 @@ export interface ReportFlowProps {
   project?: WidgetProject | null;
   onProject?: (project: WidgetProject | null) => void;
   /** Told once a report is saved, so that a list showing My requests can refresh. */
-  onSaved?: () => void;
 }
 
 /**
@@ -101,7 +100,6 @@ export function ReportFlow({
   draft,
   identity,
   headerExtra,
-  onSaved,
   project,
   onProject,
 }: ReportFlowProps) {
@@ -308,7 +306,6 @@ export function ReportFlow({
       const uploads = [...leftOut, ...results];
       // The report exists: the draft is spent, whether or not the dialog is still open.
       if (draft) draft.current = null;
-      onSaved?.();
       if (!aborted.current.signal.aborted)
         setSent({ tracking: report.tracking, uploads });
       onSubmitted({
