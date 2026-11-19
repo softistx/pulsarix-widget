@@ -136,6 +136,81 @@ export function App({
       </TabsTrigger>
     </TabsList>
   );
+  const body = (
+    <>
+      {showing === "requests" && identity ? (
+        <Suspense
+          fallback={
+            <>
+              <DialogHeader>
+                <DialogTitle>{messages.title}</DialogTitle>
+                {tabs}
+              </DialogHeader>
+              <DialogBody>{null}</DialogBody>
+            </>
+          }
+        >
+          <RequestsPanel
+            messages={messages}
+            locale={locale}
+            apiBase={apiBase}
+            projectKey={projectKey}
+            identity={identity}
+            headerExtra={tabs}
+            onUnread={setUnread}
+            onClose={() => onOpenChange(false)}
+            onNewRequest={() => {
+              setEditing(false);
+              setTab("new");
+            }}
+          />
+        </Suspense>
+      ) : (
+        <ReportFlow
+          messages={messages}
+          locale={locale}
+          projectKey={projectKey}
+          apiBase={apiBase}
+          onSubmitted={onSubmitted}
+          onError={onError}
+          minFillMs={minFillMs}
+          retryDelayMs={retryDelayMs}
+          maskText={maskText}
+          onDone={setDone}
+          onEditing={setEditing}
+          attachments={attachments}
+          prefill={prefill}
+          metadata={metadata}
+          privacyUrl={privacyUrl}
+          draft={draft}
+          identity={identity}
+          headerExtra={identified ? tabs : undefined}
+          project={project}
+          onProject={setProject}
+          onControls={setControls}
+          onClose={() => onOpenChange(false)}
+        />
+      )}
+    </>
+  );
+  const content = identified ? (
+    <Tabs
+      value={showing}
+      activationMode="manual"
+      onValueChange={(value) => {
+        // The form unmounts with its screenshot: the editor is closed with it.
+        setEditing(false);
+        setTab(value === "requests" ? "requests" : "new");
+      }}
+      // No box of its own: the dialog's header, body and footer stay its grid items.
+      className="contents"
+    >
+      {body}
+    </Tabs>
+  ) : (
+    body
+  );
+
   return (
     <div
       ref={setRoot}
@@ -208,71 +283,7 @@ export function App({
                   opener.current.focus();
                 }}
               >
-                <Tabs
-                  value={showing}
-                  activationMode="manual"
-                  onValueChange={(value) => {
-                    // The form unmounts with its screenshot: the editor is closed with it.
-                    setEditing(false);
-                    setTab(value === "requests" ? "requests" : "new");
-                  }}
-                  // No box of its own: the dialog's header, body and footer stay its grid items.
-                  className="contents"
-                >
-                  {showing === "requests" && identity ? (
-                    <Suspense
-                      fallback={
-                        <>
-                          <DialogHeader>
-                            <DialogTitle>{messages.title}</DialogTitle>
-                            {tabs}
-                          </DialogHeader>
-                          <DialogBody>{null}</DialogBody>
-                        </>
-                      }
-                    >
-                      <RequestsPanel
-                        messages={messages}
-                        locale={locale}
-                        apiBase={apiBase}
-                        projectKey={projectKey}
-                        identity={identity}
-                        headerExtra={tabs}
-                        onUnread={setUnread}
-                        onClose={() => onOpenChange(false)}
-                        onNewRequest={() => {
-                          setEditing(false);
-                          setTab("new");
-                        }}
-                      />
-                    </Suspense>
-                  ) : (
-                    <ReportFlow
-                      messages={messages}
-                      locale={locale}
-                      projectKey={projectKey}
-                      apiBase={apiBase}
-                      onSubmitted={onSubmitted}
-                      onError={onError}
-                      minFillMs={minFillMs}
-                      retryDelayMs={retryDelayMs}
-                      maskText={maskText}
-                      onDone={setDone}
-                      onEditing={setEditing}
-                      attachments={attachments}
-                      prefill={prefill}
-                      metadata={metadata}
-                      privacyUrl={privacyUrl}
-                      draft={draft}
-                      identity={identity}
-                      headerExtra={identified ? tabs : undefined}
-                      project={project}
-                      onProject={setProject}
-                      onControls={setControls}
-                      onClose={() => onOpenChange(false)}
-                    />
-                  )}
-                </Tabs>
+                {content}
               </DialogContent>
             </Dialog>
           </PortalContainerProvider>
