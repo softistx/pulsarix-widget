@@ -2,14 +2,16 @@ import {
   Alert,
   Badge,
   Button,
-  ChatComposer,
   ChatMessage,
   ChatMessageSeparator,
+  ChatThread,
   DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  NonceProvider,
+  SkeletonText,
 } from "@softistx/material/embed";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IntakeError } from "../api";
@@ -31,6 +33,7 @@ import {
 } from "./api";
 import { streamRequests } from "./live";
 import { REQUESTS_MESSAGES } from "./messages";
+import { pageNonce } from "./nonce";
 
 const STATE_TONE = {
   received: "neutral",
@@ -89,7 +92,6 @@ export default function Thread({
   const [acting, setActing] = useState(false);
   const aborted = useRef(new AbortController());
   const seen = useRef<number | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
   const time = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
@@ -263,12 +265,6 @@ export default function Thread({
         ...detail.thread,
       ]
     : [];
-  const itemCount = items.length;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to the newest message when the count changes
-  useEffect(() => {
-    const log = logRef.current;
-    if (log) log.scrollTop = log.scrollHeight;
-  }, [itemCount]);
 
   return (
     <>
@@ -286,9 +282,10 @@ export default function Thread({
       <DialogBody role="region" aria-label={t.label}>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3">
           {load.status === "loading" ? (
-            <p role="status" className="text-muted-foreground text-sm">
-              {t.loading}
-            </p>
+            <div role="status" aria-busy="true">
+              <span className="sr-only">{t.loading}</span>
+              <SkeletonText lines={4} labelled={false} />
+            </div>
           ) : null}
           {load.status === "error" ? (
             <Alert
@@ -326,17 +323,29 @@ export default function Thread({
           ) : null}
           {note ? <Alert variant="warning" description={note} /> : null}
           {detail ? (
-            // Temporary, until nxgt-material#5302: ChatMessageList takes the page nonce in
-            // `/embed`: its ScrollArea injects an un-nonced <style> that a strict
-            // host CSP blocks, so the list is a plain scrolling log of ChatMessage.
-            <div className="flex h-[min(460px,54dvh)] flex-col overflow-hidden rounded-xl border bg-card">
-              <div
-                ref={logRef}
-                role="log"
-                aria-live="polite"
-                // biome-ignore lint/a11y/noNoninteractiveTabindex: a keyboard reader scrolls the transcript
-                tabIndex={0}
-                className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3"
+            <NonceProvider nonce={pageNonce()}>
+              <ChatThread
+                surface="card"
+                className="h-[min(460px,54dvh)]"
+                messageListProps={{ itemCount: items.length + 1 }}
+                composerProps={
+                  detail.canReply
+                    ? {
+                        value,
+                        onValueChange: setValue,
+                        attachments: files,
+                        onAttachmentsChange: setFiles,
+                        onSend: (body, attached) => void send(body, attached),
+                        isLoading: sending,
+                        placeholder: t.placeholder,
+                        sendLabel: t.send,
+                        attachmentLabel: t.attach,
+                        accept: ACCEPTED_TYPES.join(","),
+                        maxFiles: 3,
+                        maxLength: 4000,
+                      }
+                    : { disabled: true, disabledReason: t.readOnly }
+                }
               >
                 <ChatMessageSeparator
                   label={date.format(new Date(detail.createdAt))}
@@ -365,26 +374,8 @@ export default function Thread({
                     }
                   />
                 ))}
-              </div>
-              <ChatComposer
-                {...(detail.canReply
-                  ? {
-                      value,
-                      onValueChange: setValue,
-                      attachments: files,
-                      onAttachmentsChange: setFiles,
-                      onSend: (body, attached) => void send(body, attached),
-                      isLoading: sending,
-                      placeholder: t.placeholder,
-                      sendLabel: t.send,
-                      attachmentLabel: t.attach,
-                      accept: ACCEPTED_TYPES.join(","),
-                      maxFiles: 3,
-                      maxLength: 4000,
-                    }
-                  : { disabled: true, disabledReason: t.readOnly })}
-              />
-            </div>
+              </ChatThread>
+            </NonceProvider>
           ) : null}
         </div>
       </DialogBody>

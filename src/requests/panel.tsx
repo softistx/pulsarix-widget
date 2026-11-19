@@ -8,7 +8,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   ListRow,
+  SkeletonText,
 } from "@softistx/material/embed";
 import {
   type ReactNode,
@@ -240,27 +242,30 @@ export default function RequestsPanel({
             />
           ) : null}
           {load.status === "loading" ? (
-            <p role="status" className="text-muted-foreground text-sm">
-              {text.loading}
-            </p>
+            <div role="status" aria-busy="true">
+              <span className="sr-only">{text.loading}</span>
+              <SkeletonText lines={4} labelled={false} />
+            </div>
           ) : null}
           {load.status === "ready" && nodes.length === 0 ? (
             total === 0 ? (
-              <div className="grid justify-items-center gap-2 rounded-lg bg-card px-4 py-10 text-center">
-                <p className="font-semibold text-foreground text-sm">
-                  {text.none.title}
-                </p>
-                <p className="max-w-[320px] text-muted-foreground text-sm">
-                  {text.none.body}
-                </p>
-                <Button type="button" className="mt-2" onClick={onNewRequest}>
-                  {text.none.action}
-                </Button>
-              </div>
+              <EmptyState
+                size="compact"
+                headingLevel={3}
+                title={text.none.title}
+                description={text.none.body}
+                action={
+                  <Button type="button" onClick={onNewRequest}>
+                    {text.none.action}
+                  </Button>
+                }
+              />
             ) : (
-              <p className="rounded-lg bg-card px-4 py-8 text-center text-muted-foreground text-sm">
-                {filter === "ALL" ? text.none.title : text.empty[filter]}
-              </p>
+              <EmptyState
+                kind="search"
+                size="compact"
+                title={filter === "ALL" ? text.none.title : text.empty[filter]}
+              />
             )
           ) : null}
           {nodes.length > 0 ? (

@@ -326,6 +326,49 @@ describe("request thread", () => {
     expect(screen.queryByRole("button", { name: "Reopen" })).toBeNull();
   });
 
+  test("the conversation is a log of the messages, with the composer under it", async () => {
+    await openThread();
+    await screen.findByText("Under Account, then Billing.");
+    const log = screen.getByRole("log");
+    expect(log.textContent).toContain("Under Account, then Billing.");
+    expect(screen.getByPlaceholderText("Write a reply...")).toBeTruthy();
+  });
+
+  test("a read-only thread keeps its messages and says why the composer is off", async () => {
+    await openThread({ canReply: false, publicState: "declined" });
+    await screen.findByText("Under Account, then Billing.");
+    screen.getByText("A declined request is read-only.");
+    expect(screen.queryByPlaceholderText("Write a reply...")).toBeNull();
+  });
+
+  test("while the thread loads, a busy status with a skeleton stands in", async () => {
+    const real = globalThis.fetch;
+    let release: () => void = () => {};
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    detail = { ...base };
+    list = [detail];
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      if (init?.body && JSON.parse(String(init.body)).id === "request")
+        await held;
+      return real(url, init);
+    }) as unknown as typeof fetch;
+    render(<App {...props()} />);
+    await userEvent.click(
+      await screen.findByRole("tab", { name: /My requests/ }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Open request/ }),
+    );
+    const busy = await screen.findByText("Loading the conversation...");
+    expect(busy.closest('[role="status"]')?.getAttribute("aria-busy")).toBe(
+      "true",
+    );
+    release();
+    await screen.findByText("Under Account, then Billing.");
+  });
+
   test("the live stream carries the identity header, refreshes the thread and emits events", async () => {
     await openThread();
     await screen.findByText("Under Account, then Billing.");

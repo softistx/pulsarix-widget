@@ -105,6 +105,19 @@ try {
         await drag(b.page, [0.4, 0.3], [0.75, 0.85]);
         await b.page.waitForTimeout(300);
         await shot(b.page, "editor-annotated");
+        // Crop: a button of the editor's own "Tools" bar, beside Markup (no hand-made control).
+        const crop = b.page
+          .locator("pulsarix-widget")
+          .getByRole("button", { name: "Crop", exact: true });
+        await crop.scrollIntoViewIfNeeded();
+        await crop.click();
+        await b.page.waitForTimeout(800);
+        await shot(b.page, "editor-crop");
+        await b.page
+          .locator("pulsarix-widget")
+          .getByRole("button", { name: "Markup", exact: true })
+          .click();
+        await b.page.waitForTimeout(300);
         // The pane scrolls on its own: every tool row is reachable at the bottom.
         await b.page.evaluate(() => {
           const aside = document
