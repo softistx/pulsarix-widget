@@ -1,15 +1,11 @@
 import { type RefObject, useState } from "react";
 import type { Locale } from "../config";
-import {
-  ACCEPTED_TYPES,
-  MAX_FILE_BYTES,
-  MAX_TOTAL_BYTES,
-} from "../files/rules";
-import { putFile } from "../files/upload";
-import { replyToRequest, type resolveRequest } from "./api";
+import { replyToRequest } from "./api";
 import { threadErrorText } from "./error-text";
+import { failure } from "./failure";
 import type { RequestsMessages } from "./messages";
-import { failure } from "./use-thread";
+import { filesOversize, uploadFiles } from "./reply-files";
+import { useThreadAction } from "./use-thread-action";
 
 export interface UseReplyOptions {
   text: RequestsMessages;
@@ -38,7 +34,6 @@ export function useReply({
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const [acting, setActing] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const call = { apiBase, publicKey: projectKey, identity, locale };
 
@@ -47,11 +42,7 @@ export function useReply({
     setNote(null);
     const trimmed = body.trim();
     if (!trimmed) return setProblem(t.needText);
-    const oversize =
-      attached.some(
-        (f) => f.size > MAX_FILE_BYTES || !ACCEPTED_TYPES.includes(f.type),
-      ) || attached.reduce((sum, f) => sum + f.size, 0) > MAX_TOTAL_BYTES;
-    if (oversize) return setProblem(t.errors.files);
+    if (filesOversize(attached)) return setProblem(t.errors.files);
     setSending(true);
     try {
       const reply = await replyToRequest({
@@ -66,23 +57,12 @@ export function useReply({
         })),
         signal: aborted.current.signal,
       });
-      const failed: string[] = [];
-      await Promise.all(
-        attached.map(async (file, index) => {
-          const ticket = reply.files[index];
-          const result = ticket
-            ? await putFile({
-                apiBase,
-                slot: ticket.slot,
-                ticket: ticket.ticket,
-                file,
-                onProgress: () => {},
-                signal: aborted.current.signal,
-              })
-            : { ok: false as const };
-          if (!result.ok) failed.push(file.name);
-        }),
-      );
+      const failed = await uploadFiles({
+        apiBase,
+        files: attached,
+        tickets: reply.files,
+        signal: aborted.current.signal,
+      });
       if (aborted.current.signal.aborted) return;
       setValue("");
       setFiles([]);
@@ -96,21 +76,14 @@ export function useReply({
     }
   };
 
-  const change = async (action: typeof resolveRequest) => {
-    setProblem(null);
-    setActing(true);
-    try {
-      await action({ ...call, id: requestId, signal: aborted.current.signal });
-      if (!aborted.current.signal.aborted) await read();
-    } catch (error) {
-      if (aborted.current.signal.aborted) return;
-      const failed = failure(error);
-      setProblem(threadErrorText(text, failed));
-      if (failed.code.endsWith("reopen-expired")) await read();
-    } finally {
-      if (!aborted.current.signal.aborted) setActing(false);
-    }
-  };
+  const { acting, change } = useThreadAction({
+    text,
+    call,
+    requestId,
+    read,
+    aborted,
+    setProblem,
+  });
 
   return {
     value,

@@ -29,6 +29,29 @@ async function refusalOf(
   }
 }
 
+/** A ref that reads false once the component has unmounted. */
+function useAlive() {
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  return alive;
+}
+
+/** Tells the dialog when the editor is open; closing the dialog resets it to the normal width. */
+function useEditingSignal(
+  editing: boolean,
+  onEditingChange?: (editing: boolean) => void,
+) {
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+  useEffect(() => () => onEditingChange?.(false), [onEditingChange]);
+}
+
 /**
  * The pane's state and actions: capture the screen or take an uploaded file, hold the picture
  * being edited, and tell the dialog when the editor is open.
@@ -41,7 +64,7 @@ export function usePane(
   const t = messages.screenshot;
   const region = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const alive = useRef(true);
+  const alive = useAlive();
   const [canCapture] = useState(captureAvailable);
   // The picture being edited: dropped (and so unreachable) once it is saved or cancelled.
   const [source, setSource] = useState<Blob | null>(null);
@@ -50,18 +73,7 @@ export function usePane(
   const [notice, setNotice] = useState<string | null>(null);
   const [maskText, setMaskText] = useState(maskTextDefault);
 
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
-  const editing = source !== null;
-  useEffect(() => {
-    onEditingChange?.(editing);
-  }, [editing, onEditingChange]);
-  // Closing the dialog unmounts the pane: the next opening starts at the normal width.
-  useEffect(() => () => onEditingChange?.(false), [onEditingChange]);
+  useEditingSignal(source !== null, onEditingChange);
   const focusRegion = useCallback(
     () => queueMicrotask(() => region.current?.focus()),
     [],

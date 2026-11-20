@@ -15,8 +15,6 @@ import {
 } from "../validation";
 
 export const FORM_ID = "pulsarix-report-form";
-const TYPES = ["bug", "question", "suggestion"] as const;
-const IMPACTS = ["blocking", "annoying", "minor"] as const;
 
 interface SectionProps {
   messages: Messages;
@@ -76,12 +74,16 @@ export function ProblemSection({ messages, control }: SectionProps) {
 }
 
 /** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
-function ChoiceChips<N extends "type" | "impact">({
+function ChoiceChips({
   name,
-  values,
+  labels,
   messages,
   control,
-}: SectionProps & { name: N; values: readonly string[] }) {
+}: SectionProps & {
+  name: "type" | "impact";
+  /** The chip labels by value, in display order. */
+  labels: Record<string, string>;
+}) {
   return (
     <Controller
       control={control}
@@ -92,9 +94,9 @@ function ChoiceChips<N extends "type" | "impact">({
           deselectable
           value={field.value || null}
           onValueChange={(value) => field.onChange(value ?? "")}
-          options={values.map((value) => ({
+          options={Object.entries(labels).map(([value, label]) => ({
             value,
-            label: (messages.choices[name] as Record<string, string>)[value],
+            label,
           }))}
         />
       )}
@@ -107,13 +109,13 @@ export function DetailsSection({ messages, control }: SectionProps) {
     <FormSection id="details" title={messages.sections.details}>
       <ChoiceChips
         name="type"
-        values={TYPES}
+        labels={messages.choices.type}
         messages={messages}
         control={control}
       />
       <ChoiceChips
         name="impact"
-        values={IMPACTS}
+        labels={messages.choices.impact}
         messages={messages}
         control={control}
       />

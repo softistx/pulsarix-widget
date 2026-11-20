@@ -15,26 +15,46 @@ import {
   ProblemSection,
 } from "./form-sections";
 
-export function Form({
+/** A field a person never sees; a bot that fills every field trips the API's check. */
+function Honeypot({ inputRef }: { inputRef: Ref<HTMLInputElement> }) {
+  return (
+    <input
+      ref={inputRef}
+      name="url_confirm"
+      type="text"
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      defaultValue=""
+      className="absolute -left-[9999px] h-0 w-0 opacity-0"
+    />
+  );
+}
+
+/** The live region that announces a failed submit. */
+function FailureAlert({
   messages,
-  projectName,
-  control,
-  onSubmit,
-  onClose,
-  honeypot,
-  alertBox,
   failure,
-  submitting,
-  blocked,
-  controls,
-  filesSection,
-  screenshot,
-  onScreenshot,
-  maskText,
-  onEditing,
-  privacyUrl,
-  headerExtra,
+  alertBox,
 }: {
+  messages: Messages;
+  failure: IntakeError | null;
+  alertBox: Ref<HTMLDivElement>;
+}) {
+  return (
+    <div role="alert" ref={alertBox}>
+      {failure ? (
+        <Alert
+          variant="error"
+          title={messages.failure.summary}
+          description={failureText(messages, failure)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export interface FormProps {
   messages: Messages;
   projectName: string | null;
   control: Control<ReportValues>;
@@ -56,7 +76,28 @@ export function Form({
   privacyUrl?: string | null;
   /** In the header under the description: the identified reporter's tabs. */
   headerExtra?: ReactNode;
-}) {
+}
+
+export function Form({
+  messages,
+  projectName,
+  control,
+  onSubmit,
+  onClose,
+  honeypot,
+  alertBox,
+  failure,
+  submitting,
+  blocked,
+  controls,
+  filesSection,
+  screenshot,
+  onScreenshot,
+  maskText,
+  onEditing,
+  privacyUrl,
+  headerExtra,
+}: FormProps) {
   return (
     <>
       <FormHeader
@@ -88,26 +129,12 @@ export function Form({
             control={control}
             privacyUrl={privacyUrl}
           />
-          {/* Honeypot: a person never sees it; a bot that fills every field trips the API's check. */}
-          <input
-            ref={honeypot}
-            name="url_confirm"
-            type="text"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            defaultValue=""
-            className="absolute -left-[9999px] h-0 w-0 opacity-0"
+          <Honeypot inputRef={honeypot} />
+          <FailureAlert
+            messages={messages}
+            failure={failure}
+            alertBox={alertBox}
           />
-          <div role="alert" ref={alertBox}>
-            {failure ? (
-              <Alert
-                variant="error"
-                title={messages.failure.summary}
-                description={failureText(messages, failure)}
-              />
-            ) : null}
-          </div>
         </form>
       </DialogBody>
       {controls ? (
