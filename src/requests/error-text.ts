@@ -16,3 +16,15 @@ export function errorText(text: RequestsMessages, error: IntakeError): string {
       return text.errors.unknown;
   }
 }
+
+/** A thread's failure words: its own codes first, then the generic ones. */
+export function threadErrorText(
+  text: RequestsMessages,
+  error: IntakeError,
+): string {
+  const t = text.thread;
+  if (error.code.endsWith("reopen-expired")) return t.errors.reopenExpired;
+  if (error.code.endsWith("request-declined")) return t.errors.declined;
+  if (error.kind === "files") return t.errors.files;
+  return errorText(text, error);
+}

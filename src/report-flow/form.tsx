@@ -1,33 +1,19 @@
-import {
-  Alert,
-  Button,
-  ChipGroupField,
-  DialogAside,
-  DialogBody,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  EmailFormField,
-  TextareaFormField,
-  TextFormField,
-} from "@softistx/material/embed";
+import { Alert, DialogAside, DialogBody } from "@softistx/material/embed";
 import type { FormEventHandler, ReactNode, Ref } from "react";
-import { type Control, Controller } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import type { IntakeError } from "../api";
 import type { Messages } from "../messages";
 import { ScreenshotPane } from "../screenshot/pane";
-import {
-  DESCRIPTION_MAX,
-  EMAIL_MAX,
-  type ReportValues,
-  TITLE_MAX,
-} from "../validation";
+import type { ReportValues } from "../validation";
 import { failureText } from "./failure-text";
-
-const FORM_ID = "pulsarix-report-form";
-const TYPES = ["bug", "question", "suggestion"] as const;
-const IMPACTS = ["blocking", "annoying", "minor"] as const;
+import { FormFooter, FormHeader } from "./form-frame";
+import {
+  ContactSection,
+  DetailsSection,
+  FORM_ID,
+  FormSection,
+  ProblemSection,
+} from "./form-sections";
 
 export function Form({
   messages,
@@ -73,21 +59,11 @@ export function Form({
 }) {
   return (
     <>
-      <DialogHeader>
-        {projectName ? (
-          <p
-            data-testid="project-name"
-            className="font-semibold text-primary-text text-xs uppercase tracking-wide"
-          >
-            {projectName}
-          </p>
-        ) : null}
-        <DialogTitle>{messages.title}</DialogTitle>
-        <DialogDescription>
-          {projectName ? messages.introFor(projectName) : messages.intro}
-        </DialogDescription>
-        {headerExtra}
-      </DialogHeader>
+      <FormHeader
+        messages={messages}
+        projectName={projectName}
+        headerExtra={headerExtra}
+      />
       <DialogBody role="region" aria-label={messages.title}>
         <form
           id={FORM_ID}
@@ -95,137 +71,23 @@ export function Form({
           noValidate
           className="grid gap-6"
         >
-          <section
-            aria-labelledby={`${FORM_ID}-problem`}
-            className="grid content-start gap-4"
-          >
-            <h3
-              id={`${FORM_ID}-problem`}
-              className="font-semibold text-foreground text-sm"
-            >
-              {messages.sections.problem}
-            </h3>
-            <TextFormField
-              control={control}
-              name="title"
-              label={messages.fields.title}
-              helperText={messages.fields.titleHint}
-              maxLength={TITLE_MAX}
-              autoComplete="off"
-              required
-            />
-            <TextareaFormField
-              control={control}
-              name="description"
-              label={messages.fields.description}
-              helperText={messages.fields.descriptionHint}
-              minRows={4}
-              maxRows={10}
-              maxLength={DESCRIPTION_MAX}
-              required
-            />
-          </section>
+          <ProblemSection messages={messages} control={control} />
           <hr className="border-border border-t" />
-          <section
-            aria-labelledby={`${FORM_ID}-details`}
-            className="grid content-start gap-4"
-          >
-            <h3
-              id={`${FORM_ID}-details`}
-              className="font-semibold text-foreground text-sm"
-            >
-              {messages.sections.details}
-            </h3>
-            {/* Single-choice and optional: chips on a full row, pressing the chosen one clears it. */}
-            <Controller
-              control={control}
-              name="type"
-              render={({ field }) => (
-                <ChipGroupField
-                  label={messages.fields.type}
-                  deselectable
-                  value={field.value || null}
-                  onValueChange={(value) => field.onChange(value ?? "")}
-                  options={TYPES.map((value) => ({
-                    value,
-                    label: messages.choices.type[value],
-                  }))}
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="impact"
-              render={({ field }) => (
-                <ChipGroupField
-                  label={messages.fields.impact}
-                  deselectable
-                  value={field.value || null}
-                  onValueChange={(value) => field.onChange(value ?? "")}
-                  options={IMPACTS.map((value) => ({
-                    value,
-                    label: messages.choices.impact[value],
-                  }))}
-                />
-              )}
-            />
-          </section>
+          <DetailsSection messages={messages} control={control} />
           <hr className="border-border border-t" />
           {controls ? (
             <>
-              <section
-                aria-labelledby={`${FORM_ID}-files`}
-                className="grid content-start gap-4"
-              >
-                <h3
-                  id={`${FORM_ID}-files`}
-                  className="font-semibold text-foreground text-sm"
-                >
-                  {messages.sections.files}
-                </h3>
+              <FormSection id="files" title={messages.sections.files}>
                 {filesSection}
-              </section>
+              </FormSection>
               <hr className="border-border border-t" />
             </>
           ) : null}
-          <section
-            aria-labelledby={`${FORM_ID}-contact`}
-            className="grid content-start gap-4"
-          >
-            <h3
-              id={`${FORM_ID}-contact`}
-              className="font-semibold text-foreground text-sm"
-            >
-              {messages.sections.contact}
-            </h3>
-            <div className="grid items-start gap-4 sm:grid-cols-2">
-              <EmailFormField
-                control={control}
-                name="email"
-                inputMode="email"
-                label={messages.fields.email}
-                helperText={messages.fields.emailHint}
-                maxLength={EMAIL_MAX}
-                autoComplete="email"
-              />
-              <p className="text-muted-foreground text-xs sm:pt-6">
-                {messages.privacy}
-                {privacyUrl ? (
-                  <>
-                    {" "}
-                    <a
-                      href={privacyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-text underline"
-                    >
-                      {messages.privacyLink}
-                    </a>
-                  </>
-                ) : null}
-              </p>
-            </div>
-          </section>
+          <ContactSection
+            messages={messages}
+            control={control}
+            privacyUrl={privacyUrl}
+          />
           {/* Honeypot: a person never sees it; a bot that fills every field trips the API's check. */}
           <input
             ref={honeypot}
@@ -259,19 +121,12 @@ export function Form({
           />
         </DialogAside>
       ) : null}
-      <DialogFooter>
-        <Button type="button" variant="tonal" onClick={onClose}>
-          {messages.close}
-        </Button>
-        <Button
-          type="submit"
-          form={FORM_ID}
-          loading={submitting}
-          disabled={blocked}
-        >
-          {messages.submit}
-        </Button>
-      </DialogFooter>
+      <FormFooter
+        messages={messages}
+        onClose={onClose}
+        submitting={submitting}
+        blocked={blocked}
+      />
     </>
   );
 }
