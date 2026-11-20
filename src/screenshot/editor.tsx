@@ -7,7 +7,7 @@ import editorCss from "../generated/editor-css";
 import { MAX_EXPORT_SIDE } from "./capture";
 
 /**
- * The annotation editor, the one lazy chunk of the widget: pen, highlighter, arrow, box,
+ * The annotation editor, the one lazy chunk of the widget: pen, highlighter, arrow, box, ellipse, line,
  * text, "Redact" and Crop (a solid, opaque redaction only: pixelating a screenshot can be reversed).
  * It carries its own stylesheet, adopted into the shadow root the first time it mounts, so the form pays for none of it. The image is
  * decoded with `createImageBitmap` (the preset's default): no `blob:` image, no CSP change.

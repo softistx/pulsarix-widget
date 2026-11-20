@@ -113,10 +113,8 @@ try {
         await crop.click();
         await b.page.waitForTimeout(800);
         await shot(b.page, "editor-crop");
-        await b.page
-          .locator("pulsarix-widget")
-          .getByRole("button", { name: "Markup", exact: true })
-          .click();
+        // Crop is a tool of the pill now: pick Pen to leave it.
+        await tool(b.page, "Pen").click();
         await b.page.waitForTimeout(300);
         // The pane scrolls on its own: every tool row is reachable at the bottom.
         await b.page.evaluate(() => {

@@ -265,8 +265,8 @@ try {
     // The panel always renders its Size control: wait for it so the count below is not vacuous.
     const panel = page.locator("pulsarix-widget");
     await panel
-      .getByText("Size")
-      .or(panel.getByLabel("Size"))
+      .getByText("Size", { exact: true })
+      .or(panel.getByLabel("Size", { exact: true }))
       .first()
       .waitFor();
     check(
