@@ -31,6 +31,29 @@ function Honeypot({ inputRef }: { inputRef: Ref<HTMLInputElement> }) {
   );
 }
 
+/** The live region that announces a failed submit. */
+function FailureAlert({
+  messages,
+  failure,
+  alertBox,
+}: {
+  messages: Messages;
+  failure: IntakeError | null;
+  alertBox: Ref<HTMLDivElement>;
+}) {
+  return (
+    <div role="alert" ref={alertBox}>
+      {failure ? (
+        <Alert
+          variant="error"
+          title={messages.failure.summary}
+          description={failureText(messages, failure)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export interface FormProps {
   messages: Messages;
   projectName: string | null;
@@ -107,15 +130,11 @@ export function Form({
             privacyUrl={privacyUrl}
           />
           <Honeypot inputRef={honeypot} />
-          <div role="alert" ref={alertBox}>
-            {failure ? (
-              <Alert
-                variant="error"
-                title={messages.failure.summary}
-                description={failureText(messages, failure)}
-              />
-            ) : null}
-          </div>
+          <FailureAlert
+            messages={messages}
+            failure={failure}
+            alertBox={alertBox}
+          />
         </form>
       </DialogBody>
       {controls ? (
