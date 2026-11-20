@@ -1,4 +1,4 @@
-import { expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, expect, spyOn, test } from "bun:test";
 import { join } from "node:path";
 
 const g = globalThis as unknown as {
@@ -18,6 +18,29 @@ interface Api {
 const pulsarix = () =>
   (window as unknown as { PulsarixWidget: Api }).PulsarixWidget;
 
+// The loader is a classic script: importing it registers the one global. Load it once for
+// the file, whatever the order of the tests, and take every trace of it away afterwards.
+beforeAll(async () => {
+  const loaderPath = "../src/loader";
+  await import(loaderPath);
+});
+
+afterEach(() => {
+  pulsarix().destroy();
+});
+
+afterAll(() => {
+  Reflect.deleteProperty(window, "PulsarixWidget");
+  for (const key of [
+    "__WIDGET_FILE__",
+    "__stubGate",
+    "__stubMounts",
+    "__stubOpened",
+  ]) {
+    Reflect.deleteProperty(globalThis, key);
+  }
+});
+
 test("destroy while the bundle loads cancels the mount", async () => {
   g.__WIDGET_FILE__ = join(import.meta.dir, "fixtures", "widget-stub.ts");
   g.__stubMounts = 0;
@@ -25,17 +48,7 @@ test("destroy while the bundle loads cancels the mount", async () => {
   g.__stubGate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  // A classic script, not a module: imported for its side effect only.
-  const loaderPath = "../src/loader";
-  await import(loaderPath);
-  const api = (
-    window as unknown as {
-      PulsarixWidget: {
-        init(o: { projectKey: string }): Promise<void>;
-        destroy(): void;
-      };
-    }
-  ).PulsarixWidget;
+  const api = pulsarix();
 
   const first = api.init({ projectKey: "pk_live_abc" });
   api.destroy();
