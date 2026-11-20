@@ -255,7 +255,8 @@ describe("the report form", () => {
   });
 
   describe("the page address", () => {
-    afterEach(() => window.history.pushState({}, "", "/"));
+    const originalUrl = window.location.href;
+    afterEach(() => window.history.pushState({}, "", originalUrl));
 
     test("is sent without its query and fragment", async () => {
       window.history.pushState({}, "", "/cart?token=secret&x=1#access=abc");
