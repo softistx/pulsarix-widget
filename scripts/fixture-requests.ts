@@ -203,9 +203,7 @@ const failure = (
           message: apiMessage(code, language, minutes),
           extensions: {
             code: `intake.errors.${code}`,
-            ...(minutes === undefined
-              ? {}
-              : { minutes }),
+            ...(minutes === undefined ? {} : { minutes }),
           },
         },
       ],
