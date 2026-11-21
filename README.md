@@ -116,7 +116,7 @@ A script-tag loader and an npm import are two separate instances: use one route 
 
 ### Exports
 
-Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity` and its option type (see "Signing the identity on your server").
+Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity` and the type `SignPulsarixIdentityOptions` (see "Signing the identity on your server").
 
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
@@ -244,9 +244,12 @@ A React Router loader signs, the component hands the token to the widget, and si
 
 ```tsx
 // app/routes/app.tsx
+// `Route` is React Router's generated type and `requireUser` is your own session helper.
+// Import the signer in a route's loader only (or in a `*.server.ts` file the loader calls), never in
+// code that runs in the browser.
 import { signPulsarixIdentity } from "@softistx/pulsarix-widget/server";
 import { useEffect } from "react";
-import { useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request); // your own session
@@ -273,6 +276,10 @@ export default function App() {
 // at sign-out, in the browser, before the session ends:
 //   window.PulsarixWidget?.identify(null);
 ```
+
+In a strict-TypeScript host, the script tag's global is not typed: declare it once
+(`declare global { interface Window { PulsarixWidget?: { identify(token: string | null): void } } }`)
+or use the npm route.
 
 With the npm route, call `widget.identify(token)` on the handle `mount()` returned. See
 [docs/integration.md](docs/integration.md) for the whole integration, CSP and troubleshooting.

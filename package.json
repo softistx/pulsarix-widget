@@ -76,7 +76,8 @@
     "dist/types/config.d.ts",
     "dist/types/element.d.ts",
     "dist/server.js",
-    "dist/types/server.d.ts"
+    "dist/types/server.d.ts",
+    "docs/integration.md"
   ],
   "types": "./dist/types/index.d.ts",
   "sideEffects": true

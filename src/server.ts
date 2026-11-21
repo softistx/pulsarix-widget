@@ -14,11 +14,11 @@
 import { createHmac } from "node:crypto";
 
 /** The longest life a token may have: 24 hours. 1 hour is recommended. */
-export const MAX_TTL_SECONDS = 24 * 60 * 60;
+const MAX_TTL_SECONDS = 24 * 60 * 60;
 /** The default life of a token: 1 hour. */
-export const DEFAULT_TTL_SECONDS = 60 * 60;
+const DEFAULT_TTL_SECONDS = 60 * 60;
 /** The longest token the API reads. */
-export const MAX_TOKEN_LENGTH = 2_048;
+const MAX_TOKEN_LENGTH = 2_048;
 
 // The e-mail shape the API's validator accepts.
 const EMAIL =
@@ -87,6 +87,9 @@ export function signPulsarixIdentity(
     throw new Error(
       "signPulsarixIdentity: `email` must be a valid address of at most 254 characters",
     );
+  }
+  if (options.name !== undefined && typeof options.name !== "string") {
+    throw new Error("signPulsarixIdentity: `name` must be a string");
   }
   const name = options.name?.trim();
   if (name !== undefined && name.length > 100) {
