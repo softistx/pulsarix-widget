@@ -34,11 +34,11 @@ export type ErrorKind =
 export class IntakeError extends Error {
   constructor(
     readonly kind: ErrorKind,
-    /** The API's own code (`intake.errors.…`) when it gave one, else the kind. */
+    /** The API's own code (`intake.errors.…`, `validation.errors.…`) when it gave one, else the kind. */
     readonly code: string,
     /** Whole minutes to wait (`extensions.minutes`) on a rate limit. */
     readonly minutes?: number,
-    /** The API's own message, in the request's language, for an `intake.errors.*` code. */
+    /** The API's own message, in the request's language, for any `*.errors.*` code (the API words its refusals). */
     readonly apiMessage?: string,
   ) {
     super(code);
@@ -124,7 +124,7 @@ export async function publicCall<I extends PersistedId>({
       kindOf(response.status, code),
       code,
       failure?.extensions?.minutes,
-      code.startsWith("intake.errors.") && failure?.message?.trim()
+      code.includes(".errors.") && failure?.message?.trim()
         ? failure.message
         : undefined,
     );

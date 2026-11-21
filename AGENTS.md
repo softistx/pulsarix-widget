@@ -22,9 +22,10 @@ invariants and where it departs from the UI conventions.
   `.github/workflows/publish.yml` (tags `v*` and `**@*`, a published release, or `workflow_dispatch`; concurrency
   group = commit sha; only a commit on `develop`) runs `bun run verify`, then `bun run release`
   (`scripts/publish.ts`, secret `NPM_TOKEN`), which skips a version already on npmjs. Check it
-  afterwards: `npm view @softistx/pulsarix-widget version`. `publishConfig` is npmjs with public
-  access. npmjs only, through `publish.yml`: `@softistx/*` installs from registry.npmjs.org
-  too, with no scope override in `bunfig.toml`.
+  afterwards: `npm view @softistx/pulsarix-widget version`. `publishConfig` is npmjs with restricted
+  access (the package is private, softistx/plugins#233). npmjs only, through `publish.yml`:
+  `@softistx/*` installs from registry.npmjs.org too, with the read-only token
+  `NPM_SOFTISTX_READ_TOKEN` named by the `bunfig.toml` scope (CI passes `secrets.NPM_TOKEN`).
 - `mount()` is a singleton while its element is attached.
 
 ## Conventions
@@ -39,7 +40,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   `src/core/{api,messages,shell,theme}` and `src/modules/<m>/{components,hooks,model}` (modules
   `report`, `requests`, `files`, `screenshot`), each module with an `api.ts` when it has operations of
   its own (`core/api/api.ts` holds `publicCall` and `IntakeError`). Imports go one way, enforced by
-  `bun run check:deps` (`scripts/check-deps.ts`, part of `verify`): `core` imports only `core`; a module
+  `bun run check:deps` (`scripts/check-deps.ts`, part of `verify`): `core` imports only `core` and `config.ts`; a module
   imports itself, `core` and `config.ts`; the two features `report` and `requests` never import each
   other, and may use the leaf modules `files` (and, for `report`, `screenshot`), which import no module.
   Unit tests sit beside their source (`*.test.ts[x]`; `tests/` keeps only `setup.ts`, the build test

@@ -6,9 +6,28 @@ Shadow DOM, so your page's styles and the widget's never touch.
 
 ## Install
 
-The package is published on npmjs (public), no registry setup needed:
+The package is published on npmjs with restricted access: installing it needs an npm read token for
+the `@softistx` scope. Point the scope at npmjs with the token read from an environment variable
+(never commit its value).
+
+In `bunfig.toml` (Bun):
+
+```toml
+[install.scopes]
+"@softistx" = { url = "https://registry.npmjs.org", token = "$NPM_SOFTISTX_READ_TOKEN" }
+```
+
+Or in `.npmrc` (npm, pnpm, yarn):
+
+```ini
+@softistx:registry=https://registry.npmjs.org
+//registry.npmjs.org/:_authToken=${NPM_SOFTISTX_READ_TOKEN}
+```
+
+Then:
 
 ```sh
+export NPM_SOFTISTX_READ_TOKEN=<your read token>
 npm install @softistx/pulsarix-widget
 ```
 
