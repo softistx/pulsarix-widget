@@ -1,0 +1,12 @@
+{
+  "extraKnownMarketplaces": {
+    "softistx": {
+      "source": { "source": "github", "repo": "softistx/plugins" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "alxia-web@softistx": true,
+    "nxgt-material@softistx": true
+  }
+}
