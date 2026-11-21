@@ -2,7 +2,7 @@ import type { IntakeError } from "../../../core/api/api";
 import type { Messages } from "../../../core/messages";
 
 /**
- * The API words its own `intake.errors.*` refusals (in the request's language);
+ * The API words its own `*.errors.*` refusals (in the request's language);
  * the widget words only what the API cannot: config, network, a busy or
  * unreachable service, a wait with no API message, and unknown.
  */

@@ -38,7 +38,7 @@ function placeOf(file: string): Place {
   return { kind: "root", file: parts.join("/") };
 }
 
-function* sources(dir: string): Generator<string> {
+export function* sources(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) yield* sources(path);
@@ -74,32 +74,36 @@ export function violation(from: string, to: string): string | null {
   return null;
 }
 
-const problems: string[] = [];
-for (const file of sources(src)) {
-  const text = readFileSync(file, "utf8");
-  for (const match of text.matchAll(SPECIFIER)) {
-    const base = resolve(dirname(file), match[1] as string);
-    const target = [".ts", ".tsx", "/index.ts", "/index.tsx", ""]
-      .map((ext) => base + ext)
-      .find((path) => {
-        try {
-          return statSync(path).isFile();
-        } catch {
-          return false;
-        }
-      });
-    if (!target) continue; // a stylesheet, or a file the build generates
-    const why = violation(file, target);
-    if (why)
-      problems.push(
-        `${relative(root, file)}: imports ${relative(root, target)} (${why})`,
-      );
+function scan(): void {
+  const problems: string[] = [];
+  for (const file of sources(src)) {
+    const text = readFileSync(file, "utf8");
+    for (const match of text.matchAll(SPECIFIER)) {
+      const base = resolve(dirname(file), match[1] as string);
+      const target = [".ts", ".tsx", "/index.ts", "/index.tsx", ""]
+        .map((ext) => base + ext)
+        .find((path) => {
+          try {
+            return statSync(path).isFile();
+          } catch {
+            return false;
+          }
+        });
+      if (!target) continue; // a stylesheet, or a file the build generates
+      const why = violation(file, target);
+      if (why)
+        problems.push(
+          `${relative(root, file)}: imports ${relative(root, target)} (${why})`,
+        );
+    }
   }
+
+  if (problems.length > 0) {
+    console.error(problems.join("\n"));
+    console.error(`check:deps: ${problems.length} import(s) break the layout`);
+    process.exit(1);
+  }
+  console.log("check:deps: imports follow the layout");
 }
 
-if (problems.length > 0) {
-  console.error(problems.join("\n"));
-  console.error(`check:deps: ${problems.length} import(s) break the layout`);
-  process.exit(1);
-}
-console.log("check:deps: imports follow the layout");
+if (import.meta.main) scan();

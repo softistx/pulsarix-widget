@@ -2,7 +2,7 @@ import type { IntakeError } from "../../../core/api/api";
 import type { RequestsMessages } from "./messages";
 
 /**
- * The words of a failed call: the API's own message for an `intake.errors.*`
+ * The words of a failed call: the API's own message for a `*.errors.*`
  * code, else the widget's for a lapsed session (the stream's own failure), the
  * busy service, the network and unknown.
  */

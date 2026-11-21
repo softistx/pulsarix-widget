@@ -40,7 +40,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   `src/core/{api,messages,shell,theme}` and `src/modules/<m>/{components,hooks,model}` (modules
   `report`, `requests`, `files`, `screenshot`), each module with an `api.ts` when it has operations of
   its own (`core/api/api.ts` holds `publicCall` and `IntakeError`). Imports go one way, enforced by
-  `bun run check:deps` (`scripts/check-deps.ts`, part of `verify`): `core` imports only `core`; a module
+  `bun run check:deps` (`scripts/check-deps.ts`, part of `verify`): `core` imports only `core` and `config.ts`; a module
   imports itself, `core` and `config.ts`; the two features `report` and `requests` never import each
   other, and may use the leaf modules `files` (and, for `report`, `screenshot`), which import no module.
   Unit tests sit beside their source (`*.test.ts[x]`; `tests/` keeps only `setup.ts`, the build test
