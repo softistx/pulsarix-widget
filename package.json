@@ -10,7 +10,7 @@
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
-    "access": "public"
+    "access": "restricted"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
