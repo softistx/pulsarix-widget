@@ -1,15 +1,5 @@
-query myRequests(
-  $publicKey: String!
-  $filter: RequestFilter
-  $first: Int
-  $after: ID
-) {
-  myRequests(
-    publicKey: $publicKey
-    filter: $filter
-    first: $first
-    after: $after
-  ) {
+query myRequests($publicKey: String!, $filter: RequestFilter, $first: Int, $after: ID) {
+  myRequests(publicKey: $publicKey, filter: $filter, first: $first, after: $after) {
     nodes {
       id
       title

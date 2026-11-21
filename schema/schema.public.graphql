@@ -6,14 +6,10 @@ type FileTicket {
   expiresAt: String!
   role: ReportFileRole!
 
-  """
-  The file's slot: the last segment of the PUT path.
-  """
+  """The file's slot: the last segment of the PUT path."""
   slot: ID!
 
-  """
-  The value of the x-pulsarix-ticket header of the PUT.
-  """
+  """The value of the x-pulsarix-ticket header of the PUT."""
   ticket: String!
 }
 
@@ -26,17 +22,10 @@ type Mutation {
   eraseMyData(publicKey: String!): ErasedData!
   markRequestRead(id: ID!, publicKey: String!): UnreadCount!
   reopenRequest(id: ID!, publicKey: String!): RequestSummary!
-  replyToRequest(
-    id: ID!
-    input: RequestReplyInput!
-    publicKey: String!
-  ): RequestReply!
+  replyToRequest(id: ID!, input: RequestReplyInput!, publicKey: String!): RequestReply!
   resolveRequest(id: ID!, publicKey: String!): RequestSummary!
   setRequestEmails(on: Boolean!, publicKey: String!): Boolean!
-  submitClientReport(
-    input: SubmitClientReportInput!
-    publicKey: String!
-  ): SubmittedReport!
+  submitClientReport(input: SubmitClientReportInput!, publicKey: String!): SubmittedReport!
   trackingEmails(on: Boolean!): Boolean!
   trackingErase: ErasedData!
   trackingReopen: RequestSummary!
@@ -55,15 +44,11 @@ type MyRequests {
   hasNextPage: Boolean!
   nodes: [RequestSummary!]!
 
-  """
-  Unread replies over every request (the launcher's badge).
-  """
+  """Unread replies over every request (the launcher's badge)."""
   unread: Int!
 }
 
-"""
-What a reporter sees of a request: the status's name never leaves.
-"""
+"""What a reporter sees of a request: the status's name never leaves."""
 enum PublicState {
   declined
   inProgress
@@ -76,12 +61,7 @@ type Query {
   The tracking page's read. The token is the x-pulsarix-tracking header; the variable is the older way.
   """
   clientReportStatus(token: String): TrackedReport!
-  myRequests(
-    after: ID
-    filter: RequestFilter = OPEN
-    first: Int
-    publicKey: String!
-  ): MyRequests!
+  myRequests(after: ID, filter: RequestFilter = OPEN, first: Int, publicKey: String!): MyRequests!
   request(id: ID!, publicKey: String!): RequestDetail!
   widgetConfig(publicKey: String!): WidgetConfig!
 }
@@ -93,14 +73,10 @@ input ReportFileInput {
   name: String!
   role: ReportFileRole!
 
-  """
-  Bytes, at most 5 MB each and 12 MB together.
-  """
+  """Bytes, at most 5 MB each and 12 MB together."""
   size: Int!
 
-  """
-  png, jpeg or webp; a PDF for a file, never for a screenshot.
-  """
+  """png, jpeg or webp; a PDF for a file, never for a screenshot."""
   type: String!
 }
 
@@ -109,9 +85,7 @@ enum ReportFileRole {
   screenshot
 }
 
-"""
-How much the problem blocks the reporter.
-"""
+"""How much the problem blocks the reporter."""
 enum ReportImpact {
   annoying
   blocking
@@ -171,9 +145,7 @@ type RequestMessage {
   body: String!
   files: [RequestFile!]!
 
-  """
-  reporter or team.
-  """
+  """reporter or team."""
   from: String!
   id: ID!
 }
@@ -186,15 +158,11 @@ type RequestReply {
 input RequestReplyInput {
   body: String!
 
-  """
-  At most 3 files, as a report's.
-  """
+  """At most 3 files, as a report's."""
   files: [ReportFileInput!]
 }
 
-"""
-One request in the reporter's list.
-"""
+"""One request in the reporter's list."""
 type RequestSummary {
   createdAt: String!
   declineReason: String
@@ -204,9 +172,7 @@ type RequestSummary {
   title: String!
   type: String
 
-  """
-  The team's replies not read yet.
-  """
+  """The team's replies not read yet."""
   unread: Int!
 }
 
@@ -214,14 +180,10 @@ input SubmitClientReportInput {
   description: String!
   email: String
 
-  """
-  At most 1 screenshot and 3 files.
-  """
+  """At most 1 screenshot and 3 files."""
   files: [ReportFileInput!]
 
-  """
-  How long the form was open before it was sent, in milliseconds.
-  """
+  """How long the form was open before it was sent, in milliseconds."""
   filledInMs: Int!
   impact: ReportImpact
   locale: String
@@ -230,9 +192,7 @@ input SubmitClientReportInput {
   title: String!
   type: ReportType
 
-  """
-  Honeypot: a real form leaves it empty.
-  """
+  """Honeypot: a real form leaves it empty."""
   website: String
 }
 
@@ -277,9 +237,7 @@ type TrackedReport {
   resolvedAt: String
   state: String!
 
-  """
-  The reporter's messages and the team's public replies, oldest first.
-  """
+  """The reporter's messages and the team's public replies, oldest first."""
   thread: [RequestMessage!]!
   title: String!
   type: String
@@ -290,9 +248,7 @@ type UnreadCount {
 }
 
 type WidgetConfig {
-  """
-  Whether to show the screenshot and file controls.
-  """
+  """Whether to show the screenshot and file controls."""
   attachments: Boolean!
   enabled: Boolean!
   locale: String!

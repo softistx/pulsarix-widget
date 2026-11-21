@@ -1,7 +1,4 @@
-mutation submitClientReport(
-  $publicKey: String!
-  $input: SubmitClientReportInput!
-) {
+mutation submitClientReport($publicKey: String!, $input: SubmitClientReportInput!) {
   submitClientReport(publicKey: $publicKey, input: $input) {
     reportId
     tracking
