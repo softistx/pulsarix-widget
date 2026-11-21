@@ -33,21 +33,28 @@ An embeddable widget is not a BFF: it keeps the invariants above and takes the U
 (`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
 follow yet, the rule is the target and names its slice (tracking issue #134).
 
-- **Layout** (alignment W5, #134): the entry files `index.ts`, `loader.ts` and `element.tsx` stay at
-  the root of `src/` (they are the shipped `.d.ts`). The rest is `src/core/{api,shell,theme}` and
-  `src/modules/<m>/{components,hooks,model}` (modules `report`, `requests`, `files`, `screenshot`), each module with an `api.ts` for its operations. Imports
-  go one way: modules use `core`, never the reverse or each other. Unit tests sit beside their
-  source; browser tests stay in `scripts/`.
+- **Layout** (alignment W5, #134): the entry files `index.ts`, `loader.ts`, `element.tsx` and
+  `config.ts` stay at the root of `src/` (they are the shipped `.d.ts`), with `app.tsx` and
+  `app-props.ts`, the composition root that mounts the modules. The rest is
+  `src/core/{api,messages,shell,theme}` and `src/modules/<m>/{components,hooks,model}` (modules
+  `report`, `requests`, `files`, `screenshot`), each module with an `api.ts` when it has operations of
+  its own (`core/api/api.ts` holds `publicCall` and `IntakeError`). Imports go one way, enforced by
+  `bun run check:deps` (`scripts/check-deps.ts`, part of `verify`): `core` imports only `core`; a module
+  imports itself, `core` and `config.ts`; the two features `report` and `requests` never import each
+  other, and may use the leaf modules `files` (and, for `report`, `screenshot`), which import no module.
+  Unit tests sit beside their source (`*.test.ts[x]`; `tests/` keeps only `setup.ts`, the build test
+  and the loader's stub); browser tests stay in `scripts/`. Tailwind scans only `src/` (no tests, no
+  generated files).
 - **GraphQL** (alignment W3/W4, #134): every call is a persisted operation sent by id on
   `/public/graphql`, the ids typed as the `PersistedId` union. Types come from type-only codegen
   (`typescript` and `typescript-operations`, no client preset) against the public schema the API
   prints: it adds no byte to the bundle. `schema/` holds the committed copies of the API's
   `schema.public.graphql` and `operations/public/*.graphql` (the latter flat in `schema/operations/`): `bun run schema:sync` refreshes them
-  by reading `PULSARIX_API_REF` (default `origin/feat/align-conventions`, `origin/develop` once the
-  API's alignment landed) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
+  by reading `PULSARIX_API_REF` (default `origin/feat/align-conventions`; it becomes `origin/develop` once the
+  API's alignment landed there, since `develop` has no public schema yet) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
   main checkout), whatever branch that checkout is on. `schema:check` fails when they differ and
   skips with a message when the checkout is absent. `bun run generate` (`scripts/generate.ts`)
-  writes `src/graphql/public.ts` (committed, never edited): the operations' variable and result
+  writes `src/core/api/public.ts` (committed, never edited): the operations' variable and result
   types, the inputs and enums they use (`typescript-operations` alone, since v7 emits them) and
   the `PersistedId` union of the operation ids and the `PersistedOperations` map (variables and result by
   id) that types `publicCall`; each operation's root field must be named after its id. `generate:check` fails when it is stale. `verify`
@@ -68,7 +75,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
 ## Develop
 
 ```sh
-bun run verify        # lint, build, typecheck, unit tests, bundle sizes (loader at most 5 KB gzipped, main widget bundle at most 314 KiB gzipped)
+bun run verify        # lint, schema and type checks, build, typecheck, unit tests, import direction, bundle sizes (loader at most 5 KB gzipped, main widget bundle at most 314 KiB gzipped)
 bun run test:browser  # the host-fixture leak test in Chromium (local only, not in CI)
 bun run capture <dir> # 360 and 1440 px, light and dark, widget open
 ```

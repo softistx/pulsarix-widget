@@ -1,7 +1,7 @@
 /**
  * Type-only codegen: the operations' variable and result types and the `PersistedId` union, from
  * `schema/`. No client preset and no runtime: the output is types and adds no byte to the bundle.
- * `bun scripts/generate.ts` writes `src/graphql/public.ts`; `--check` fails when it is stale.
+ * `bun scripts/generate.ts` writes `src/core/api/public.ts`; `--check` fails when it is stale.
  */
 
 import { readdir } from "node:fs/promises";
@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { generate } from "@graphql-codegen/cli";
 
 const root = join(import.meta.dir, "..");
-const out = join(root, "src", "graphql", "public.ts");
+const out = join(root, "src", "core", "api", "public.ts");
 
 const [file] = ((await generate(
   {
@@ -72,7 +72,7 @@ if (process.argv.includes("--check")) {
     : null;
   if (current !== text) {
     console.error(
-      "generate:check: src/graphql/public.ts is stale. Run `bun run generate` and commit.",
+      "generate:check: src/core/api/public.ts is stale. Run `bun run generate` and commit.",
     );
     process.exit(1);
   }

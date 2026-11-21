@@ -8,17 +8,17 @@ import {
   PortalContainerProvider,
 } from "@softistx/material/embed";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import type { WidgetProject } from "./api";
 import type { AppProps } from "./app-props";
-import { DialogTabs } from "./dialog-tabs";
-import { Launcher } from "./launcher";
-import { ReportFlow } from "./report-flow";
-import { useUnread } from "./requests/use-unread";
-import { themeNameFor } from "./theme";
-import type { ReportValues } from "./validation";
+import { DialogTabs } from "./core/shell/dialog-tabs";
+import { Launcher } from "./core/shell/launcher";
+import { themeNameFor } from "./core/theme/theme";
+import type { WidgetProject } from "./modules/report/api";
+import { ReportFlow } from "./modules/report/components/report-flow";
+import type { ReportValues } from "./modules/report/model/validation";
+import { useUnread } from "./modules/requests/hooks/use-unread";
 
 // "My requests" is its own chunk: a reporter with no identity never downloads it.
-const loadRequests = () => import("./requests/panel");
+const loadRequests = () => import("./modules/requests/components/panel");
 const RequestsPanel = lazy(loadRequests);
 
 export type { AppProps } from "./app-props";

@@ -1,6 +1,6 @@
 import type { Locale, MetadataEntry, Position } from "./config";
-import type { Messages } from "./messages";
-import type { SubmitDetail } from "./report-flow";
+import type { Messages } from "./core/messages";
+import type { SubmitDetail } from "./modules/report/components/report-flow";
 
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
