@@ -80,18 +80,17 @@ interface CallBase {
 }
 
 /** One request with its thread. */
-export async function fetchRequest({
+export function fetchRequest({
   id,
   publicKey,
   ...rest
 }: CallBase & { id: string }): Promise<RequestDetail> {
-  const request = await publicCall({
+  // The API words a message's author as a string; its two values are narrowed here, the one cast.
+  return publicCall({
     ...rest,
     id: "request",
     variables: { publicKey, id },
-  });
-  // The API words a message's author as a string; its two values are narrowed here.
-  return request as RequestDetail;
+  }) as Promise<RequestDetail>;
 }
 
 /** The reply's text is saved; each declared file then goes up by its ticket (the W2c path). */
