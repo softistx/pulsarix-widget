@@ -25,13 +25,14 @@ setDefaultTimeout(30_000);
 // `mock.module` is process-wide and survives the file: keep the real pane to put it back.
 const realPane = { ...(await import("../src/screenshot/pane")) };
 let shot = new File([new Uint8Array(100)], "x.png", { type: "image/png" });
-mock.module("../src/screenshot/pane", () => ({
-  ScreenshotPane: ({ onImage }: { onImage: (file: File) => void }) => (
+function StubPane({ onImage }: { onImage: (file: File) => void }) {
+  return (
     <button type="button" onClick={() => onImage(shot)}>
       stub-shot
     </button>
-  ),
-}));
+  );
+}
+mock.module("../src/screenshot/pane", () => ({ ScreenshotPane: StubPane }));
 const { App } = await import("../src/app");
 afterAll(() => {
   mock.module("../src/screenshot/pane", () => realPane);

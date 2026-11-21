@@ -48,7 +48,9 @@ Without the attributes, drive it from script. Calls made before the bundle has l
 
 ```js
 PulsarixWidget.init({ projectKey: "pk_live_xxx", locale: "fr" });
-const off = PulsarixWidget.on("pulsarix:submit", (e) => console.log(e.detail.reportId));
+const off = PulsarixWidget.on("pulsarix:submit", (e) =>
+  console.log(e.detail.reportId),
+);
 PulsarixWidget.open();
 // later
 off();
@@ -84,7 +86,11 @@ handle. To mount again, destroy first:
 
 ```ts
 widget.destroy();
-const next = mount({ projectKey: "pk_live_xxx", apiBase: "https://<pulsarix-host>", locale: "fr" });
+const next = mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://<pulsarix-host>",
+  locale: "fr",
+});
 ```
 
 A script-tag loader and an npm import are two separate instances: use one route per page.
@@ -95,17 +101,17 @@ A script-tag loader and an npm import are two separate instances: use one route 
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
 `WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
 
-| `MountOptions` | Type | Default |
-| --- | --- | --- |
-| `projectKey` | `string` | required; missing reports `pulsarix:error` `config` |
-| `apiBase` | `string` | none; required on the npm route |
-| `locale` | `"en" \| "fr"` | `"en"` |
-| `theme` | `"light" \| "dark" \| "auto"` | `"auto"` |
-| `position` | `"bottom-right" \| "bottom-left"` | `"bottom-right"` |
-| `accentColor` | hex string | none: the built-in `lavande` theme |
-| `launcher` | `boolean` | `true` (`false` hides the floating button) |
-| `identity` | `string \| null` | none: today's form only (see "Identified reporters") |
-| `target` | `Element` | `document.body` |
+| `MountOptions` | Type                              | Default                                              |
+| -------------- | --------------------------------- | ---------------------------------------------------- |
+| `projectKey`   | `string`                          | required; missing reports `pulsarix:error` `config`  |
+| `apiBase`      | `string`                          | none; required on the npm route                      |
+| `locale`       | `"en" \| "fr"`                    | `"en"`                                               |
+| `theme`        | `"light" \| "dark" \| "auto"`     | `"auto"`                                             |
+| `position`     | `"bottom-right" \| "bottom-left"` | `"bottom-right"`                                     |
+| `accentColor`  | hex string                        | none: the built-in `lavande` theme                   |
+| `launcher`     | `boolean`                         | `true` (`false` hides the floating button)           |
+| `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
+| `target`       | `Element`                         | `document.body`                                      |
 
 `WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).

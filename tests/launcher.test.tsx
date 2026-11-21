@@ -43,26 +43,27 @@ describe("the launcher", () => {
   });
 });
 
+function Host() {
+  const [open, setOpen] = useState(false);
+  return (
+    <App
+      messages={MESSAGES.en}
+      locale="en"
+      projectKey="pk_live_abc"
+      apiBase="https://pulsarix.test"
+      dark={false}
+      launcher
+      position="bottom-right"
+      open={open}
+      onOpenChange={setOpen}
+      onSubmitted={() => {}}
+      onError={() => {}}
+    />
+  );
+}
+
 describe("focus", () => {
   test("opening from the launcher then pressing Escape puts focus back on it", async () => {
-    function Host() {
-      const [open, setOpen] = useState(false);
-      return (
-        <App
-          messages={MESSAGES.en}
-          locale="en"
-          projectKey="pk_live_abc"
-          apiBase="https://pulsarix.test"
-          dark={false}
-          launcher
-          position="bottom-right"
-          open={open}
-          onOpenChange={setOpen}
-          onSubmitted={() => {}}
-          onError={() => {}}
-        />
-      );
-    }
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async () =>
       new Response(JSON.stringify({ data: { widgetConfig: null } }), {
