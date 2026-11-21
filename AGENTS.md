@@ -65,7 +65,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
 ## Develop
 
 ```sh
-bun run verify        # lint, build, typecheck, unit tests, loader size (at most 5 KB gzipped)
+bun run verify        # lint, build, typecheck, unit tests, bundle sizes (loader at most 5 KB gzipped, main widget bundle at most 314 KiB gzipped)
 bun run test:browser  # the host-fixture leak test in Chromium (local only, not in CI)
 bun run capture <dir> # 360 and 1440 px, light and dark, widget open
 ```
