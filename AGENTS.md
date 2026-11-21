@@ -49,7 +49,8 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   skips with a message when the checkout is absent. `bun run generate` (`scripts/generate.ts`)
   writes `src/graphql/public.ts` (committed, never edited): the operations' variable and result
   types, the inputs and enums they use (`typescript-operations` alone, since v7 emits them) and
-  the `PersistedId` union of the operation ids. `generate:check` fails when it is stale. `verify`
+  the `PersistedId` union of the operation ids and the `PersistedOperations` map (variables and result by
+  id) that types `publicCall`; each operation's root field must be named after its id. `generate:check` fails when it is stale. `verify`
   runs both checks.
 - **i18n**: recorded departure from the UI's catalogue and `check:i18n`. Messages are typed TS
   catalogues (`Messages`): there is no ICU runtime to ship, and the compiler enforces parity between
