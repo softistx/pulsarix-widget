@@ -11,6 +11,8 @@ export function errorText(text: RequestsMessages, error: IntakeError): string {
   switch (error.kind) {
     case "identity":
       return text.errors.identity;
+    case "rate-limited":
+      return text.errors.rateLimited(Math.max(1, error.minutes ?? 1));
     case "unavailable":
       return text.errors.unavailable;
     case "network":

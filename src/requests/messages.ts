@@ -59,6 +59,7 @@ export interface RequestsMessages {
     title: string;
     identity: string;
     unavailable: string;
+    rateLimited: (minutes: number) => string;
     network: string;
     unknown: string;
   };
@@ -142,6 +143,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       identity:
         "Your session expired. Reload the page and sign in again to see your requests.",
       unavailable: "The service is busy right now. Try again in a moment.",
+      rateLimited: (minutes) =>
+        `Too many requests from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       network: "Could not reach the server. Check your connection.",
       unknown: "Something went wrong. Try again in a moment.",
     },
@@ -224,6 +227,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       identity:
         "Votre session a expiré. Rechargez la page et reconnectez-vous pour voir vos demandes.",
       unavailable: "Le service est occupé. Réessayez dans un instant.",
+      rateLimited: (minutes) =>
+        `Trop de requêtes depuis ici. Réessayez dans ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       network: "Le serveur est injoignable. Vérifiez votre connexion.",
       unknown: "Une erreur est survenue. Réessayez dans un instant.",
     },
