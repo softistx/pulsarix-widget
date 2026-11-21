@@ -2,7 +2,7 @@
 
 The owner's rules for every repository are in `~/.claude/CLAUDE.md`. The conventions follow
 operix-ui (`~/workspace/dev/operix/operix-ui/AGENTS.md`). This file states only the widget's
-invariants.
+invariants and where it departs from the UI conventions.
 
 - The loader stays at 5 KB gzipped or less (`scripts/check-size.ts`).
 - Exactly one global, `PulsarixWidget` (the leak test, `bun run test:browser`).
@@ -26,6 +26,32 @@ invariants.
   access. npmjs only, through `publish.yml`: `@softistx/*` installs from registry.npmjs.org
   too, with no scope override in `bunfig.toml`.
 - `mount()` is a singleton while its element is attached.
+
+## Conventions
+
+An embeddable widget is not a BFF: it keeps the invariants above and takes the UI conventions
+(`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
+follow yet, the rule is the target and names its slice (tracking issue #134).
+
+- **Layout** (alignment W5, #134): the entry files `index.ts`, `loader.ts` and `element.tsx` stay at
+  the root of `src/` (they are the shipped `.d.ts`). The rest is `src/core/{api,shell,theme}` and
+  `src/modules/<m>/{components,hooks,model}` (modules `report`, `requests`, `files`, `screenshot`), each module with an `api.ts` for its operations. Imports
+  go one way: modules use `core`, never the reverse or each other. Unit tests sit beside their
+  source; browser tests stay in `scripts/`.
+- **GraphQL** (alignment W3/W4, #134): every call is a persisted operation sent by id on
+  `/public/graphql`, the ids typed as the `PersistedId` union. Types come from type-only codegen
+  (`typescript` and `typescript-operations`, no client preset) against the public schema the API
+  prints: it adds no byte to the bundle.
+- **i18n**: recorded departure from the UI's catalogue and `check:i18n`. Messages are typed TS
+  catalogues (`Messages`): there is no ICU runtime to ship, and the compiler enforces parity between
+  languages.
+- **Errors** (alignment W1, #134): the API's catalogue words `intake.errors.*`, and the widget shows
+  the API's message. Local words exist only for `network`, `config`, unreachable and `unknown`.
+- **Theme**: `lavande` by default. The host accent is the documented exception: an embed matches its
+  host page, so the host may set its accent instead of the app's `--primary`.
+- **Checks** (alignment W2/W3/W5, #134): `verify` grows `check:deps` (the layout's import direction),
+  `generate:check` and `schema:check` (generated types and the schema copy in sync), and a gzipped
+  budget for the main bundle beside the loader cap in `scripts/check-size.ts`.
 
 ## Develop
 
