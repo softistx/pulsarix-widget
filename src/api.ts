@@ -2,6 +2,7 @@
 
 import type {
   PersistedId,
+  PersistedOperations,
   ReportFileInput,
   ReportImpact,
   ReportType,
@@ -95,7 +96,7 @@ function kindOf(status: number, code: string): ErrorKind {
 }
 
 /** One persisted operation on `/public/graphql`: its data, or an `IntakeError`. */
-export async function publicCall<T>({
+export async function publicCall<I extends PersistedId>({
   apiBase,
   id,
   variables,
@@ -105,13 +106,13 @@ export async function publicCall<T>({
   signal,
 }: {
   apiBase: string;
-  id: PersistedId;
-  variables: object;
+  id: I;
+  variables: PersistedOperations[I]["variables"];
   locale: string;
   identity?: string | null;
   fetch?: typeof fetch;
   signal?: AbortSignal;
-}): Promise<T> {
+}): Promise<PersistedOperations[I]["result"]> {
   let response: Response;
   try {
     response = await doFetch(`${apiBase.replace(/\/+$/, "")}/public/graphql`, {
@@ -129,8 +130,10 @@ export async function publicCall<T>({
     if (signal?.aborted) throw error;
     throw new IntakeError("network", "network");
   }
-  let body: { data?: Record<string, T>; errors?: GraphQLErrorBody[] } | null =
-    null;
+  let body: {
+    data?: Record<string, PersistedOperations[I]["result"]>;
+    errors?: GraphQLErrorBody[];
+  } | null = null;
   try {
     body = await response.json();
   } catch {
@@ -172,9 +175,7 @@ export async function submitReport({
   signal,
 }: SubmitOptions): Promise<SubmittedReport> {
   const { email, files, metadata, ...rest } = input;
-  const report = await publicCall<
-    Omit<SubmittedReport, "files"> & { files?: FileTicket[] }
-  >({
+  const report = await publicCall({
     apiBase,
     id: "submitClientReport",
     variables: {

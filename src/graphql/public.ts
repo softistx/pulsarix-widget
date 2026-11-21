@@ -203,3 +203,23 @@ export type PersistedId =
   | "trackingReply"
   | "trackingResolve"
   | "widgetConfig";
+
+/** Each persisted operation's variables and the data `publicCall` answers, by id (types only). */
+export interface PersistedOperations {
+  clientReportStatus: { variables: ClientReportStatusQueryVariables; result: ClientReportStatusQuery["clientReportStatus"] };
+  eraseMyData: { variables: EraseMyDataMutationVariables; result: EraseMyDataMutation["eraseMyData"] };
+  markRequestRead: { variables: MarkRequestReadMutationVariables; result: MarkRequestReadMutation["markRequestRead"] };
+  myRequests: { variables: MyRequestsQueryVariables; result: MyRequestsQuery["myRequests"] };
+  reopenRequest: { variables: ReopenRequestMutationVariables; result: ReopenRequestMutation["reopenRequest"] };
+  replyToRequest: { variables: ReplyToRequestMutationVariables; result: ReplyToRequestMutation["replyToRequest"] };
+  request: { variables: RequestQueryVariables; result: RequestQuery["request"] };
+  resolveRequest: { variables: ResolveRequestMutationVariables; result: ResolveRequestMutation["resolveRequest"] };
+  setRequestEmails: { variables: SetRequestEmailsMutationVariables; result: SetRequestEmailsMutation["setRequestEmails"] };
+  submitClientReport: { variables: SubmitClientReportMutationVariables; result: SubmitClientReportMutation["submitClientReport"] };
+  trackingEmails: { variables: TrackingEmailsMutationVariables; result: TrackingEmailsMutation["trackingEmails"] };
+  trackingErase: { variables: TrackingEraseMutationVariables; result: TrackingEraseMutation["trackingErase"] };
+  trackingReopen: { variables: TrackingReopenMutationVariables; result: TrackingReopenMutation["trackingReopen"] };
+  trackingReply: { variables: TrackingReplyMutationVariables; result: TrackingReplyMutation["trackingReply"] };
+  trackingResolve: { variables: TrackingResolveMutationVariables; result: TrackingResolveMutation["trackingResolve"] };
+  widgetConfig: { variables: WidgetConfigQueryVariables; result: WidgetConfigQuery["widgetConfig"] };
+}
