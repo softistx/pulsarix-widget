@@ -29,5 +29,5 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
-      # lint, build, typecheck (bun check), unit tests, loader size budget
+      # lint, schema and generated-types checks, build, typecheck (bun check), unit tests, import-direction check, loader and main-bundle gzipped size budgets
       - run: bun run verify

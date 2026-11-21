@@ -7,9 +7,9 @@ import {
   readConfig,
   type WidgetConfig,
 } from "./config";
+import { MESSAGES } from "./core/messages";
+import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
-import { MESSAGES } from "./messages";
-import { themeCssFor, themeNameFor } from "./theme";
 
 export const TAG_NAME = "pulsarix-widget";
 

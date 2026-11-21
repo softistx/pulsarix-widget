@@ -1,7 +1,9 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme" theme(reference);
-@import "tailwindcss/utilities" layer(utilities);
+@import "tailwindcss/utilities" layer(utilities) source(none);
 @source "./";
-/* The build's generated files hold the previous CSS as strings; scanning them makes Tailwind emit
-   rules for class names the CSS itself contains (`.rounded{border-radius:.25rem}`). */
+/* Only the widget's sources are scanned: never the tests beside them (a bare word such as "rounded"
+   there would emit a rem rule), nor the build's generated files, which hold the previous CSS as
+   strings (`.rounded{border-radius:.25rem}`). */
 @source not "./generated";
+@source not "./**/*.test.{ts,tsx}";

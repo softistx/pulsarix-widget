@@ -6,7 +6,7 @@
       "**",
       "!!**/dist",
       "!!**/src/generated",
-      "!!**/src/graphql",
+      "!!**/src/core/api/public.ts",
       "!!**/schema",
       "!!fixtures/host.html"
     ]
