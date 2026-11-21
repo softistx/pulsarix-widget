@@ -42,7 +42,7 @@ function FailureAlert({
   alertBox: Ref<HTMLDivElement>;
 }) {
   return (
-    <div role="alert" ref={alertBox}>
+    <div role="alert" ref={alertBox} className="scroll-mb-24">
       {failure ? (
         <Alert
           variant="error"
