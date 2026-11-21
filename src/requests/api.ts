@@ -1,37 +1,17 @@
 /** The reporter's side of the public endpoint that "My requests" reads (plan section 19, A17). */
 import { type DeclaredFile, type FileTicket, publicCall } from "../api";
+import type {
+  MyRequestsQuery,
+  PublicState,
+  RequestFilter,
+  RequestQuery,
+} from "../graphql/public";
 
-export type PublicState = "received" | "inProgress" | "resolved" | "declined";
-export type RequestFilter = "OPEN" | "RESOLVED" | "DECLINED" | "ALL";
+export type { PublicState, RequestFilter };
 
-export interface RequestSummary {
-  id: string;
-  title: string;
-  publicState: PublicState;
-  impact: string | null;
-  type: string | null;
-  createdAt: string;
-  declineReason: string | null;
-  /** The team's replies not read yet. */
-  unread: number;
-}
-
-export interface RequestCounts {
-  open: number;
-  resolved: number;
-  declined: number;
-  all: number;
-}
-
-export interface MyRequests {
-  nodes: RequestSummary[];
-  counts: RequestCounts;
-  /** Unread replies over every request: the launcher's badge. */
-  unread: number;
-  emailsOn: boolean;
-  endCursor: string | null;
-  hasNextPage: boolean;
-}
+export type MyRequests = MyRequestsQuery["myRequests"];
+export type RequestSummary = MyRequests["nodes"][number];
+export type RequestCounts = MyRequests["counts"];
 
 /** One page of the reporter's requests; unread ones come first. */
 export function fetchMyRequests({
@@ -74,30 +54,18 @@ export async function fetchUnread(
   return page.unread;
 }
 
-export interface RequestFileRef {
-  id: string;
-  name: string;
-  /** Needs the identity header to read, so the thread shows the name only. */
-  thumbnailUrl: string | null;
-}
+export type RequestFileRef = RequestQuery["request"]["files"][number];
 
-export interface ThreadMessage {
-  id: string;
+export type ThreadMessage = Omit<
+  RequestQuery["request"]["thread"][number],
+  "from"
+> & {
   from: "reporter" | "team";
-  body: string;
-  at: string;
-  files: RequestFileRef[];
-}
+};
 
-export interface RequestDetail extends RequestSummary {
-  description: string;
+export type RequestDetail = Omit<RequestQuery["request"], "thread"> & {
   thread: ThreadMessage[];
-  files: RequestFileRef[];
-  canReply: boolean;
-  canReopen: boolean;
-  resolvedAt: string | null;
-  emailsOn: boolean;
-}
+};
 
 interface CallBase {
   apiBase: string;

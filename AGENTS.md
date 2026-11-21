@@ -41,7 +41,16 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
 - **GraphQL** (alignment W3/W4, #134): every call is a persisted operation sent by id on
   `/public/graphql`, the ids typed as the `PersistedId` union. Types come from type-only codegen
   (`typescript` and `typescript-operations`, no client preset) against the public schema the API
-  prints: it adds no byte to the bundle.
+  prints: it adds no byte to the bundle. `schema/` holds the committed copies of the API's
+  `schema.public.graphql` and `operations/public/*.graphql`: `bun run schema:sync` refreshes them
+  by reading `PULSARIX_API_REF` (default `origin/feat/align-conventions`, `origin/develop` once the
+  API's alignment landed) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
+  main checkout), whatever branch that checkout is on. `schema:check` fails when they differ and
+  skips with a message when the checkout is absent. `bun run generate` (`scripts/generate.ts`)
+  writes `src/graphql/public.ts` (committed, never edited): the operations' variable and result
+  types, the inputs and enums they use (`typescript-operations` alone, since v7 emits them) and
+  the `PersistedId` union of the operation ids. `generate:check` fails when it is stale. `verify`
+  runs both checks.
 - **i18n**: recorded departure from the UI's catalogue and `check:i18n`. Messages are typed TS
   catalogues (`Messages`): there is no ICU runtime to ship, and the compiler enforces parity between
   languages.

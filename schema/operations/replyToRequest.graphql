@@ -1,0 +1,15 @@
+mutation replyToRequest(
+  $publicKey: String!
+  $id: ID!
+  $input: RequestReplyInput!
+) {
+  replyToRequest(publicKey: $publicKey, id: $id, input: $input) {
+    messageId
+    files {
+      slot
+      role
+      ticket
+      expiresAt
+    }
+  }
+}

@@ -1,0 +1,3 @@
+mutation setRequestEmails($publicKey: String!, $on: Boolean!) {
+  setRequestEmails(publicKey: $publicKey, on: $on)
+}
