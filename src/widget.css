@@ -2,3 +2,6 @@
 @import "tailwindcss/theme" theme(reference);
 @import "tailwindcss/utilities" layer(utilities);
 @source "./";
+/* The build's generated files hold the previous CSS as strings; scanning them makes Tailwind emit
+   rules for class names the CSS itself contains (`.rounded{border-radius:.25rem}`). */
+@source not "./generated";
