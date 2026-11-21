@@ -4,8 +4,7 @@
  * skips (exit 0) when no API checkout is there, so `verify` runs anywhere.
  *
  * Source: the checkout `PULSARIX_API` (default `../pulsarix-api`, relative to this repository's main checkout), read through git at
- * `PULSARIX_API_REF` (default `origin/feat/align-conventions`; `origin/develop` once the API's
- * alignment has landed), so the API's working tree and branch do not matter.
+ * `PULSARIX_API_REF` (default `origin/develop`), so the API's working tree and branch do not matter.
  */
 
 import { existsSync } from "node:fs";
@@ -30,7 +29,7 @@ const api = resolve(
   mainCheckout,
   process.env.PULSARIX_API ?? "../pulsarix-api",
 );
-const ref = process.env.PULSARIX_API_REF ?? "origin/feat/align-conventions";
+const ref = process.env.PULSARIX_API_REF ?? "origin/develop";
 const check = process.argv.includes("--check");
 const target = join(root, "schema");
 

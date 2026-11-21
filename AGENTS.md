@@ -51,8 +51,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   (`typescript` and `typescript-operations`, no client preset) against the public schema the API
   prints: it adds no byte to the bundle. `schema/` holds the committed copies of the API's
   `schema.public.graphql` and `operations/public/*.graphql` (the latter flat in `schema/operations/`): `bun run schema:sync` refreshes them
-  by reading `PULSARIX_API_REF` (default `origin/feat/align-conventions`; it becomes `origin/develop` once the
-  API's alignment landed there, since `develop` has no public schema yet) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
+  by reading `PULSARIX_API_REF` (default `origin/develop`) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
   main checkout), whatever branch that checkout is on. `schema:check` fails when they differ and
   skips with a message when the checkout is absent. `bun run generate` (`scripts/generate.ts`)
   writes `src/core/api/public.ts` (committed, never edited): the operations' variable and result
