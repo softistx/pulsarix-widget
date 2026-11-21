@@ -1,6 +1,6 @@
 name: Publish
 
-# Publishes @softistx/pulsarix-widget to npmjs (public). Runs only from a tag, a
+# Publishes @softistx/pulsarix-widget to npmjs (restricted). Runs only from a tag, a
 # published release or a manual dispatch, never on a push to a branch or a PR.
 # The release owner bumps `version` in a PR, then tags an up-to-date `develop`
 # commit (`git tag v<x.y.z> && git push origin v<x.y.z>`). CI never tags.
@@ -42,6 +42,8 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
+        env:
+          NPM_SOFTISTX_READ_TOKEN: ${{ secrets.NPM_TOKEN }}
       # The whole verify: lint, schema and generated-types checks, build, typecheck, unit tests, import-direction check and the loader and main-bundle gzipped size budgets (the artifact checks).
       - run: bun run verify
       - name: Publish
