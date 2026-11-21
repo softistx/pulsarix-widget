@@ -17,6 +17,7 @@
  *   GET /__puts  what the stub received: [{ slot, name, bytes, type }]
  */
 import { join } from "node:path";
+import { apiMessage } from "./fixture-messages";
 import { createRequestsStub } from "./fixture-requests";
 
 const root = join(import.meta.dir, "..");
@@ -77,7 +78,13 @@ export function serveFixture(port = 0) {
           return Response.json(
             {
               errors: [
-                { extensions: { code: "intake.errors.ticket-invalid" } },
+                {
+                  message: apiMessage(
+                    "ticket-invalid",
+                    request.headers.get("accept-language"),
+                  ),
+                  extensions: { code: "intake.errors.ticket-invalid" },
+                },
               ],
             },
             { status: 403 },
@@ -87,7 +94,17 @@ export function serveFixture(port = 0) {
         if (name.startsWith("slow")) await Bun.sleep(6_000);
         if (name.startsWith("fail"))
           return Response.json(
-            { errors: [{ extensions: { code: "intake.errors.unavailable" } }] },
+            {
+              errors: [
+                {
+                  message: apiMessage(
+                    "unavailable",
+                    request.headers.get("accept-language"),
+                  ),
+                  extensions: { code: "intake.errors.unavailable" },
+                },
+              ],
+            },
             { status: 500 },
           );
         puts.push({
@@ -123,6 +140,7 @@ export function serveFixture(port = 0) {
             slots.set(slot, name);
             return { slot, role: "file", ticket: `ticket-${slot}` };
           },
+          request.headers.get("accept-language"),
         );
         if (answered) return answered;
         if (body.id === "widgetConfig")
@@ -136,13 +154,37 @@ export function serveFixture(port = 0) {
               },
             },
           });
+        // A title that says "limited" gets the API's 429 with its wait in minutes.
+        if (body.variables?.input?.title?.includes("limited"))
+          return Response.json(
+            {
+              errors: [
+                {
+                  message: apiMessage(
+                    "too-many-requests",
+                    request.headers.get("accept-language"),
+                    10,
+                  ),
+                  extensions: {
+                    code: "intake.errors.too-many-requests",
+                    minutes: 10,
+                    retryAfter: 600,
+                  },
+                },
+              ],
+            },
+            { status: 429 },
+          );
         // A title that says "busy" gets the API's 503, to see the error state.
         if (body.variables?.input?.title?.includes("busy"))
           return Response.json(
             {
               errors: [
                 {
-                  message: "busy",
+                  message: apiMessage(
+                    "unavailable",
+                    request.headers.get("accept-language"),
+                  ),
                   extensions: { code: "intake.errors.unavailable" },
                 },
               ],

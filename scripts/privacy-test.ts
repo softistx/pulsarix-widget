@@ -92,7 +92,7 @@ try {
   // A refused erase keeps the dialog open.
   await page.getByRole("button", { name: "Delete my data" }).click();
   await page.getByRole("button", { name: "Delete", exact: true }).click();
-  await page.getByText(/Too many requests from here/).waitFor();
+  await page.getByText(/Too many requests. Try again in 10 minutes/).waitFor();
   check(
     (await page.getByRole("alertdialog").count()) === 1,
     "a refused erase keeps the confirm dialog open with the reason",

@@ -298,7 +298,7 @@ describe("the report form", () => {
       refusal(
         429,
         "intake.errors.too-many-requests",
-        { retryAfter: 600, minutes: 10 },
+        { minutes: 10 },
         "Too many requests. Try again in 10 minutes.",
       );
     const { user } = setup();
