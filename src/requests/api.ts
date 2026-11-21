@@ -38,7 +38,7 @@ export function fetchMyRequests({
   fetch?: typeof globalThis.fetch;
   signal?: AbortSignal;
 }): Promise<MyRequests> {
-  return publicCall<MyRequests>({
+  return publicCall({
     apiBase,
     id: "myRequests",
     variables: { publicKey, filter, first, ...(after ? { after } : {}) },
@@ -85,11 +85,12 @@ export function fetchRequest({
   publicKey,
   ...rest
 }: CallBase & { id: string }): Promise<RequestDetail> {
-  return publicCall<RequestDetail>({
+  // The API words a message's author as a string; its two values are narrowed here, the one cast.
+  return publicCall({
     ...rest,
     id: "request",
     variables: { publicKey, id },
-  });
+  }) as Promise<RequestDetail>;
 }
 
 /** The reply's text is saved; each declared file then goes up by its ticket (the W2c path). */
@@ -120,7 +121,7 @@ export function resolveRequest({
   publicKey,
   ...rest
 }: CallBase & { id: string }): Promise<RequestSummary> {
-  return publicCall<RequestSummary>({
+  return publicCall({
     ...rest,
     id: "resolveRequest",
     variables: { publicKey, id },
@@ -132,7 +133,7 @@ export function reopenRequest({
   publicKey,
   ...rest
 }: CallBase & { id: string }): Promise<RequestSummary> {
-  return publicCall<RequestSummary>({
+  return publicCall({
     ...rest,
     id: "reopenRequest",
     variables: { publicKey, id },
@@ -147,7 +148,7 @@ export function markRequestRead({
 }: CallBase & { id: string }): Promise<
   MarkRequestReadMutation["markRequestRead"]
 > {
-  return publicCall<MarkRequestReadMutation["markRequestRead"]>({
+  return publicCall({
     ...rest,
     id: "markRequestRead",
     variables: { publicKey, id },
@@ -162,7 +163,7 @@ export function setRequestEmails({
 }: CallBase & { on: boolean }): Promise<
   SetRequestEmailsMutation["setRequestEmails"]
 > {
-  return publicCall<SetRequestEmailsMutation["setRequestEmails"]>({
+  return publicCall({
     ...rest,
     id: "setRequestEmails",
     variables: { publicKey, on },
@@ -174,7 +175,7 @@ export function eraseMyData({
   publicKey,
   ...rest
 }: CallBase): Promise<EraseMyDataMutation["eraseMyData"]> {
-  return publicCall<EraseMyDataMutation["eraseMyData"]>({
+  return publicCall({
     ...rest,
     id: "eraseMyData",
     variables: { publicKey },
