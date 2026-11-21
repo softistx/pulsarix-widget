@@ -1,10 +1,13 @@
 /** The reporter's side of the public endpoint that "My requests" reads (plan section 19, A17). */
 import { type DeclaredFile, type FileTicket, publicCall } from "../api";
 import type {
+  EraseMyDataMutation,
+  MarkRequestReadMutation,
   MyRequestsQuery,
   PublicState,
   RequestFilter,
   RequestQuery,
+  SetRequestEmailsMutation,
 } from "../graphql/public";
 
 export type { PublicState, RequestFilter };
@@ -141,8 +144,10 @@ export function markRequestRead({
   id,
   publicKey,
   ...rest
-}: CallBase & { id: string }): Promise<{ count: number }> {
-  return publicCall<{ count: number }>({
+}: CallBase & { id: string }): Promise<
+  MarkRequestReadMutation["markRequestRead"]
+> {
+  return publicCall<MarkRequestReadMutation["markRequestRead"]>({
     ...rest,
     id: "markRequestRead",
     variables: { publicKey, id },
@@ -154,8 +159,10 @@ export function setRequestEmails({
   publicKey,
   on,
   ...rest
-}: CallBase & { on: boolean }): Promise<boolean> {
-  return publicCall<boolean>({
+}: CallBase & { on: boolean }): Promise<
+  SetRequestEmailsMutation["setRequestEmails"]
+> {
+  return publicCall<SetRequestEmailsMutation["setRequestEmails"]>({
     ...rest,
     id: "setRequestEmails",
     variables: { publicKey, on },
@@ -166,8 +173,8 @@ export function setRequestEmails({
 export function eraseMyData({
   publicKey,
   ...rest
-}: CallBase): Promise<{ requests: number }> {
-  return publicCall<{ requests: number }>({
+}: CallBase): Promise<EraseMyDataMutation["eraseMyData"]> {
+  return publicCall<EraseMyDataMutation["eraseMyData"]>({
     ...rest,
     id: "eraseMyData",
     variables: { publicKey },

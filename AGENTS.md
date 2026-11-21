@@ -42,7 +42,7 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   `/public/graphql`, the ids typed as the `PersistedId` union. Types come from type-only codegen
   (`typescript` and `typescript-operations`, no client preset) against the public schema the API
   prints: it adds no byte to the bundle. `schema/` holds the committed copies of the API's
-  `schema.public.graphql` and `operations/public/*.graphql`: `bun run schema:sync` refreshes them
+  `schema.public.graphql` and `operations/public/*.graphql` (the latter flat in `schema/operations/`): `bun run schema:sync` refreshes them
   by reading `PULSARIX_API_REF` (default `origin/feat/align-conventions`, `origin/develop` once the
   API's alignment landed) in the API checkout `PULSARIX_API` (default `../pulsarix-api` beside the
   main checkout), whatever branch that checkout is on. `schema:check` fails when they differ and

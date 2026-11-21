@@ -213,6 +213,7 @@ export async function fetchWidgetConfig({
   signal?: AbortSignal;
 }): Promise<WidgetProject | null> {
   try {
+    const id: PersistedId = "widgetConfig";
     const response = await doFetch(
       `${apiBase.replace(/\/+$/, "")}/public/graphql`,
       {
@@ -221,7 +222,7 @@ export async function fetchWidgetConfig({
           "content-type": "application/json",
           "accept-language": locale,
         },
-        body: JSON.stringify({ id: "widgetConfig", variables: { publicKey } }),
+        body: JSON.stringify({ id, variables: { publicKey } }),
         credentials: "omit",
         signal,
       },
