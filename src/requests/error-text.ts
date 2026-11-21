@@ -1,15 +1,20 @@
 import type { IntakeError } from "../api";
 import type { RequestsMessages } from "./messages";
 
-/** The words of a failed read; the API's own code is never shown. */
+/**
+ * The words of a failed call: the API's own message for an `intake.errors.*`
+ * code, else the widget's for a lapsed session (the stream's own failure), the
+ * busy service, the network and unknown.
+ */
 export function errorText(text: RequestsMessages, error: IntakeError): string {
+  if (error.apiMessage) return error.apiMessage;
   switch (error.kind) {
     case "identity":
       return text.errors.identity;
+    case "rate-limited":
+      return text.errors.rateLimited(Math.max(1, error.minutes ?? 1));
     case "unavailable":
       return text.errors.unavailable;
-    case "rate-limited":
-      return text.errors.rateLimited;
     case "network":
       return text.errors.network;
     default:
@@ -17,14 +22,5 @@ export function errorText(text: RequestsMessages, error: IntakeError): string {
   }
 }
 
-/** A thread's failure words: its own codes first, then the generic ones. */
-export function threadErrorText(
-  text: RequestsMessages,
-  error: IntakeError,
-): string {
-  const t = text.thread;
-  if (error.code.endsWith("reopen-expired")) return t.errors.reopenExpired;
-  if (error.code.endsWith("request-declined")) return t.errors.declined;
-  if (error.kind === "files") return t.errors.files;
-  return errorText(text, error);
-}
+/** A thread's failure words: the same as any call's (the API words its codes). */
+export const threadErrorText = errorText;

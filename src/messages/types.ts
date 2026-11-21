@@ -91,12 +91,8 @@ export interface Messages {
   failure: {
     summary: string;
     config: string;
-    rejected: string;
-    identity: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;
-    invalid: string;
-    files: string;
     network: string;
     unknown: string;
   };

@@ -57,7 +57,10 @@ export class IntakeError extends Error {
     readonly kind: ErrorKind,
     /** The API's own code (`intake.errors.…`) when it gave one, else the kind. */
     readonly code: string,
-    readonly retryAfterSeconds?: number,
+    /** Whole minutes to wait (`extensions.minutes`) on a rate limit. */
+    readonly minutes?: number,
+    /** The API's own message, in the request's language, for an `intake.errors.*` code. */
+    readonly apiMessage?: string,
   ) {
     super(code);
     this.name = "IntakeError";
@@ -66,7 +69,7 @@ export class IntakeError extends Error {
 
 interface GraphQLErrorBody {
   message?: string;
-  extensions?: { code?: string; retryAfter?: number };
+  extensions?: { code?: string; minutes?: number };
 }
 
 const FILE_CODES = new Set([
@@ -139,7 +142,10 @@ export async function publicCall<T>({
     throw new IntakeError(
       kindOf(response.status, code),
       code,
-      failure?.extensions?.retryAfter,
+      failure?.extensions?.minutes,
+      code.startsWith("intake.errors.") && failure?.message?.trim()
+        ? failure.message
+        : undefined,
     );
   }
   const data = body?.data?.[id];

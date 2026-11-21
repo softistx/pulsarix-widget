@@ -103,16 +103,9 @@ export const EN: Messages = {
   failure: {
     summary: "Your report was not sent",
     config: "This form is not set up correctly. Tell the owner of this site.",
-    rejected:
-      "This form cannot take reports from this site. Tell the owner of this site.",
-    identity:
-      "Your session expired. Reload the page and sign in again, then send the report.",
     unavailable: "The service is busy right now. Try again in a moment.",
     rateLimited: (minutes) =>
       `Too many reports from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
-    invalid: "The report was refused. Check what you wrote and try again.",
-    files:
-      "Your files were refused. Remove them, or check they are PNG, JPEG, WebP or PDF files under 5 MB, and try again.",
     network:
       "Could not reach the server. Check your connection, or ask the site owner whether reports are enabled here.",
     unknown: "Something went wrong. Try again in a moment.",

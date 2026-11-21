@@ -38,8 +38,7 @@ export interface RequestsMessages {
     filesFailed: (names: string) => string;
     errors: {
       title: string;
-      declined: string;
-      reopenExpired: string;
+      /** The client-side size check, before anything is sent. */
       files: string;
     };
   };
@@ -60,7 +59,7 @@ export interface RequestsMessages {
     title: string;
     identity: string;
     unavailable: string;
-    rateLimited: string;
+    rateLimited: (minutes: number) => string;
     network: string;
     unknown: string;
   };
@@ -121,9 +120,6 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
         `Your reply was sent, but these files did not upload: ${names}.`,
       errors: {
         title: "That did not work",
-        declined: "This request was declined: it takes no reply.",
-        reopenExpired:
-          "This request can no longer be reopened (30 days passed).",
         files:
           "A file was refused (PNG, JPEG, WebP or PDF, 5 MB each, 3 files).",
       },
@@ -147,7 +143,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       identity:
         "Your session expired. Reload the page and sign in again to see your requests.",
       unavailable: "The service is busy right now. Try again in a moment.",
-      rateLimited: "Too many requests from here. Try again in a few minutes.",
+      rateLimited: (minutes) =>
+        `Too many requests from here. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       network: "Could not reach the server. Check your connection.",
       unknown: "Something went wrong. Try again in a moment.",
     },
@@ -207,10 +204,6 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
         `Votre réponse est envoyée, mais ces fichiers n'ont pas été transférés : ${names}.`,
       errors: {
         title: "Cela n'a pas fonctionné",
-        declined:
-          "Cette demande a été refusée : elle n'accepte pas de réponse.",
-        reopenExpired:
-          "Cette demande ne peut plus être rouverte (30 jours écoulés).",
         files:
           "Un fichier a été refusé (PNG, JPEG, WebP ou PDF, 5 Mo chacun, 3 fichiers).",
       },
@@ -234,8 +227,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       identity:
         "Votre session a expiré. Rechargez la page et reconnectez-vous pour voir vos demandes.",
       unavailable: "Le service est occupé. Réessayez dans un instant.",
-      rateLimited:
-        "Trop de requêtes depuis ici. Réessayez dans quelques minutes.",
+      rateLimited: (minutes) =>
+        `Trop de requêtes depuis ici. Réessayez dans ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       network: "Le serveur est injoignable. Vérifiez votre connexion.",
       unknown: "Une erreur est survenue. Réessayez dans un instant.",
     },

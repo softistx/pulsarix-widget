@@ -33,8 +33,12 @@ const json = (status: number, body: unknown, headers: HeadersInit = {}) =>
   });
 const ok = (tracking: boolean) =>
   json(200, { data: { submitClientReport: { reportId: "r1", tracking } } });
-const refusal = (status: number, code: string, extra: object = {}) =>
-  json(status, { errors: [{ message: code, extensions: { code, ...extra } }] });
+const refusal = (
+  status: number,
+  code: string,
+  extra: object = {},
+  message: string = code,
+) => json(status, { errors: [{ message, extensions: { code, ...extra } }] });
 
 beforeEach(() => {
   calls = [];
@@ -200,11 +204,12 @@ describe("the report form", () => {
   });
 
   test("a busy service (503) keeps the text and lets the reporter retry", async () => {
-    handler = () => refusal(503, "intake.errors.unavailable");
+    handler = () =>
+      refusal(503, "intake.errors.unavailable", {}, "API: busy, retry.");
     const { user, onError } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
-    const alert = await screen.findByText(m.failure.unavailable);
+    const alert = await screen.findByText("API: busy, retry.");
     expect(alert).toBeTruthy();
     expect(onError).toHaveBeenCalledWith({ code: "intake.errors.unavailable" });
     expect(
@@ -220,11 +225,12 @@ describe("the report form", () => {
   });
 
   test("a rejected key says the site cannot report, and stops offering to send", async () => {
-    handler = () => refusal(404, "intake.errors.unknown-key");
+    handler = () =>
+      refusal(404, "intake.errors.unknown-key", {}, "API: unknown key.");
     const { user, onError } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
-    await screen.findByText(m.failure.rejected);
+    await screen.findByText("API: unknown key.");
     expect(onError).toHaveBeenCalledWith({ code: "intake.errors.unknown-key" });
     const button = screen.getByRole("button", { name: m.submit });
     expect(
@@ -247,11 +253,20 @@ describe("the report form", () => {
   // Not delivered by browsers (they hide a response without CORS headers), but the code
   // handles a readable 403, for example from a non-browser host.
   test("a readable 403 is rejected like an unknown key", async () => {
-    handler = () => refusal(403, "intake.errors.origin-not-allowed");
+    handler = () =>
+      refusal(403, "intake.errors.origin-not-allowed", {}, "API: not allowed.");
     const { user } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
-    await screen.findByText(m.failure.rejected);
+    await screen.findByText("API: not allowed.");
+  });
+
+  test("a 403 with no intake code is worded locally as a config failure", async () => {
+    handler = () => refusal(403, "http-403", {}, "Forbidden");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.failure.config);
   });
 
   describe("the page address", () => {
@@ -286,13 +301,27 @@ describe("the report form", () => {
     });
   });
 
-  test("a rate limit tells how long to wait", async () => {
+  test("a rate limit shows the API's own wait", async () => {
     handler = () =>
-      refusal(429, "intake.errors.too-many-requests", { retryAfter: 600 });
+      refusal(
+        429,
+        "intake.errors.too-many-requests",
+        { minutes: 10 },
+        "Too many requests. Try again in 10 minutes.",
+      );
     const { user } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
-    await screen.findByText(m.failure.rateLimited(10));
+    await screen.findByText("Too many requests. Try again in 10 minutes.");
+  });
+
+  test("a rate limit with no API message words the wait from extensions.minutes", async () => {
+    handler = () =>
+      json(429, { errors: [{ extensions: { code: "http-429", minutes: 3 } }] });
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.failure.rateLimited(3));
   });
 
   test("a network failure is told as such, with the text kept", async () => {
@@ -403,12 +432,13 @@ describe("the report form", () => {
   });
 
   test("a failure is announced in a live region", async () => {
-    handler = () => refusal(503, "intake.errors.unavailable");
+    handler = () =>
+      refusal(503, "intake.errors.unavailable", {}, "API: busy, retry.");
     const { user } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toContain(m.failure.unavailable);
+    expect(alert.textContent).toContain("API: busy, retry.");
   });
 
   test("a stricter e-mail than a@b.c is refused before sending", async () => {

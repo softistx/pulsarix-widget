@@ -26,7 +26,12 @@ function stub(over: Partial<Stub> = {}): Stub {
     const fail = (status: number) =>
       new Response(
         JSON.stringify({
-          errors: [{ extensions: { code: `intake.errors.http-${status}` } }],
+          errors: [
+            {
+              message: `API says ${status}`,
+              extensions: { code: `intake.errors.http-${status}` },
+            },
+          ],
         }),
         { status },
       );
@@ -191,7 +196,7 @@ describe("Delete my data", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: "Delete" }),
     );
-    await screen.findByText(/session expired/);
+    await screen.findByText("API says 401");
     expect(screen.getByRole("alertdialog")).toBeTruthy();
   });
 
@@ -205,7 +210,7 @@ describe("Delete my data", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: "Delete" }),
     );
-    await screen.findByText(/Too many requests from here/);
+    await screen.findByText("API says 429");
     expect(screen.getByRole("alertdialog")).toBeTruthy();
     expect(erased).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
