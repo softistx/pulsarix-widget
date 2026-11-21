@@ -116,6 +116,8 @@ A script-tag loader and an npm import are two separate instances: use one route 
 
 ### Exports
 
+Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity` and its option type (see "Signing the identity on your server").
+
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
 `WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
@@ -159,7 +161,7 @@ and returns focus to the launcher (or to whatever opened it).
 
 ## Identified reporters
 
-Give the widget the token your server signed for the signed-in user (`data-identity`,
+Give the widget the token your server signed for the signed-in user (see "Signing the identity on your server"; `data-identity`,
 `identity` in `init` / `mount`, or `PulsarixWidget.identify(token)` after sign-in; call
 `identify(null)` at sign-out). The secret that signs the token stays on your server and never
 reaches the browser; the widget only sends the token, in the `x-pulsarix-identity` header, and
@@ -199,6 +201,81 @@ attribute of the element, so it is visible in the DOM (prefer `identify()` when 
   to get a fresh one.
 - Everyone (identified or not) can give an optional type (bug, question, suggestion) and an
   impact (blocking, annoying, minor) in the form's Details group.
+
+## Signing the identity on your server
+
+`@softistx/pulsarix-widget/server` signs the token for you, so you never hand-write the HMAC. It is
+server-only (`node:crypto`, works on Node and Bun) and is a separate file: the browser bundle and the
+loader never contain it. Never import it in client code.
+
+```ts
+import { signPulsarixIdentity } from "@softistx/pulsarix-widget/server";
+
+const token = signPulsarixIdentity({
+  secret: process.env.PULSARIX_IDENTITY_SECRET!, // shown once in pulsarix; keep it on the server
+  publicKey: "pk_live_xxx", // the widget key's public key
+  sub: user.id, // 1 to 200 characters, stable per user
+  email: user.email, // optional, at most 254 characters
+  name: user.name, // optional, at most 100 characters
+  // ttlSeconds: 3600, // default 1 hour; 24 hours (86400) at most
+});
+```
+
+| Option       | Type           | Notes                                                                |
+| ------------ | -------------- | -------------------------------------------------------------------- |
+| `secret`     | `string`       | required; used as the raw string, as the API does                    |
+| `publicKey`  | `string`       | required; the token's audience                                       |
+| `sub`        | `string`       | required; 1 to 200 characters; never stored, only its digest per key |
+| `email`      | `string`       | a valid address                                                      |
+| `name`       | `string`       | trimmed; blank is left out                                           |
+| `ttlSeconds` | `number`       | whole seconds, 1 to 86 400; default 3 600                            |
+| `now`        | `() => number` | milliseconds; default `Date.now` (tests)                             |
+
+It throws an `Error` naming the option for input the API would refuse (an empty secret, a `sub` of 0 or
+over 200 characters, a `ttlSeconds` over 24 hours or not a positive whole number, a bad e-mail, a token
+over 2 048 characters), instead of letting the widget meet an `intake.errors.identity-invalid` later.
+
+The secret lives in an environment variable such as `PULSARIX_IDENTITY_SECRET`, never in the page,
+the repository or a public config. Tokens expire: sign a fresh one on each request that renders the
+page (a loader, a session endpoint) and call `identify(newToken)` before the old one lapses; 1 hour is
+the recommended life.
+
+A React Router loader signs, the component hands the token to the widget, and sign-out clears it:
+
+```tsx
+// app/routes/app.tsx
+import { signPulsarixIdentity } from "@softistx/pulsarix-widget/server";
+import { useEffect } from "react";
+import { useLoaderData } from "react-router";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request); // your own session
+  return {
+    pulsarixIdentity: signPulsarixIdentity({
+      secret: process.env.PULSARIX_IDENTITY_SECRET as string,
+      publicKey: process.env.PULSARIX_PUBLIC_KEY as string,
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+    }),
+  };
+}
+
+export default function App() {
+  const { pulsarixIdentity } = useLoaderData<typeof loader>();
+  useEffect(() => {
+    // The script tag's PulsarixWidget queues the call until the bundle has loaded.
+    window.PulsarixWidget?.identify(pulsarixIdentity);
+  }, [pulsarixIdentity]);
+  return <Outlet />;
+}
+
+// at sign-out, in the browser, before the session ends:
+//   window.PulsarixWidget?.identify(null);
+```
+
+With the npm route, call `widget.identify(token)` on the handle `mount()` returned. See
+[docs/integration.md](docs/integration.md) for the whole integration, CSP and troubleshooting.
 
 ## Screenshots
 
