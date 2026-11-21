@@ -46,7 +46,9 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   catalogues (`Messages`): there is no ICU runtime to ship, and the compiler enforces parity between
   languages.
 - **Errors** (alignment W1, #134): the API's catalogue words `intake.errors.*`, and the widget shows
-  the API's message. Local words exist only for `network`, `config`, unreachable and `unknown`.
+  the API's message. Waits come from `extensions.minutes`; nothing is parsed from a message. Local words
+  exist only for `network`, `config` (a non-API refusal included), unreachable, a lapsed live-stream
+  session (made client-side) and `unknown`.
 - **Theme**: `lavande` by default. The host accent is the documented exception: an embed matches its
   host page, so the host may set its accent instead of the app's `--primary`.
 - **Checks** (alignment W2/W3/W5, #134): `verify` grows `check:deps` (the layout's import direction),

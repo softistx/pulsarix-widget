@@ -11,6 +11,7 @@ export function failureText(messages: Messages, error: IntakeError): string {
   const text = messages.failure;
   switch (error.kind) {
     case "config":
+    case "rejected":
       return text.config;
     case "unavailable":
       return text.unavailable;

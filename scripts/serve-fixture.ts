@@ -168,7 +168,6 @@ export function serveFixture(port = 0) {
                   extensions: {
                     code: "intake.errors.too-many-requests",
                     minutes: 10,
-                    retryAfter: 600,
                   },
                 },
               ],

@@ -205,7 +205,7 @@ const failure = (
             code: `intake.errors.${code}`,
             ...(minutes === undefined
               ? {}
-              : { minutes, retryAfter: minutes * 60 }),
+              : { minutes }),
           },
         },
       ],

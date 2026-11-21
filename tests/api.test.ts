@@ -61,7 +61,7 @@ test("statuses map to kinds, and a refusal keeps extensions.minutes", async () =
   for (const [status, kind] of kinds) {
     const error = await submitReport({
       ...base,
-      fetch: refusal(status, "intake.errors.x", { retryAfter: 90, minutes: 2 }),
+      fetch: refusal(status, "intake.errors.x", { minutes: 2 }),
     }).catch((e) => e);
     expect(error.kind).toBe(kind);
     expect(error.minutes).toBe(2);

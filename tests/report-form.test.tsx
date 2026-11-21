@@ -261,6 +261,14 @@ describe("the report form", () => {
     await screen.findByText("API: not allowed.");
   });
 
+  test("a 403 with no intake code is worded locally as a config failure", async () => {
+    handler = () => refusal(403, "http-403", {}, "Forbidden");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.failure.config);
+  });
+
   describe("the page address", () => {
     const originalUrl = window.location.href;
     afterEach(() => window.history.pushState({}, "", originalUrl));
