@@ -29,5 +29,7 @@ jobs:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
+        env:
+          NPM_SOFTISTX_READ_TOKEN: ${{ secrets.NPM_TOKEN }}
       # lint, build, typecheck (bun check), unit tests, loader size budget
       - run: bun run verify
