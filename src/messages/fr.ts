@@ -103,16 +103,9 @@ export const FR: Messages = {
   failure: {
     summary: "Votre signalement n'a pas été envoyé",
     config: "Ce formulaire est mal configuré. Prévenez le responsable du site.",
-    rejected:
-      "Ce formulaire n'accepte pas de signalements depuis ce site. Prévenez le responsable du site.",
-    identity:
-      "Votre session a expiré. Rechargez la page et reconnectez-vous, puis envoyez le signalement.",
     unavailable: "Le service est occupé. Réessayez dans un instant.",
     rateLimited: (minutes) =>
       `Trop de signalements depuis ici. Réessayez dans ${minutes} minute${minutes === 1 ? "" : "s"}.`,
-    invalid: "Le signalement a été refusé. Vérifiez votre texte et réessayez.",
-    files:
-      "Vos fichiers ont été refusés. Retirez-les, ou vérifiez que ce sont des PNG, JPEG, WebP ou PDF de moins de 5 Mo, puis réessayez.",
     network:
       "Le serveur est injoignable. Vérifiez votre connexion, ou demandez au responsable du site si les signalements y sont activés.",
     unknown: "Une erreur est survenue. Réessayez dans un instant.",

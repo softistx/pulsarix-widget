@@ -1,25 +1,21 @@
 import type { IntakeError } from "../api";
 import type { Messages } from "../messages";
 
+/**
+ * The API words its own `intake.errors.*` refusals (in the request's language);
+ * the widget words only what the API cannot: config, network, a busy or
+ * unreachable service, a wait with no API message, and unknown.
+ */
 export function failureText(messages: Messages, error: IntakeError): string {
+  if (error.apiMessage) return error.apiMessage;
   const text = messages.failure;
   switch (error.kind) {
     case "config":
       return text.config;
-    case "rejected":
-      return text.rejected;
-    case "identity":
-      return text.identity;
     case "unavailable":
       return text.unavailable;
     case "rate-limited":
-      return text.rateLimited(
-        Math.max(1, Math.ceil((error.retryAfterSeconds ?? 60) / 60)),
-      );
-    case "invalid":
-      return text.invalid;
-    case "files":
-      return text.files;
+      return text.rateLimited(Math.max(1, error.minutes ?? 1));
     case "network":
       return text.network;
     default:

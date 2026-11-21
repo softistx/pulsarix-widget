@@ -47,7 +47,7 @@ const refusal = (status: number, code: string, extra: object = {}) =>
       { status },
     )) as unknown as typeof fetch;
 
-test("statuses map to kinds, and a rate limit keeps its retryAfter", async () => {
+test("statuses map to kinds, and a refusal keeps extensions.minutes", async () => {
   const kinds: Array<[number, string]> = [
     [404, "rejected"],
     [403, "rejected"],
@@ -61,11 +61,32 @@ test("statuses map to kinds, and a rate limit keeps its retryAfter", async () =>
   for (const [status, kind] of kinds) {
     const error = await submitReport({
       ...base,
-      fetch: refusal(status, "intake.errors.x", { retryAfter: 90 }),
+      fetch: refusal(status, "intake.errors.x", { retryAfter: 90, minutes: 2 }),
     }).catch((e) => e);
     expect(error.kind).toBe(kind);
-    expect(error.retryAfterSeconds).toBe(90);
+    expect(error.minutes).toBe(2);
   }
+});
+
+test("an intake code keeps the API's message; another code does not", async () => {
+  const withMessage = (code: string) =>
+    (async () =>
+      new Response(
+        JSON.stringify({
+          errors: [{ message: "Words by the API", extensions: { code } }],
+        }),
+        { status: 400 },
+      )) as unknown as typeof fetch;
+  const intake = await submitReport({
+    ...base,
+    fetch: withMessage("intake.errors.file-too-large"),
+  }).catch((e) => e);
+  expect(intake.apiMessage).toBe("Words by the API");
+  const other = await submitReport({
+    ...base,
+    fetch: withMessage("something-else"),
+  }).catch((e) => e);
+  expect(other.apiMessage).toBeUndefined();
 });
 
 test("a fetch that throws is a network failure", async () => {

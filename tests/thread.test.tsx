@@ -118,7 +118,12 @@ function install() {
     if (failWith && failWith.id === body.id)
       return new Response(
         JSON.stringify({
-          errors: [{ extensions: { code: `intake.errors.${failWith.code}` } }],
+          errors: [
+            {
+              message: `API says ${failWith.code}`,
+              extensions: { code: `intake.errors.${failWith.code}` },
+            },
+          ],
         }),
         { status: failWith.status },
       );
@@ -313,7 +318,7 @@ describe("request thread", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: "Reopen" }),
     );
-    await screen.findByText(/can no longer be reopened/);
+    await screen.findByText("API says reopen-expired");
   });
 
   test("a resolved request past 30 days has no Reopen", async () => {
@@ -473,14 +478,14 @@ describe("request thread", () => {
   test("a thread read refused for its identity tells the page", async () => {
     failWith = { id: "request", status: 401, code: "identity-invalid" };
     await openThread();
-    await screen.findByText(/Your session expired/);
+    await screen.findByText("API says identity-invalid");
     expect(errors).toEqual([{ code: "intake.errors.identity-invalid" }]);
   });
 
   test("a thread that cannot be read says so and offers no composer", async () => {
     failWith = { id: "request", status: 503, code: "unavailable" };
     await openThread();
-    await screen.findByText(/busy right now/);
+    await screen.findByText("API says unavailable");
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
@@ -491,7 +496,7 @@ describe("request thread", () => {
     const box = await screen.findByRole("textbox");
     await userEvent.type(box, "Hello again");
     await userEvent.click(screen.getByRole("button", { name: /Send/ }));
-    await screen.findByText(/Too many requests/);
+    await screen.findByText("API says rate-limited");
     expect((box as HTMLTextAreaElement).value).toBe("Hello again");
   });
 

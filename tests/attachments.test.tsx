@@ -372,7 +372,7 @@ describe("partial failure and the one retry", () => {
         {
           errors: [
             {
-              message: "x",
+              message: "At most 3 files.",
               extensions: { code: "intake.errors.too-many-files" },
             },
           ],
@@ -384,7 +384,7 @@ describe("partial failure and the one retry", () => {
     await ready();
     await user.upload(input(), [file("a.png", "image/png")]);
     await fillAndSend(user);
-    await screen.findByText(en.failure.files);
+    await screen.findByText("At most 3 files.");
     expect(puts).toHaveLength(0);
   });
 });

@@ -5,21 +5,33 @@ import { REQUESTS_MESSAGES } from "../src/requests/messages";
 
 const text = REQUESTS_MESSAGES.en;
 
-describe("threadErrorText", () => {
-  test("names the thread's own codes first", () => {
-    const expired = new IntakeError("unknown", "x.reopen-expired");
-    expect(threadErrorText(text, expired)).toBe(
-      text.thread.errors.reopenExpired,
+describe("errorText", () => {
+  test("shows the API's own message when it gave one", () => {
+    const error = new IntakeError(
+      "unknown",
+      "intake.errors.reopen-expired",
+      undefined,
+      "Too old to reopen.",
     );
-    const declined = new IntakeError("unknown", "x.request-declined");
-    expect(threadErrorText(text, declined)).toBe(text.thread.errors.declined);
-    expect(threadErrorText(text, new IntakeError("files", "files"))).toBe(
-      text.thread.errors.files,
+    expect(errorText(text, error)).toBe("Too old to reopen.");
+    expect(threadErrorText(text, error)).toBe("Too old to reopen.");
+  });
+
+  test("words a lapsed session (no API message) in its own words", () => {
+    expect(errorText(text, new IntakeError("identity", "http-401"))).toBe(
+      text.errors.identity,
     );
   });
 
-  test("falls back to the generic words", () => {
-    const error = new IntakeError("network", "network");
-    expect(threadErrorText(text, error)).toBe(errorText(text, error));
+  test("words only the busy service, the network and the unknown", () => {
+    expect(errorText(text, new IntakeError("unavailable", "http-503"))).toBe(
+      text.errors.unavailable,
+    );
+    expect(errorText(text, new IntakeError("network", "network"))).toBe(
+      text.errors.network,
+    );
+    expect(errorText(text, new IntakeError("invalid", "http-400"))).toBe(
+      text.errors.unknown,
+    );
   });
 });
