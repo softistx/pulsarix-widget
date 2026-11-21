@@ -1,0 +1,5 @@
+mutation eraseMyData($publicKey: String!) {
+  eraseMyData(publicKey: $publicKey) {
+    requests
+  }
+}

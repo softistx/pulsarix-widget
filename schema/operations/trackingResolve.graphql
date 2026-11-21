@@ -1,0 +1,12 @@
+mutation trackingResolve {
+  trackingResolve {
+    id
+    title
+    publicState
+    impact
+    type
+    createdAt
+    declineReason
+    unread
+  }
+}

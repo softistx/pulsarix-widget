@@ -6,6 +6,8 @@
       "**",
       "!!**/dist",
       "!!**/src/generated",
+      "!!**/src/graphql",
+      "!!**/schema",
       "!!fixtures/host.html"
     ]
   },

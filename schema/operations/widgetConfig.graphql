@@ -1,0 +1,8 @@
+query widgetConfig($publicKey: String!) {
+  widgetConfig(publicKey: $publicKey) {
+    projectName
+    locale
+    enabled
+    attachments
+  }
+}

@@ -1,47 +1,44 @@
 /** The public intake client: the persisted `submitClientReport` operation on `/public/graphql`. */
 
+import type {
+  PersistedId,
+  ReportFileInput,
+  ReportImpact,
+  ReportType,
+  SubmitClientReportMutation,
+  SubmitClientReportMutationVariables,
+  WidgetConfigQuery,
+} from "./graphql/public";
+
 /** The header the host's identity token travels in, never in a URL. */
 export const IDENTITY_HEADER = "x-pulsarix-identity";
 
 /** A file the report will carry, as `submitClientReport` wants it declared (plan A12). */
-export interface DeclaredFile {
-  role: "screenshot" | "file";
-  name: string;
-  type: string;
-  size: number;
-}
+export type DeclaredFile = ReportFileInput;
 
 /** The signed, single-use ticket the API answers for each declared file, in order. */
-export interface FileTicket {
-  slot: string;
-  role: "screenshot" | "file";
-  ticket: string;
-}
+export type FileTicket = Pick<
+  SubmitClientReportMutation["submitClientReport"]["files"][number],
+  "slot" | "role" | "ticket"
+>;
 
-export type ReportImpact = "blocking" | "annoying" | "minor";
-export type ReportType = "bug" | "question" | "suggestion";
+export type { ReportImpact, ReportType };
 
-export interface ReportInput {
-  title: string;
-  description: string;
-  email?: string;
-  pageUrl?: string;
+export type ReportInput = Omit<
+  SubmitClientReportMutationVariables["input"],
+  "locale" | "website"
+> & {
   locale: string;
   website: string;
-  filledInMs: number;
-  files?: DeclaredFile[];
-  /** Flat strings the host page stored with the report (`metadata`). */
-  metadata?: { key: string; value: string }[];
-  impact?: ReportImpact;
-  type?: ReportType;
-}
+};
 
-export interface SubmittedReport {
-  reportId: string;
-  tracking: boolean;
+export type SubmittedReport = Omit<
+  SubmitClientReportMutation["submitClientReport"],
+  "files"
+> & {
   /** One ticket per declared file; empty when none was declared. */
   files: FileTicket[];
-}
+};
 
 /** What went wrong, as far as the form tells the reporter. */
 export type ErrorKind =
@@ -105,7 +102,7 @@ export async function publicCall<T>({
   signal,
 }: {
   apiBase: string;
-  id: string;
+  id: PersistedId;
   variables: object;
   locale: string;
   identity?: string | null;
@@ -216,6 +213,7 @@ export async function fetchWidgetConfig({
   signal?: AbortSignal;
 }): Promise<WidgetProject | null> {
   try {
+    const id: PersistedId = "widgetConfig";
     const response = await doFetch(
       `${apiBase.replace(/\/+$/, "")}/public/graphql`,
       {
@@ -224,16 +222,14 @@ export async function fetchWidgetConfig({
           "content-type": "application/json",
           "accept-language": locale,
         },
-        body: JSON.stringify({ id: "widgetConfig", variables: { publicKey } }),
+        body: JSON.stringify({ id, variables: { publicKey } }),
         credentials: "omit",
         signal,
       },
     );
     if (!response.ok) return null;
     const body = (await response.json()) as {
-      data?: {
-        widgetConfig?: { projectName?: unknown; attachments?: unknown };
-      };
+      data?: { widgetConfig?: Partial<WidgetConfigQuery["widgetConfig"]> };
     };
     const config = body.data?.widgetConfig;
     if (!config) return null;

@@ -1,0 +1,5 @@
+mutation markRequestRead($publicKey: String!, $id: ID!) {
+  markRequestRead(publicKey: $publicKey, id: $id) {
+    count
+  }
+}

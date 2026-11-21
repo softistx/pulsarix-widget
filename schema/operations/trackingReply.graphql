@@ -1,0 +1,11 @@
+mutation trackingReply($input: RequestReplyInput!) {
+  trackingReply(input: $input) {
+    messageId
+    files {
+      slot
+      role
+      ticket
+      expiresAt
+    }
+  }
+}

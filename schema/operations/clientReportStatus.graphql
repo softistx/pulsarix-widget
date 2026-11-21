@@ -1,0 +1,38 @@
+query clientReportStatus($token: String) {
+  clientReportStatus(token: $token) {
+    state
+    publicState
+    declineReason
+    title
+    createdAt
+    replies {
+      at
+      body
+    }
+    files {
+      id
+      role
+      name
+      thumbnailUrl
+    }
+    id
+    description
+    impact
+    type
+    thread {
+      id
+      from
+      body
+      at
+      files {
+        id
+        name
+        thumbnailUrl
+      }
+    }
+    canReply
+    canReopen
+    resolvedAt
+    emailsOn
+  }
+}
