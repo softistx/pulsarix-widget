@@ -1,0 +1,12 @@
+mutation submitClientReport($publicKey: String!, $input: SubmitClientReportInput!) {
+  submitClientReport(publicKey: $publicKey, input: $input) {
+    reportId
+    tracking
+    files {
+      slot
+      role
+      ticket
+      expiresAt
+    }
+  }
+}

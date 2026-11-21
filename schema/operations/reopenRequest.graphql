@@ -1,0 +1,12 @@
+mutation reopenRequest($publicKey: String!, $id: ID!) {
+  reopenRequest(publicKey: $publicKey, id: $id) {
+    id
+    title
+    publicState
+    impact
+    type
+    createdAt
+    declineReason
+    unread
+  }
+}

@@ -1,0 +1,256 @@
+type ErasedData {
+  requests: Int!
+}
+
+type FileTicket {
+  expiresAt: String!
+  role: ReportFileRole!
+
+  """The file's slot: the last segment of the PUT path."""
+  slot: ID!
+
+  """The value of the x-pulsarix-ticket header of the PUT."""
+  ticket: String!
+}
+
+input MetadataEntryInput {
+  key: String!
+  value: String!
+}
+
+type Mutation {
+  eraseMyData(publicKey: String!): ErasedData!
+  markRequestRead(id: ID!, publicKey: String!): UnreadCount!
+  reopenRequest(id: ID!, publicKey: String!): RequestSummary!
+  replyToRequest(id: ID!, input: RequestReplyInput!, publicKey: String!): RequestReply!
+  resolveRequest(id: ID!, publicKey: String!): RequestSummary!
+  setRequestEmails(on: Boolean!, publicKey: String!): Boolean!
+  submitClientReport(input: SubmitClientReportInput!, publicKey: String!): SubmittedReport!
+  trackingEmails(on: Boolean!): Boolean!
+  trackingErase: ErasedData!
+  trackingReopen: RequestSummary!
+
+  """
+  The tracking page's actions: the token is the x-pulsarix-tracking header.
+  """
+  trackingReply(input: RequestReplyInput!): RequestReply!
+  trackingResolve: RequestSummary!
+}
+
+type MyRequests {
+  counts: RequestCounts!
+  emailsOn: Boolean!
+  endCursor: ID
+  hasNextPage: Boolean!
+  nodes: [RequestSummary!]!
+
+  """Unread replies over every request (the launcher's badge)."""
+  unread: Int!
+}
+
+"""What a reporter sees of a request: the status's name never leaves."""
+enum PublicState {
+  declined
+  inProgress
+  received
+  resolved
+}
+
+type Query {
+  """
+  The tracking page's read. The token is the x-pulsarix-tracking header; the variable is the older way.
+  """
+  clientReportStatus(token: String): TrackedReport!
+  myRequests(after: ID, filter: RequestFilter = OPEN, first: Int, publicKey: String!): MyRequests!
+  request(id: ID!, publicKey: String!): RequestDetail!
+  widgetConfig(publicKey: String!): WidgetConfig!
+}
+
+"""
+A file the report will carry: its bytes follow by PUT, one ticket each.
+"""
+input ReportFileInput {
+  name: String!
+  role: ReportFileRole!
+
+  """Bytes, at most 5 MB each and 12 MB together."""
+  size: Int!
+
+  """png, jpeg or webp; a PDF for a file, never for a screenshot."""
+  type: String!
+}
+
+enum ReportFileRole {
+  file
+  screenshot
+}
+
+"""How much the problem blocks the reporter."""
+enum ReportImpact {
+  annoying
+  blocking
+  minor
+}
+
+enum ReportType {
+  bug
+  question
+  suggestion
+}
+
+type RequestCounts {
+  all: Int!
+  declined: Int!
+  open: Int!
+  resolved: Int!
+}
+
+type RequestDetail {
+  canReopen: Boolean!
+  canReply: Boolean!
+  createdAt: String!
+  declineReason: String
+  description: String!
+  emailsOn: Boolean!
+  files: [RequestFile!]!
+  id: ID!
+  impact: String
+  publicState: PublicState!
+  resolvedAt: String
+  thread: [RequestMessage!]!
+  title: String!
+  type: String
+  unread: Int!
+}
+
+type RequestFile {
+  id: ID!
+  name: String!
+
+  """
+  Its thumbnail's path (read with the identity header and the key); null for a PDF.
+  """
+  thumbnailUrl: String
+}
+
+enum RequestFilter {
+  ALL
+  DECLINED
+  OPEN
+  RESOLVED
+}
+
+type RequestMessage {
+  at: String!
+  body: String!
+  files: [RequestFile!]!
+
+  """reporter or team."""
+  from: String!
+  id: ID!
+}
+
+type RequestReply {
+  files: [FileTicket!]!
+  messageId: ID!
+}
+
+input RequestReplyInput {
+  body: String!
+
+  """At most 3 files, as a report's."""
+  files: [ReportFileInput!]
+}
+
+"""One request in the reporter's list."""
+type RequestSummary {
+  createdAt: String!
+  declineReason: String
+  id: ID!
+  impact: String
+  publicState: PublicState!
+  title: String!
+  type: String
+
+  """The team's replies not read yet."""
+  unread: Int!
+}
+
+input SubmitClientReportInput {
+  description: String!
+  email: String
+
+  """At most 1 screenshot and 3 files."""
+  files: [ReportFileInput!]
+
+  """How long the form was open before it was sent, in milliseconds."""
+  filledInMs: Int!
+  impact: ReportImpact
+  locale: String
+  metadata: [MetadataEntryInput!]
+  pageUrl: String
+  title: String!
+  type: ReportType
+
+  """Honeypot: a real form leaves it empty."""
+  website: String
+}
+
+type SubmittedReport {
+  files: [FileTicket!]!
+  reportId: ID!
+  tracking: Boolean!
+}
+
+type TrackedFile {
+  id: ID!
+  name: String!
+  role: String!
+
+  """
+  The path of its 256 px thumbnail (see CONTEXT.md), a picture's only; null for a PDF.
+  """
+  thumbnailUrl: String
+}
+
+type TrackedReply {
+  at: String!
+  body: String!
+}
+
+type TrackedReport {
+  canReopen: Boolean!
+  canReply: Boolean!
+  createdAt: String!
+
+  """
+  Why the report was declined, when the team wrote it knowing it is shown.
+  """
+  declineReason: String
+  description: String!
+  emailsOn: Boolean!
+  files: [TrackedFile!]!
+  id: ID!
+  impact: String
+  publicState: PublicState!
+  replies: [TrackedReply!]!
+  resolvedAt: String
+  state: String!
+
+  """The reporter's messages and the team's public replies, oldest first."""
+  thread: [RequestMessage!]!
+  title: String!
+  type: String
+}
+
+type UnreadCount {
+  count: Int!
+}
+
+type WidgetConfig {
+  """Whether to show the screenshot and file controls."""
+  attachments: Boolean!
+  enabled: Boolean!
+  locale: String!
+  projectName: String
+}

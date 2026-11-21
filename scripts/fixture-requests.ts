@@ -6,6 +6,8 @@
  * all) is refused with 401, as a forged or expired token is. The state is per server: a reply,
  * a resolve or a read lasts until the server stops.
  */
+import { apiMessage } from "./fixture-messages";
+
 type State = "received" | "inProgress" | "resolved" | "declined";
 
 interface Message {
@@ -188,16 +190,26 @@ const matches = (filter: string, state: State) =>
   (filter === "RESOLVED" && state === "resolved") ||
   (filter === "DECLINED" && state === "declined");
 
-const failure = (status: number, code: string) =>
+const failure = (
+  status: number,
+  code: string,
+  language: string | null,
+  minutes?: number,
+) =>
   Response.json(
     {
       errors: [
-        { message: code, extensions: { code: `intake.errors.${code}` } },
+        {
+          message: apiMessage(code, language, minutes),
+          extensions: {
+            code: `intake.errors.${code}`,
+            ...(minutes === undefined ? {} : { minutes }),
+          },
+        },
       ],
     },
     { status },
   );
-const refused = () => failure(401, "identity-invalid");
 const summary = ({
   id,
   title,
@@ -265,7 +277,8 @@ export function createRequestsStub() {
     },
     /** `GET /public/live/requests`: an event stream that ends when the page drops it. */
     live(identity: string | null, signal: AbortSignal): Response {
-      if (!identity || identity.startsWith("expired")) return refused();
+      if (!identity || identity.startsWith("expired"))
+        return failure(401, "identity-invalid", null);
       const encoder = new TextEncoder();
       let write: (chunk: string) => void = () => {};
       const body = new ReadableStream({
@@ -315,6 +328,8 @@ export function createRequestsStub() {
         role: string;
         ticket: string;
       },
+      /** The request's `accept-language`: the API words its refusals in it. */
+      language: string | null = null,
     ): Response | null {
       const names = [
         "myRequests",
@@ -327,14 +342,15 @@ export function createRequestsStub() {
         "eraseMyData",
       ];
       if (!names.includes(op)) return null;
-      if (!identity || identity.startsWith("expired")) return refused();
+      if (!identity || identity.startsWith("expired"))
+        return failure(401, "identity-invalid", language);
       const rows = rowsFor(identity);
       // `limited.token` gets the API's 429 on the two privacy writes (the error states).
       if (
         (op === "setRequestEmails" || op === "eraseMyData") &&
         identity.startsWith("limited")
       )
-        return failure(429, "rate-limited");
+        return failure(429, "too-many-requests", language, 10);
       if (op === "setRequestEmails") {
         emailsOn = variables.on === true;
         calls.setRequestEmails.push(emailsOn);
@@ -379,7 +395,7 @@ export function createRequestsStub() {
         });
       }
       const row = rows.find((r) => r.id === variables.id);
-      if (!row) return failure(404, "not-found");
+      if (!row) return failure(404, "not-found", language);
       if (op === "request")
         return Response.json({
           data: {
@@ -403,7 +419,7 @@ export function createRequestsStub() {
       }
       if (op === "replyToRequest") {
         if (row.publicState === "declined")
-          return failure(409, "request-declined");
+          return failure(409, "request-declined", language);
         const files = (variables.input?.files ?? []).map((f) =>
           ticketFor(f.name),
         );
@@ -430,7 +446,7 @@ export function createRequestsStub() {
         return Response.json({ data: { resolveRequest: summary(row) } });
       }
       // reopenRequest
-      if (!row.canReopen) return failure(409, "reopen-expired");
+      if (!row.canReopen) return failure(409, "reopen-expired", language);
       row.publicState = "received";
       row.resolvedAt = null;
       return Response.json({ data: { reopenRequest: summary(row) } });

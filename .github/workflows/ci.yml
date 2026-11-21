@@ -31,5 +31,5 @@ jobs:
       - run: bun install --frozen-lockfile
         env:
           NPM_SOFTISTX_READ_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # lint, build, typecheck (bun check), unit tests, loader size budget
+      # lint, schema and generated-types checks, build, typecheck (bun check), unit tests, import-direction check, loader and main-bundle gzipped size budgets
       - run: bun run verify

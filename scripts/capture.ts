@@ -1,6 +1,6 @@
 /**
  * Captures the widget in the host fixture: 360 and 1440 px, light and dark.
- * Per combination: closed, the open form, its validation errors, the confirmation.
+ * Per combination: closed, the open form, its validation errors, a busy refusal (503), a rate limit (429), the confirmation.
  * Also checks that focus returns to the launcher when the dialog closes.
  */
 import { mkdirSync } from "node:fs";
@@ -55,6 +55,13 @@ try {
       await page.getByText("Your report was not sent").waitFor();
       await page.waitForTimeout(300);
       await shot("failure");
+      await page
+        .getByRole("textbox", { name: /Title/ })
+        .fill("Checkout limited");
+      await page.getByRole("button", { name: "Send report" }).click();
+      await page.getByText("Try again in 10 minutes").waitFor();
+      await page.waitForTimeout(300);
+      await shot("ratelimit");
       await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
       await page
         .getByRole("textbox", { name: /What happened/ })

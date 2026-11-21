@@ -1,0 +1,12 @@
+mutation trackingReopen {
+  trackingReopen {
+    id
+    title
+    publicState
+    impact
+    type
+    createdAt
+    declineReason
+    unread
+  }
+}

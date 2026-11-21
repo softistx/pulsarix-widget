@@ -1,0 +1,33 @@
+query request($publicKey: String!, $id: ID!) {
+  request(publicKey: $publicKey, id: $id) {
+    id
+    title
+    description
+    publicState
+    impact
+    type
+    createdAt
+    declineReason
+    unread
+    thread {
+      id
+      from
+      body
+      at
+      files {
+        id
+        name
+        thumbnailUrl
+      }
+    }
+    files {
+      id
+      name
+      thumbnailUrl
+    }
+    canReply
+    canReopen
+    resolvedAt
+    emailsOn
+  }
+}

@@ -1,0 +1,24 @@
+query myRequests($publicKey: String!, $filter: RequestFilter, $first: Int, $after: ID) {
+  myRequests(publicKey: $publicKey, filter: $filter, first: $first, after: $after) {
+    nodes {
+      id
+      title
+      publicState
+      impact
+      type
+      createdAt
+      declineReason
+      unread
+    }
+    counts {
+      open
+      resolved
+      declined
+      all
+    }
+    unread
+    emailsOn
+    endCursor
+    hasNextPage
+  }
+}

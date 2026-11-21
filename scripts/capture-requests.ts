@@ -82,7 +82,7 @@ try {
       page = await visit("/identified-expired");
       await page.getByRole("button", { name: /Report a problem/ }).click();
       await page.getByRole("tab", { name: /My requests/ }).click();
-      await page.getByText("Your session expired").waitFor();
+      await page.getByText("Your identity could not be confirmed").waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "expired");
       await page.close();

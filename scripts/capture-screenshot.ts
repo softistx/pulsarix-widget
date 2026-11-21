@@ -86,7 +86,7 @@ try {
       try {
         const a = await open();
         await shot(a.page, "pane-empty");
-        await a.page.getByRole("checkbox").check();
+        await a.page.getByRole("switch").check();
         await shot(a.page, "pane-mask-text");
         await a.page.getByRole("button", { name: "Add a screenshot" }).click();
         await notice(a.page);

@@ -1,0 +1,12 @@
+mutation resolveRequest($publicKey: String!, $id: ID!) {
+  resolveRequest(publicKey: $publicKey, id: $id) {
+    id
+    title
+    publicState
+    impact
+    type
+    createdAt
+    declineReason
+    unread
+  }
+}

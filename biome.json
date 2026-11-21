@@ -6,6 +6,8 @@
       "**",
       "!!**/dist",
       "!!**/src/generated",
+      "!!**/src/core/api/public.ts",
+      "!!**/schema",
       "!!fixtures/host.html"
     ]
   },
