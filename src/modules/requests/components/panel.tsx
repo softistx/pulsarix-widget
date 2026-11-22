@@ -103,7 +103,6 @@ export default function RequestsPanel({
           onOpen={setOpened}
           onNewRequest={onNewRequest}
           onErase={onErase}
-          onClose={onClose}
         />
       </DialogBody>
       <DialogFooter>

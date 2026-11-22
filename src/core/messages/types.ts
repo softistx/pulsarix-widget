@@ -16,6 +16,7 @@ export interface Messages {
     maskText: string;
     maskTextHint: string;
     capturing: string;
+    noticeTitle: string;
     editorLabel: string;
     /** The button that reopens an attachment in the editor. */
     edit: string;

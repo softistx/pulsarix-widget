@@ -49,7 +49,11 @@ export function ThreadChat({
     <NonceProvider nonce={pageNonce()}>
       <ChatThread
         surface="card"
-        className="h-[min(460px,58dvh)]"
+        className={
+          detail.canReply
+            ? "h-[min(460px,58dvh)] max-sm:h-[42dvh]"
+            : "h-auto max-h-[min(460px,58dvh)] max-sm:max-h-[42dvh]"
+        }
         messageListProps={{ itemCount: items.length + 1 }}
         composerProps={
           detail.canReply
@@ -89,7 +93,7 @@ export function ThreadChat({
             timestamp={formatTime(message.at)}
             text={message.from === "reporter" ? message.body : undefined}
             // Copy's hover toolbar floats over the bubble's corner and hides its words on a
-            // phone; the words stay selectable. (material: toolbar placement, to file.)
+            // phone; the words stay selectable. Temporary, until material#TBD (ChatMessage copy toolbar placement, coordinator files it).
             copyable={false}
             footer={
               message.files.length ? (

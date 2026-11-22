@@ -17,6 +17,7 @@ export const FR: Messages = {
     maskTextHint:
       "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
     capturing: "Capture en cours...",
+    noticeTitle: "Capture d'écran",
     editorLabel: "Annoter la capture",
     edit: "Modifier",
     editCapture: (n) => `Modifier la capture ${n}`,

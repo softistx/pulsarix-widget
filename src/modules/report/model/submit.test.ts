@@ -98,6 +98,14 @@ describe("runSubmit", () => {
     expect(calls.errors).toEqual([]);
   });
 
+  test("a total over the limit sends nothing and emits nothing", async () => {
+    const { ctx, calls } = context({ overTotal: true });
+    await runSubmit(values, ctx);
+    expect(sent).toBe(0);
+    expect(calls.errors).toEqual([]);
+    expect(calls.submitted).toEqual([]);
+  });
+
   test("an API failure is reported once and nothing is emitted as submitted", async () => {
     globalThis.fetch = mock(
       async () => new Response("{}", { status: 500 }),

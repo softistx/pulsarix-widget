@@ -17,6 +17,7 @@ export const EN: Messages = {
     maskTextHint:
       "Covers every character of the page with black boxes before the picture is taken.",
     capturing: "Taking the screenshot...",
+    noticeTitle: "Screenshot",
     editorLabel: "Annotate the screenshot",
     edit: "Edit",
     editCapture: (n) => `Edit capture ${n}`,

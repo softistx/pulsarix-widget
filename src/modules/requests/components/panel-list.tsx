@@ -36,7 +36,6 @@ export function RequestsListBody({
   onOpen,
   onNewRequest,
   onErase,
-  onClose,
 }: {
   messages: Messages;
   locale: Locale;
@@ -48,7 +47,6 @@ export function RequestsListBody({
   onNewRequest: () => void;
   onErase?: (detail: { requests: number }) => void;
   /** Closes the dialog: the action of a refused identity, which a retry cannot mend. */
-  onClose?: () => void;
 }) {
   const text = REQUESTS_MESSAGES[locale];
   const { filter, counts, nodes, load } = list;
@@ -79,19 +77,9 @@ export function RequestsListBody({
           variant="error"
           title={text.errors.title}
           description={errorText(text, load.error)}
+          // An identity error has no retry: the footer's Close is the way out, once.
           actions={
-            load.error.kind === "identity" ? (
-              onClose ? (
-                <Button
-                  type="button"
-                  variant="tonal"
-                  size="sm"
-                  onClick={onClose}
-                >
-                  {messages.close}
-                </Button>
-              ) : undefined
-            ) : (
+            load.error.kind === "identity" ? undefined : (
               <Button
                 type="button"
                 variant="tonal"

@@ -23,7 +23,11 @@ export function PaneStatus({
           {messages.screenshot.capturing}
         </div>
       ) : notice ? (
-        <Alert variant="warning" description={notice} />
+        <Alert
+          variant="warning"
+          title={messages.screenshot.noticeTitle}
+          description={notice}
+        />
       ) : null}
     </div>
   );

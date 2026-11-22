@@ -25,4 +25,18 @@
    browser's own green showed. */
 progress {
   accent-color: var(--primary);
+  appearance: none;
+  border: 0;
+  background: var(--muted);
+}
+progress::-webkit-progress-bar {
+  background: var(--muted);
+}
+progress::-webkit-progress-value {
+  background: var(--primary);
+  border-radius: inherit;
+}
+progress::-moz-progress-bar {
+  background: var(--primary);
+  border-radius: inherit;
 }

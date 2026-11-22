@@ -56,7 +56,7 @@ export function FormFooter({
         loading={submitting}
         disabled={blocked}
       >
-        {messages.submit}
+        {submitting ? messages.submitting : messages.submit}
       </Button>
     </DialogFooter>
   );
