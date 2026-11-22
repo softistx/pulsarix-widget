@@ -3,12 +3,23 @@
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
 export type Position = "bottom-right" | "bottom-left";
+/** `auto` shows the icon below 640 px of viewport width and the text pill above it. */
+export type LauncherMode = "auto" | "pill" | "icon";
+/** A launcher offset: a number is pixels, a string is any CSS length (`"2rem"`, `"env(...)"`). */
+export interface LauncherOffset {
+  bottom?: number | string;
+  side?: number | string;
+}
 
 export interface WidgetConfig {
   projectKey: string | null;
   locale: Locale;
   theme: ThemeMode;
   position: Position;
+  /** The launcher's look (`launcher="icon"`); `launcher="false"` is read by the element. */
+  launcherMode: LauncherMode;
+  /** The launcher's offsets (`offset-bottom`, `offset-side`), as CSS lengths, or null. */
+  offset: { bottom: string | null; side: string | null };
   /** A valid hex seed from the host, or null: the built-in lavande theme then applies. */
   accentColor: string | null;
   /**
@@ -52,6 +63,9 @@ export const OBSERVED_ATTRIBUTES = [
   "locale",
   "theme",
   "position",
+  "launcher",
+  "offset-bottom",
+  "offset-side",
   "accent-color",
   "inherit-theme",
   "api-base",
@@ -70,6 +84,46 @@ function oneOf<T extends string>(
   fallback: T,
 ): T {
   return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+const UNIT_LENGTH =
+  /^\d+(?:\.\d+)?(?:px|r?em|ex|ch|vh|vw|vmin|vmax|svh|lvh|dvh|svw|lvw|dvw|cm|mm|in|pt|pc|%)$/i;
+const FUNCTION_LENGTH = /^(?:calc|min|max|clamp|var|env)\(/i;
+
+/** True when every `(` of the text is closed, none before it opens. */
+function balanced(text: string): boolean {
+  let depth = 0;
+  for (const char of text) {
+    if (char === "(") depth++;
+    else if (char === ")" && --depth < 0) return false;
+  }
+  return depth === 0;
+}
+
+/**
+ * A CSS length for the launcher offset (a number of pixels, or `<number><unit>`, or a balanced
+ * `calc()`, `min()`, `max()`, `clamp()`, `var()`, `env()` call), or null. A negative value, or
+ * anything else (`;`, `}`, quotes, a bare word), is dropped. The browser's `CSS.supports` has
+ * the last word where it exists.
+ */
+export function lengthOf(
+  value: string | number | null | undefined,
+): string | null {
+  if (typeof value === "number")
+    return Number.isFinite(value) && value >= 0 ? `${value}px` : null;
+  const text = value?.trim() ?? "";
+  if (!text) return null;
+  if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
+  const shaped =
+    UNIT_LENGTH.test(text) ||
+    (/^[\w\s.,+*/()%-]{1,100}$/.test(text) &&
+      FUNCTION_LENGTH.test(text) &&
+      text.endsWith(")") &&
+      balanced(text));
+  if (!shaped) return null;
+  if (typeof CSS !== "undefined" && typeof CSS.supports === "function")
+    return CSS.supports("bottom", text) ? text : null;
+  return text;
 }
 
 /** A hex colour (#rgb or #rrggbb): the only form accepted as a seed. */
@@ -167,6 +221,11 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
       ["bottom-right", "bottom-left"],
       "bottom-right",
     ),
+    launcherMode: oneOf(get("launcher"), ["auto", "pill", "icon"], "auto"),
+    offset: {
+      bottom: lengthOf(get("offset-bottom")),
+      side: lengthOf(get("offset-side")),
+    },
     accentColor: isHexColor(accent) ? accent.trim() : null,
     inheritTheme: get("inherit-theme") !== "false",
     apiBase: apiBaseOf(get("api-base")),

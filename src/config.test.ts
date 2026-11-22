@@ -1,7 +1,8 @@
-import { expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
   apiBaseOf,
   isHexColor,
+  lengthOf,
   metadataOf,
   privacyUrlOf,
   readConfig,
@@ -16,6 +17,8 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     locale: "en",
     theme: "auto",
     position: "bottom-right",
+    launcherMode: "auto",
+    offset: { bottom: null, side: null },
     accentColor: null,
     inheritTheme: true,
     apiBase: null,
@@ -181,4 +184,38 @@ test("identity: a token of two dot-separated parts is taken, anything else is nu
   for (const bad of ["", "nodot", "a.b.c", "a b.c", `${"a".repeat(4096)}.b`]) {
     expect(read({ identity: bad }).identity).toBeNull();
   }
+});
+
+describe("the launcher attributes", () => {
+  test("launcher takes auto, pill or icon, anything else is auto", () => {
+    expect(read({ launcher: "icon" }).launcherMode).toBe("icon");
+    expect(read({ launcher: "pill" }).launcherMode).toBe("pill");
+    expect(read({ launcher: "false" }).launcherMode).toBe("auto");
+    expect(read({ launcher: "huge" }).launcherMode).toBe("auto");
+  });
+
+  test("offsets are CSS lengths, bare numbers are pixels, junk is dropped", () => {
+    expect(
+      read({ "offset-bottom": "88", "offset-side": "1.5rem" }).offset,
+    ).toEqual({ bottom: "88px", side: "1.5rem" });
+    expect(lengthOf("calc(var(--bar) + 8px)")).toBe("calc(var(--bar) + 8px)");
+    expect(lengthOf(24)).toBe("24px");
+    expect(lengthOf(-4)).toBeNull();
+    expect(lengthOf("4px; color: red")).toBeNull();
+    expect(lengthOf("url(x)")).toBeNull();
+    expect(lengthOf("")).toBeNull();
+  });
+
+  test("a malformed or negative length is dropped", () => {
+    expect(lengthOf("5foo")).toBeNull();
+    expect(lengthOf("1 2")).toBeNull();
+    expect(lengthOf("calc(")).toBeNull();
+    expect(lengthOf("calc(1px + 2px))")).toBeNull();
+    expect(lengthOf("-4px")).toBeNull();
+    expect(lengthOf("-4")).toBeNull();
+    expect(lengthOf("max(1px, 2px)")).toBe("max(1px, 2px)");
+    expect(lengthOf("env(safe-area-inset-bottom, 0px)")).toBe(
+      "env(safe-area-inset-bottom, 0px)",
+    );
+  });
 });

@@ -8,7 +8,8 @@ interface Window {
       position?: string;
       accentColor?: string;
       apiBase?: string;
-      launcher?: boolean;
+      launcher?: boolean | "auto" | "pill" | "icon";
+      offset?: { bottom?: number | string; side?: number | string };
       maskText?: boolean;
       attachments?: boolean;
       privacyUrl?: string;
@@ -18,6 +19,7 @@ interface Window {
     }): Promise<void>;
     open(): void;
     close(): void;
+    setLauncherVisible(visible: boolean): void;
     identify(token: string | null): void;
     setTheme(theme: "light" | "dark" | "auto"): void;
     setLocale(locale: "en" | "fr"): void;

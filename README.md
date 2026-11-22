@@ -49,7 +49,8 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
 `data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
-floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
+floating button; open it with `window.PulsarixWidget.open()`) or `data-launcher="auto|pill|icon"`
+(`auto` is the default: icon below 640 px, pill above), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
 (no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
 own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
@@ -120,22 +121,24 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
-`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
+`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`, `LauncherMode`,
+`LauncherOffset`.
 
-| `MountOptions` | Type                              | Default                                              |
-| -------------- | --------------------------------- | ---------------------------------------------------- |
-| `projectKey`   | `string`                          | required; missing reports `pulsarix:error` `config`  |
-| `apiBase`      | `string`                          | none; required on the npm route                      |
-| `locale`       | `"en" \| "fr"`                    | `"en"`                                               |
-| `theme`        | `"light" \| "dark" \| "auto"`     | `"auto"`                                             |
-| `position`     | `"bottom-right" \| "bottom-left"` | `"bottom-right"`                                     |
-| `accentColor`  | hex string                        | none: the built-in `lavande` theme                   |
-| `inheritTheme` | `boolean`                         | `true`: wear the host's `@softistx/material` theme   |
-| `launcher`     | `boolean`                         | `true` (`false` hides the floating button)           |
-| `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
-| `target`       | `Element`                         | `document.body`                                      |
+| `MountOptions` | Type                                                | Default                                              |
+| -------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| `projectKey`   | `string`                                            | required; missing reports `pulsarix:error` `config`  |
+| `apiBase`      | `string`                                            | none; required on the npm route                      |
+| `locale`       | `"en" \| "fr"`                                      | `"en"`                                               |
+| `theme`        | `"light" \| "dark" \| "auto"`                       | `"auto"`                                             |
+| `position`     | `"bottom-right" \| "bottom-left"`                   | `"bottom-right"`                                     |
+| `accentColor`  | hex string                                          | none: the built-in `lavande` theme                   |
+| `inheritTheme` | `boolean`                                           | `true`: wear the host's `@softistx/material` theme   |
+| `launcher`     | `boolean \| "auto" \| "pill" \| "icon"`             | `"auto"` (`false` removes the floating button)       |
+| `offset`       | `{ bottom?, side? }` (number = px, or a CSS length) | 16 px each, plus the bottom safe area                |
+| `identity`     | `string \| null`                                    | none: today's form only (see "Identified reporters") |
+| `target`       | `Element`                                           | `document.body`                                      |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
+`WidgetHandle`: `open()`, `close()`, `setLauncherVisible(visible)`, `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
 `setMetadata(metadata \| null)` (see "Changing theme, locale and metadata at run time"), `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
 
@@ -175,6 +178,15 @@ The widget wears the host app's `@softistx/material` theme (colours, radius, lig
 one, and follows its theme picker; its own `lavande` values (or `accentColor`) are the fallback for every token
 the host lacks. `inheritTheme: false` (`data-inherit-theme="false"`) keeps the widget's own look. How it
 works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-the-host-apps-theme).
+
+## The launcher
+
+`launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
+pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
+`offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
+`setLauncherVisible(false)` hides only the launcher, never an open dialog; with the script tag it is
+`window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
+[docs/integration.md](docs/integration.md).
 
 ## The report form
 

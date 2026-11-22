@@ -105,7 +105,9 @@ describe("My requests", () => {
     answer([row("r1", "Pay button broken", 2)]);
     render(<App {...props("a.b")} open={false} />);
     await waitFor(() =>
-      expect(screen.getByText(/2 unread replies/)).toBeTruthy(),
+      expect(
+        screen.getByRole("button", { name: /2 unread replies/ }),
+      ).toBeTruthy(),
     );
     expect(calls[0]?.identity).toBe("a.b");
   });

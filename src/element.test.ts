@@ -147,3 +147,80 @@ describe("mount", () => {
     });
   });
 });
+
+describe("the launcher options", () => {
+  const box = () =>
+    handle?.element.shadowRoot?.querySelector<HTMLElement>("[data-launcher]") ??
+    null;
+
+  test("the offset option sets the custom properties on the host element", () => {
+    handle = mount({
+      projectKey: "pk_live_abc",
+      offset: { bottom: 88, side: "1.5rem" },
+    });
+    expect(
+      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
+    ).toBe("88px");
+    expect(
+      handle.element.style.getPropertyValue("--pulsarix-launcher-side"),
+    ).toBe("1.5rem");
+  });
+
+  test("without the option nothing is set, so the default and the host's CSS stand", () => {
+    handle = mount({ projectKey: "pk_live_abc" });
+    expect(
+      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
+    ).toBe("");
+    expect(handle.element.hasAttribute("style")).toBe(false);
+  });
+
+  test("a property the host set itself is not removed, one the widget set is", () => {
+    handle = mount({ projectKey: "pk_live_abc", offset: { side: 24 } });
+    const { element } = handle;
+    element.style.setProperty("--pulsarix-launcher-bottom", "70px");
+    element.setAttribute("offset-side", "bogus;");
+    element.setLauncherVisible(true);
+    expect(element.style.getPropertyValue("--pulsarix-launcher-bottom")).toBe(
+      "70px",
+    );
+    expect(element.style.getPropertyValue("--pulsarix-launcher-side")).toBe("");
+  });
+
+  test("an unsafe length is dropped", () => {
+    handle = mount({
+      projectKey: "pk_live_abc",
+      offset: { bottom: "4px; color: red" },
+    });
+    expect(
+      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
+    ).toBe("");
+  });
+
+  test("the launcher option reaches the element; false keeps its old meaning", async () => {
+    handle = mount({ projectKey: "pk_live_abc", launcher: "icon" });
+    expect(handle.element.config.launcherMode).toBe("icon");
+    await settle();
+    expect(box()?.dataset.launcher).toBe("icon");
+    handle.destroy();
+    handle = mount({ projectKey: "pk_live_abc", launcher: false });
+    await settle();
+    expect(box()).toBeNull();
+  });
+
+  test("setLauncherVisible hides and shows the launcher only", async () => {
+    handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+    await settle();
+    expect(box()?.hidden).toBe(false);
+    handle.setLauncherVisible(false);
+    await settle();
+    expect(box()?.hidden).toBe(true);
+    handle.open();
+    await settle();
+    expect(handle.element.isOpen).toBe(true);
+    expect(box()?.hidden).toBe(true);
+    handle.close();
+    handle.setLauncherVisible(true);
+    await settle();
+    expect(box()?.hidden).toBe(false);
+  });
+});

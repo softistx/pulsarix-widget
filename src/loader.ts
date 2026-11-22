@@ -14,7 +14,8 @@ interface InitOptions {
   accentColor?: string;
   inheritTheme?: boolean;
   apiBase?: string;
-  launcher?: boolean;
+  launcher?: boolean | string;
+  offset?: { bottom?: number | string; side?: number | string };
   maskText?: boolean;
   attachments?: boolean;
   privacyUrl?: string;
@@ -26,6 +27,7 @@ interface InitOptions {
 interface Handle {
   open(): void;
   close(): void;
+  setLauncherVisible(visible: boolean): void;
   identify(token: string | null): void;
   setTheme(theme: string): void;
   setLocale(locale: string): void;
@@ -92,6 +94,8 @@ window.PulsarixWidget = {
   init,
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
+  setLauncherVisible: (visible: boolean) =>
+    whenReady((h) => h.setLauncherVisible(visible)),
   identify: (token: string | null) => whenReady((h) => h.identify(token)),
   setTheme: (theme: string) => whenReady((h) => h.setTheme(theme), "theme"),
   setLocale: (locale: string) =>
@@ -128,7 +132,11 @@ if (data?.projectKey) {
     accentColor: data.accentColor,
     inheritTheme: data.inheritTheme === "false" ? false : undefined,
     apiBase: data.apiBase,
-    launcher: data.launcher === "false" ? false : undefined,
+    launcher: data.launcher === "false" ? false : data.launcher,
+    offset:
+      data.offsetBottom || data.offsetSide
+        ? { bottom: data.offsetBottom, side: data.offsetSide }
+        : undefined,
     maskText: data.maskText === "true" ? true : undefined,
     attachments: data.attachments === "false" ? false : undefined,
     privacyUrl: data.privacyUrl,

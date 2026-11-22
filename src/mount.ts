@@ -1,4 +1,10 @@
-import type { Locale, ThemeMode } from "./config";
+import {
+  type LauncherMode,
+  type LauncherOffset,
+  type Locale,
+  lengthOf,
+  type ThemeMode,
+} from "./config";
 import {
   defineWidget,
   type MountMetadata,
@@ -21,7 +27,10 @@ export interface MountOptions {
   inheritTheme?: boolean;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
-  launcher?: boolean;
+  /** The floating button: `"auto"` (icon below 640 px, pill above), `"pill"`, `"icon"`, or `false`. */
+  launcher?: boolean | LauncherMode;
+  /** Launcher distance from the bottom and its side (16 px default): pixels, or a CSS length. */
+  offset?: LauncherOffset;
   /** The screenshot's "Mask the text on the page" option starts on. */
   maskText?: boolean;
   /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
@@ -45,6 +54,8 @@ export interface WidgetHandle {
   element: PulsarixWidgetElement;
   open(): void;
   close(): void;
+  /** Shows or hides the launcher only; an open dialog is never closed or hidden by it. */
+  setLauncherVisible(visible: boolean): void;
   /** Signs the reporter in with a signed identity token, or out with `null`. */
   identify(token: string | null): void;
   /** Light or dark now, without a remount; `"auto"` follows the OS, not the host page. */
@@ -76,33 +87,14 @@ export function mount(options: MountOptions): WidgetHandle {
   }
   defineWidget();
   const element = document.createElement(TAG_NAME) as PulsarixWidgetElement;
-  element.setAttribute("project-key", options.projectKey);
-  if (options.locale) element.setAttribute("locale", options.locale);
-  if (options.theme) element.setAttribute("theme", options.theme);
-  if (options.position) element.setAttribute("position", options.position);
-  if (options.accentColor)
-    element.setAttribute("accent-color", options.accentColor);
-  if (options.inheritTheme === false)
-    element.setAttribute("inherit-theme", "false");
-  if (options.apiBase) element.setAttribute("api-base", options.apiBase);
-  if (options.maskText) element.setAttribute("mask-text", "true");
-  if (options.attachments === false)
-    element.setAttribute("attachments", "false");
-  if (options.privacyUrl)
-    element.setAttribute("privacy-url", options.privacyUrl);
-  if (options.prefill?.email)
-    element.setAttribute("prefill-email", options.prefill.email);
-  if (options.prefill?.title)
-    element.setAttribute("prefill-title", options.prefill.title);
-  if (options.metadata)
-    element.setAttribute("metadata", JSON.stringify(options.metadata));
+  applyOptions(element, options);
   if (options.identity) element.identify(options.identity);
-  if (options.launcher === false) element.setAttribute("launcher", "false");
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
+    setLauncherVisible: (visible) => element.setLauncherVisible(visible),
     identify: (token) => element.identify(token),
     setTheme: (theme) => element.setTheme(theme),
     setLocale: (locale) => element.setLocale(locale),
@@ -116,4 +108,35 @@ export function mount(options: MountOptions): WidgetHandle {
   };
   current = handle;
   return handle;
+}
+
+/** Writes the `mount()` options onto the element as the attributes `readConfig` reads. */
+export function applyOptions(element: HTMLElement, options: MountOptions) {
+  const put = (name: string, value: string | null | undefined | false) => {
+    if (value) element.setAttribute(name, value);
+  };
+  put("project-key", options.projectKey);
+  put("locale", options.locale);
+  put("theme", options.theme);
+  put("position", options.position);
+  put("accent-color", options.accentColor);
+  put("inherit-theme", options.inheritTheme === false && "false");
+  put("api-base", options.apiBase);
+  put("mask-text", options.maskText && "true");
+  put("attachments", options.attachments === false && "false");
+  put("privacy-url", options.privacyUrl);
+  put("prefill-email", options.prefill?.email);
+  put("prefill-title", options.prefill?.title);
+  put("metadata", options.metadata && JSON.stringify(options.metadata));
+  const { launcher } = options;
+  put(
+    "launcher",
+    launcher === false
+      ? "false"
+      : typeof launcher === "string"
+        ? launcher
+        : null,
+  );
+  put("offset-bottom", lengthOf(options.offset?.bottom));
+  put("offset-side", lengthOf(options.offset?.side));
 }

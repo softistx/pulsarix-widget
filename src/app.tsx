@@ -38,6 +38,8 @@ export function App({
   dark,
   open,
   launcher,
+  launcherMode = "auto",
+  launcherVisible = true,
   position,
   maskText = false,
   attachments = true,
@@ -206,6 +208,8 @@ export function App({
               <Launcher
                 messages={messages}
                 position={position}
+                mode={launcherMode}
+                visible={launcherVisible}
                 open={open}
                 unread={unread}
                 onOpen={(button) => {
@@ -227,9 +231,13 @@ export function App({
                       : "max-w-[896px]"
                 }
                 onCloseAutoFocus={(event) => {
-                  if (!opener.current?.isConnected) return;
+                  // A hidden or missing opener (launcher off or hidden) cannot take focus:
+                  // let Radix's default run.
+                  const target = opener.current;
+                  if (!target?.isConnected || target.closest("[hidden]"))
+                    return;
                   event.preventDefault();
-                  opener.current.focus();
+                  target.focus();
                 }}
               >
                 {body}

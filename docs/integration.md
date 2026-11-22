@@ -11,6 +11,9 @@ and "My requests" working. Reference for every option and event: the [README](..
 6. [Events](#6-events)
 7. [Local development origins](#7-local-development-origins)
 8. [Troubleshooting](#8-troubleshooting)
+9. [Inheriting the host app's theme](#9-inheriting-the-host-apps-theme)
+10. [Changing theme, locale and metadata at run time](#10-changing-theme-locale-and-metadata-at-run-time)
+11. [The launcher: look, position and visibility](#11-the-launcher-look-position-and-visibility)
 
 ## 1. Get a project and a widget key
 
@@ -197,21 +200,22 @@ Content-Security-Policy:
 
 Script-tag attributes and `init` / `mount` options (all optional except the key):
 
-| Attribute / option                         | Effect                                                |
-| ------------------------------------------ | ----------------------------------------------------- |
-| `data-project-key` / `projectKey`          | the public key (required)                             |
-| `data-api-base` / `apiBase`                | the pulsarix origin; required on the npm route        |
-| `data-locale` / `locale`                   | `en` (default) or `fr`                                |
-| `data-theme` / `theme`                     | `light`, `dark` or `auto` (default)                   |
-| `data-position` / `position`               | `bottom-right` (default) or `bottom-left`             |
-| `data-accent-color` / `accentColor`        | a hex seed for the theme                              |
-| `data-launcher="false"` / `launcher`       | no floating button; open with `PulsarixWidget.open()` |
-| `data-attachments="false"`                 | no screenshot and no file controls                    |
-| `data-mask-text="true"`                    | "Mask the text on the page" starts on                 |
-| `data-privacy-url` / `privacyUrl`          | an http(s) link to your privacy page                  |
-| `data-prefill-email`, `data-prefill-title` | starting values of the form                           |
-| `data-identity` / `identity`               | the signed token (section 3)                          |
-| `data-metadata` / `metadata`               | a JSON object of strings stored with each report      |
+| Attribute / option                                  | Effect                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| `data-project-key` / `projectKey`                   | the public key (required)                                          |
+| `data-api-base` / `apiBase`                         | the pulsarix origin; required on the npm route                     |
+| `data-locale` / `locale`                            | `en` (default) or `fr`                                             |
+| `data-theme` / `theme`                              | `light`, `dark` or `auto` (default)                                |
+| `data-position` / `position`                        | `bottom-right` (default) or `bottom-left`                          |
+| `data-accent-color` / `accentColor`                 | a hex seed for the theme                                           |
+| `data-launcher` / `launcher`                        | `auto` (default), `pill`, `icon`, or `false` for none (section 11) |
+| `data-offset-bottom`, `data-offset-side` / `offset` | launcher distance from the bottom and its side (section 11)        |
+| `data-attachments="false"`                          | no screenshot and no file controls                                 |
+| `data-mask-text="true"`                             | "Mask the text on the page" starts on                              |
+| `data-privacy-url` / `privacyUrl`                   | an http(s) link to your privacy page                               |
+| `data-prefill-email`, `data-prefill-title`          | starting values of the form                                        |
+| `data-identity` / `identity`                        | the signed token (section 3)                                       |
+| `data-metadata` / `metadata`                        | a JSON object of strings stored with each report                   |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
 values of 512, 2 KB in all; the rest is dropped.
@@ -402,3 +406,70 @@ Rules:
 - An unsupported theme or locale is ignored.
 - Calls before the script-tag bundle has loaded are queued, replayed in order; a repeated call to the same
   setter replaces the earlier one, so only the last `setTheme`, `setLocale` and `setMetadata` run.
+
+## 11. The launcher: look, position and visibility
+
+The floating button that opens the dialog. Three options shape it; each has a script-tag
+attribute and a `mount()` option.
+
+### Look: `launcher`
+
+| Value              | Result                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `"auto"` (default) | The icon below 640 px of viewport width, the text pill from 640 px up. Live: it follows a resize or a rotation. |
+| `"pill"`           | Always the text pill (the 0.3 look).                                                                            |
+| `"icon"`           | Always a 48 px round button with a speech-bubble icon.                                                          |
+| `false`            | No launcher; open the dialog with `open()`.                                                                     |
+
+The icon button keeps the localized label as its accessible name (and as its `title`, so a
+pointer hover shows it), carries the unread count in that name, and shows a visible focus ring.
+
+```html
+<script src="https://<pulsarix-host>/widget/v1/loader.js" async
+        data-project-key="pk_live_xxx" data-launcher="icon"></script>
+```
+
+```ts
+mount({ projectKey: "pk_live_xxx", launcher: "auto" });
+```
+
+### Offset: `offset` and the CSS custom properties
+
+The launcher sits 16 px from the bottom and from its side, plus the device's safe area
+(`env(safe-area-inset-bottom)`) at the bottom. Move it to clear a sticky action bar:
+
+```ts
+mount({ projectKey: "pk_live_xxx", offset: { bottom: 88, side: "1.5rem" } });
+```
+
+```html
+<script ... data-offset-bottom="88" data-offset-side="1.5rem"></script>
+```
+
+A number is pixels; a string is any CSS length (`"2rem"`, `"calc(var(--bar-height) + 8px)"`,
+`"env(...)"`). Negative values and anything that is not a length are ignored. The option sets two custom
+properties on the `<pulsarix-widget>` element, which a host can also set in its own stylesheet (for example
+from a media query, or following the height of its bar); the widget only ever removes a property it set itself:
+
+```css
+pulsarix-widget {
+  --pulsarix-launcher-bottom: 88px;
+  --pulsarix-launcher-side: 24px;
+}
+```
+
+`side` is the distance from the edge named by `position` (`bottom-right` by default).
+
+### Visibility: `setLauncherVisible(visible)`
+
+Hides or shows the launcher only, for a screen where the button is in the way:
+
+```ts
+const widget = mount({ projectKey: "pk_live_xxx" });
+widget.setLauncherVisible(false); // on the checkout step
+widget.setLauncherVisible(true);
+```
+
+An open dialog is never hidden or closed by it, and `open()` still works while the launcher is hidden.
+With the script tag: `window.PulsarixWidget.setLauncherVisible(false)`. `launcher: false` still
+removes the launcher for good.

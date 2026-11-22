@@ -13,6 +13,7 @@ import { MESSAGES } from "./core/messages";
 import { createHostFollower } from "./core/theme/inherit";
 import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
+import { applyOffset } from "./offset";
 
 export const TAG_NAME = "pulsarix-widget";
 
@@ -38,7 +39,7 @@ export type WidgetEvent =
  * no style element, no global, no portal in `document.body`.
  */
 export class PulsarixWidgetElement extends HTMLElement {
-  static observedAttributes = [...OBSERVED_ATTRIBUTES, "launcher"];
+  static observedAttributes = [...OBSERVED_ATTRIBUTES];
 
   #root: Root | null = null;
   #shadow: ShadowRoot | null = null;
@@ -64,6 +65,8 @@ export class PulsarixWidgetElement extends HTMLElement {
    * attribute, so it does not sit in the page's DOM; only a declarative `data-identity` does.
    */
   #identity: string | null = null;
+  #launcherVisible = true;
+  #offsetProps = new Set<string>();
 
   get config(): WidgetConfig {
     const config = readConfig((name) => this.getAttribute(name));
@@ -122,8 +125,13 @@ export class PulsarixWidgetElement extends HTMLElement {
    */
   identify(token: string | null) {
     this.#identity = token || null;
-    // Signing out drops a declarative `data-identity` too.
-    if (!token) this.removeAttribute("identity");
+    if (!token) this.removeAttribute("identity"); // drops a declarative `data-identity` too
+    this.#render();
+  }
+
+  /** Shows or hides the launcher only; an open dialog stays. */
+  setLauncherVisible(visible: boolean) {
+    this.#launcherVisible = visible;
     this.#render();
   }
 
@@ -135,8 +143,7 @@ export class PulsarixWidgetElement extends HTMLElement {
    */
   setTheme(theme: ThemeMode) {
     if (!THEMES.includes(theme)) return;
-    // An explicit mode beats the inherited host mode (as `accentColor` beats the host's primary);
-    // `"auto"` hands the choice back to the host's mode (`inheritTheme`) or the OS.
+    // An explicit mode beats the inherited host mode; `"auto"` hands the choice back to it.
     this.setAttribute("theme", theme);
     this.#pinnedMode = theme !== "auto";
     this.#render();
@@ -200,6 +207,7 @@ export class PulsarixWidgetElement extends HTMLElement {
       : (this.#host.current.dark ??
         (config.theme === "dark" ||
           (config.theme === "auto" && !!this.#media?.matches)));
+    applyOffset(this, config.offset, this.#offsetProps);
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
@@ -213,6 +221,8 @@ export class PulsarixWidgetElement extends HTMLElement {
         dark={dark}
         open={this.#open}
         launcher={this.getAttribute("launcher") !== "false"}
+        launcherMode={config.launcherMode}
+        launcherVisible={this.#launcherVisible}
         maskText={config.maskText}
         attachments={config.attachments}
         prefill={config.prefill}
