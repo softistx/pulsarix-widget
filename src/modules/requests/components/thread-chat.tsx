@@ -81,6 +81,7 @@ export function ThreadChat({
             avatarFallback={t.team.charAt(0)}
             timestamp={formatTime(message.at)}
             text={message.from === "reporter" ? message.body : undefined}
+            copyText={message.body}
             footer={
               message.files.length ? (
                 <ul
