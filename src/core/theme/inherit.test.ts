@@ -30,6 +30,12 @@ describe("the inheritable tokens", () => {
     expect(tokens.has("--ground")).toBe(false);
     expect(tokens.has("--destructive")).toBe(false);
   });
+
+  test("include the accents the light block derives but the dark block declares as literals", () => {
+    const tokens = inheritableTokens();
+    expect(tokens.get("--primary-text")).toBe("color");
+    expect(tokens.get("--primary-indicator")).toBe("color");
+  });
 });
 
 describe("readHostTheme", () => {
@@ -82,6 +88,29 @@ describe("readHostTheme", () => {
     expect(readHostTheme(document, { accent: false }).dark).toBeNull();
     html.style.setProperty("--primary", "#00aa00");
     expect(readHostTheme(document, { accent: false }).dark).toBe(true);
+  });
+});
+
+describe("the host's primary accents in dark mode", () => {
+  test("the text and indicator accents follow the host, and a token the host lacks is left out", () => {
+    html.classList.add("dark");
+    html.style.setProperty("--primary", "#33ccbb");
+    html.style.setProperty("--primary-text", "#66ddd0");
+    html.style.setProperty("--primary-indicator", "#44ccbb");
+    const { tokens, dark } = readHostTheme(document, { accent: false });
+    expect(dark).toBe(true);
+    expect(tokens["--primary-text"]).toBe("#66ddd0");
+    expect(tokens["--primary-indicator"]).toBe("#44ccbb");
+    html.style.removeProperty("--primary-text");
+    const lacking = readHostTheme(document, { accent: false }).tokens;
+    expect(lacking["--primary-text"]).toBeUndefined();
+  });
+
+  test("an explicit accentColor still keeps the whole primary family out", () => {
+    html.style.setProperty("--primary-text", "#66ddd0");
+    html.style.setProperty("--primary-indicator", "#44ccbb");
+    const { tokens } = readHostTheme(document, { accent: true });
+    expect(Object.keys(tokens)).toEqual([]);
   });
 });
 
