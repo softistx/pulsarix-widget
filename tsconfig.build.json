@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/index.ts", "src/globals.d.ts"],
+  "include": ["src/index.ts", "src/server.ts", "src/globals.d.ts"],
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
