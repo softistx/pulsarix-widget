@@ -13,7 +13,8 @@ interface InitOptions {
   position?: string;
   accentColor?: string;
   apiBase?: string;
-  launcher?: boolean;
+  launcher?: boolean | string;
+  offset?: { bottom?: number | string; side?: number | string };
   maskText?: boolean;
   attachments?: boolean;
   privacyUrl?: string;
@@ -25,6 +26,7 @@ interface InitOptions {
 interface Handle {
   open(): void;
   close(): void;
+  setLauncherVisible(visible: boolean): void;
   identify(token: string | null): void;
   destroy(): void;
   on(name: string, cb: (e: CustomEvent) => void): () => void;
@@ -80,6 +82,8 @@ window.PulsarixWidget = {
   init,
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
+  setLauncherVisible: (visible: boolean) =>
+    whenReady((h) => h.setLauncherVisible(visible)),
   identify: (token: string | null) => whenReady((h) => h.identify(token)),
   destroy: () => {
     generation++;
@@ -110,7 +114,11 @@ if (data?.projectKey) {
     position: data.position,
     accentColor: data.accentColor,
     apiBase: data.apiBase,
-    launcher: data.launcher === "false" ? false : undefined,
+    launcher: data.launcher === "false" ? false : data.launcher,
+    offset:
+      data.offsetBottom || data.offsetSide
+        ? { bottom: data.offsetBottom, side: data.offsetSide }
+        : undefined,
     maskText: data.maskText === "true" ? true : undefined,
     attachments: data.attachments === "false" ? false : undefined,
     privacyUrl: data.privacyUrl,

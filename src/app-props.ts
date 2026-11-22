@@ -1,4 +1,4 @@
-import type { Locale, MetadataEntry, Position } from "./config";
+import type { LauncherMode, Locale, MetadataEntry, Position } from "./config";
 import type { Messages } from "./core/messages";
 import type { SubmitDetail } from "./modules/report/components/report-flow";
 
@@ -12,6 +12,10 @@ export interface AppProps {
   dark: boolean;
   open: boolean;
   launcher: boolean;
+  /** The launcher's look; `auto` (default) is the icon below 640 px and the pill above. */
+  launcherMode?: LauncherMode;
+  /** `setLauncherVisible(false)` hides the launcher only, never an open dialog. */
+  launcherVisible?: boolean;
   position: Position;
   /** The screenshot's mask-text option starts on. */
   maskText?: boolean;

@@ -37,6 +37,8 @@ export function App({
   dark,
   open,
   launcher,
+  launcherMode = "auto",
+  launcherVisible = true,
   position,
   maskText = false,
   attachments = true,
@@ -191,6 +193,8 @@ export function App({
               <Launcher
                 messages={messages}
                 position={position}
+                mode={launcherMode}
+                visible={launcherVisible}
                 open={open}
                 unread={unread}
                 onOpen={(button) => {

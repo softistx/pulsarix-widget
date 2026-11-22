@@ -49,7 +49,8 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
 `data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
-floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
+floating button; open it with `window.PulsarixWidget.open()`) or `data-launcher="auto|pill|icon"`
+(`auto` is the default: icon below 640 px, pill above), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
 (no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
 own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
@@ -120,20 +121,29 @@ A script-tag loader and an npm import are two separate instances: use one route 
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
 `WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
 
-| `MountOptions` | Type                              | Default                                              |
-| -------------- | --------------------------------- | ---------------------------------------------------- |
-| `projectKey`   | `string`                          | required; missing reports `pulsarix:error` `config`  |
-| `apiBase`      | `string`                          | none; required on the npm route                      |
-| `locale`       | `"en" \| "fr"`                    | `"en"`                                               |
-| `theme`        | `"light" \| "dark" \| "auto"`     | `"auto"`                                             |
-| `position`     | `"bottom-right" \| "bottom-left"` | `"bottom-right"`                                     |
-| `accentColor`  | hex string                        | none: the built-in `lavande` theme                   |
-| `launcher`     | `boolean`                         | `true` (`false` hides the floating button)           |
-| `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
-| `target`       | `Element`                         | `document.body`                                      |
+| `MountOptions` | Type                                                | Default                                              |
+| -------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| `projectKey`   | `string`                                            | required; missing reports `pulsarix:error` `config`  |
+| `apiBase`      | `string`                                            | none; required on the npm route                      |
+| `locale`       | `"en" \| "fr"`                                      | `"en"`                                               |
+| `theme`        | `"light" \| "dark" \| "auto"`                       | `"auto"`                                             |
+| `position`     | `"bottom-right" \| "bottom-left"`                   | `"bottom-right"`                                     |
+| `accentColor`  | hex string                                          | none: the built-in `lavande` theme                   |
+| `launcher`     | `boolean \| "auto" \| "pill" \| "icon"`             | `"auto"` (`false` removes the floating button)       |
+| `offset`       | `{ bottom?, side? }` (number = px, or a CSS length) | 16 px each, plus the bottom safe area                |
+| `identity`     | `string \| null`                                    | none: today's form only (see "Identified reporters") |
+| `target`       | `Element`                                           | `document.body`                                      |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
+`WidgetHandle`: `open()`, `close()`, `setLauncherVisible(visible)`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
+
+## The launcher
+
+`launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
+pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
+`offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
+`setLauncherVisible(false)` hides only the launcher, never an open dialog. Details and examples:
+[docs/integration.md](docs/integration.md).
 
 ## The report form
 

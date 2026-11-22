@@ -3,6 +3,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
 import {
   identityOf,
+  type LauncherMode,
+  type LauncherOffset,
+  lengthOf,
   OBSERVED_ATTRIBUTES,
   readConfig,
   type WidgetConfig,
@@ -29,7 +32,7 @@ export type WidgetEvent =
  * no style element, no global, no portal in `document.body`.
  */
 export class PulsarixWidgetElement extends HTMLElement {
-  static observedAttributes = [...OBSERVED_ATTRIBUTES, "launcher"];
+  static observedAttributes = [...OBSERVED_ATTRIBUTES];
 
   #root: Root | null = null;
   #shadow: ShadowRoot | null = null;
@@ -45,6 +48,7 @@ export class PulsarixWidgetElement extends HTMLElement {
    * attribute, so it does not sit in the page's DOM; only a declarative `data-identity` does.
    */
   #identity: string | null = null;
+  #launcherVisible = true;
 
   get config(): WidgetConfig {
     const config = readConfig((name) => this.getAttribute(name));
@@ -100,6 +104,12 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#render();
   }
 
+  /** Shows or hides the launcher only: an open dialog stays, and `open()` still works. */
+  setLauncherVisible(visible: boolean) {
+    this.#launcherVisible = visible;
+    this.#render();
+  }
+
   open() {
     this.#setOpen(true);
   }
@@ -134,6 +144,15 @@ export class PulsarixWidgetElement extends HTMLElement {
     const dark =
       config.theme === "dark" ||
       (config.theme === "auto" && !!this.#media?.matches);
+    // The launcher's offsets are custom properties on the host: a host's own CSS may set them too.
+    // Only a given option is written, so the host's rule or the default (16 px) stays otherwise.
+    for (const [name, value] of [
+      ["--pulsarix-launcher-bottom", config.offset.bottom],
+      ["--pulsarix-launcher-side", config.offset.side],
+    ] as const) {
+      if (value) this.style.setProperty(name, value);
+      else this.style.removeProperty(name);
+    }
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
@@ -146,6 +165,8 @@ export class PulsarixWidgetElement extends HTMLElement {
         dark={dark}
         open={this.#open}
         launcher={this.getAttribute("launcher") !== "false"}
+        launcherMode={config.launcherMode}
+        launcherVisible={this.#launcherVisible}
         maskText={config.maskText}
         attachments={config.attachments}
         prefill={config.prefill}
@@ -177,7 +198,17 @@ export interface MountOptions {
   accentColor?: string;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
-  launcher?: boolean;
+  /**
+   * The floating button: `"auto"` (default; the icon below 640 px of viewport width, the text
+   * pill above, live), `"pill"`, `"icon"` (a 48 px round button), or `false` for none.
+   */
+  launcher?: boolean | LauncherMode;
+  /**
+   * Distance of the launcher from the bottom and from its side (default 16 px each, plus the
+   * bottom safe area). A number is pixels, a string any CSS length. Sets
+   * `--pulsarix-launcher-bottom` and `--pulsarix-launcher-side` on the element.
+   */
+  offset?: LauncherOffset;
   /** The screenshot's "Mask the text on the page" option starts on. */
   maskText?: boolean;
   /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
@@ -201,6 +232,8 @@ export interface WidgetHandle {
   element: PulsarixWidgetElement;
   open(): void;
   close(): void;
+  /** Shows or hides the launcher only; an open dialog is never closed or hidden by it. */
+  setLauncherVisible(visible: boolean): void;
   /** Signs the reporter in with a signed identity token, or out with `null`. */
   identify(token: string | null): void;
   destroy(): void;
@@ -242,11 +275,18 @@ export function mount(options: MountOptions): WidgetHandle {
     element.setAttribute("metadata", JSON.stringify(options.metadata));
   if (options.identity) element.identify(options.identity);
   if (options.launcher === false) element.setAttribute("launcher", "false");
+  else if (typeof options.launcher === "string")
+    element.setAttribute("launcher", options.launcher);
+  const bottom = lengthOf(options.offset?.bottom);
+  const side = lengthOf(options.offset?.side);
+  if (bottom) element.setAttribute("offset-bottom", bottom);
+  if (side) element.setAttribute("offset-side", side);
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
+    setLauncherVisible: (visible) => element.setLauncherVisible(visible),
     identify: (token) => element.identify(token),
     destroy: () => element.remove(),
     on(name, callback) {

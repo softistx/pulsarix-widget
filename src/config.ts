@@ -3,12 +3,23 @@
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
 export type Position = "bottom-right" | "bottom-left";
+/** `auto` shows the icon below 640 px of viewport width and the text pill above it. */
+export type LauncherMode = "auto" | "pill" | "icon";
+/** A launcher offset: a number is pixels, a string is any CSS length (`"2rem"`, `"env(...)"`). */
+export interface LauncherOffset {
+  bottom?: number | string;
+  side?: number | string;
+}
 
 export interface WidgetConfig {
   projectKey: string | null;
   locale: Locale;
   theme: ThemeMode;
   position: Position;
+  /** The launcher's look (`launcher="icon"`); `launcher="false"` is read by the element. */
+  launcherMode: LauncherMode;
+  /** The launcher's offsets (`offset-bottom`, `offset-side`), as CSS lengths, or null. */
+  offset: { bottom: string | null; side: string | null };
   /** A valid hex seed from the host, or null: the built-in lavande theme then applies. */
   accentColor: string | null;
   /** Origin of the pulsarix host that serves `/public/graphql`; null until given. */
@@ -47,6 +58,9 @@ export const OBSERVED_ATTRIBUTES = [
   "locale",
   "theme",
   "position",
+  "launcher",
+  "offset-bottom",
+  "offset-side",
   "accent-color",
   "api-base",
   "mask-text",
@@ -64,6 +78,24 @@ function oneOf<T extends string>(
   fallback: T,
 ): T {
   return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+/**
+ * A CSS length for the launcher offset (a number of pixels, or `<number><unit>`, `calc(...)`,
+ * `var(...)`, `env(...)`), or null. A value with anything else (`;`, `}`, quotes) is dropped.
+ */
+export function lengthOf(
+  value: string | number | null | undefined,
+): string | null {
+  if (typeof value === "number")
+    return Number.isFinite(value) && value >= 0 ? `${value}px` : null;
+  const text = value?.trim() ?? "";
+  if (!text) return null;
+  if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
+  return /^[\w\s.,+*/()%-]{1,100}$/.test(text) &&
+    /^(\d|calc\(|var\(|env\(|min\(|max\(|clamp\()/.test(text)
+    ? text
+    : null;
 }
 
 /** A hex colour (#rgb or #rrggbb): the only form accepted as a seed. */
@@ -161,6 +193,11 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
       ["bottom-right", "bottom-left"],
       "bottom-right",
     ),
+    launcherMode: oneOf(get("launcher"), ["auto", "pill", "icon"], "auto"),
+    offset: {
+      bottom: lengthOf(get("offset-bottom")),
+      side: lengthOf(get("offset-side")),
+    },
     accentColor: isHexColor(accent) ? accent.trim() : null,
     apiBase: apiBaseOf(get("api-base")),
     maskText: get("mask-text") === "true",

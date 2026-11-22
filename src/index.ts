@@ -1,4 +1,11 @@
-export type { Locale, Position, ThemeMode, WidgetConfig } from "./config";
+export type {
+  LauncherMode,
+  LauncherOffset,
+  Locale,
+  Position,
+  ThemeMode,
+  WidgetConfig,
+} from "./config";
 export {
   defineWidget,
   type MountOptions,
