@@ -94,7 +94,11 @@ test("calls before the bundle loads are queued and replayed on mount", async () 
   api.identify("a.b");
   api.setTheme("dark");
   api.setLocale("fr");
+  api.setMetadata({ org: "a" });
+  // Only the last value of a setter is replayed.
+  api.setTheme("light");
   api.setMetadata({ org: "b" });
+  api.setTheme("dark");
   expect(opened).toEqual([]);
   release();
   await loading;
@@ -102,9 +106,9 @@ test("calls before the bundle loads are queued and replayed on mount", async () 
     "open",
     "close",
     "identify:a.b",
-    "theme:dark",
     "locale:fr",
     'metadata:{"org":"b"}',
+    "theme:dark",
   ]);
   api.destroy();
 });

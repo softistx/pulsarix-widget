@@ -160,9 +160,14 @@ bundle has loaded is queued. An unsupported theme or locale is ignored.
   host; inherited colour tokens still win for their value.
 - `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
   the metadata it was sent with.
-- `setLocale` re-renders the dialog's contents in the new language: the dialog stays open and the typed
-  fields, the chosen type and the tab are kept. Files or a screenshot already attached are dropped, so
-  set the locale before the reporter attaches anything when you can (the language rarely changes mid-report).
+- `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` follow
+  when the form is next idle: on an idle form the typed fields, the type, the impact and the tab are kept
+  and files or a screenshot already attached are dropped; while a report is being sent, on the confirmation
+  or on the "My requests" tab nothing is rebuilt (and nothing is lost), and those labels switch once the
+  reporter is back on the form or the dialog closes.
+- A repeated call before the bundle loads replaces the earlier one: only the last of each setter runs.
+- With `inheritTheme`, an explicit `setTheme` wins over the host's mode until the `theme` attribute is
+  written again; see [docs/integration.md](docs/integration.md#10-changing-theme-locale-and-metadata-at-run-time).
 
 ## Theme
 

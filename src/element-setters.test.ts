@@ -8,17 +8,25 @@ import {
   test,
 } from "bun:test";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { mount, type WidgetHandle } from "./element";
+import userEvent from "@testing-library/user-event";
+import { MESSAGES } from "./core/messages";
+import { mount, type WidgetHandle } from "./mount";
 
 // The spam guard holds a submit for 3 s after the dialog opens.
 setDefaultTimeout(15_000);
 
 let handle: WidgetHandle | null = null;
 const realFetch = globalThis.fetch;
+let submitDelay = 0;
+let submitStarted = 0;
+let withAttachments = false;
 let submitted: Array<{ metadata?: Array<{ key: string; value: string }> }> = [];
 
 beforeEach(() => {
   submitted = [];
+  submitDelay = 0;
+  submitStarted = 0;
+  withAttachments = false;
   globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
     const body = JSON.parse(String(init.body)) as {
       id: string;
@@ -26,9 +34,16 @@ beforeEach(() => {
     };
     if (body.id !== "widgetConfig" && body.variables?.input)
       submitted.push(body.variables.input);
+    if (body.id !== "widgetConfig") submitStarted += 1;
+    if (body.id !== "widgetConfig" && submitDelay)
+      await new Promise((resolve) => setTimeout(resolve, submitDelay));
     const data =
       body.id === "widgetConfig"
-        ? { widgetConfig: null }
+        ? {
+            widgetConfig: withAttachments
+              ? { projectName: "Acme", enabled: true, attachments: true }
+              : null,
+          }
         : { submitClientReport: { reportId: "r1", tracking: false } };
     return new Response(JSON.stringify({ data }), {
       status: 200,
@@ -208,5 +223,125 @@ describe("run-time setters", () => {
     );
     expect(h.element.isOpen).toBe(true);
     expect(typed(h)).toEqual(DRAFT);
+  });
+
+  test("type and impact are kept by setLocale", async () => {
+    const h = await openWithDraft({ projectKey: "pk_live_abc" });
+    const chip = (name: string) =>
+      [...shadowOf(h).querySelectorAll("[role=radio],button")].find(
+        (el) => el.textContent?.trim() === name,
+      ) as HTMLElement;
+    fireEvent.click(chip("Bug"));
+    fireEvent.click(chip("Annoying"));
+    const pressed = (el: HTMLElement) =>
+      el.getAttribute("aria-checked") ?? el.getAttribute("aria-pressed");
+    expect(pressed(chip("Bug"))).toBe("true");
+    h.setLocale("fr");
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).toContain("Signaler un problème"),
+    );
+    const fr = MESSAGES.fr.choices;
+    expect(pressed(chip(fr.type.bug))).toBe("true");
+    expect(pressed(chip(fr.impact.annoying))).toBe("true");
+  });
+
+  test("setLocale on an idle form drops the files already attached", async () => {
+    withAttachments = true;
+    const h = await openWithDraft({ projectKey: "pk_live_abc" });
+    const user = userEvent.setup({ applyAccept: false });
+    await waitFor(() => expect(field(h, 'input[type="file"]')).not.toBeNull());
+    await user.upload(
+      field<HTMLInputElement>(h, 'input[type="file"]'),
+      new File([new Uint8Array(100)], "log.txt", { type: "text/plain" }),
+    );
+    await waitFor(() => expect(shadowOf(h).textContent).toContain("log.txt"));
+    h.setLocale("fr");
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).toContain("Signaler un problème"),
+    );
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).not.toContain("log.txt"),
+    );
+    expect(typed(h)).toEqual(DRAFT);
+  });
+
+  test("setLocale while a report is on its way keeps the form; the strings still follow", async () => {
+    const events: CustomEvent[] = [];
+    const h = await openWithDraft({ projectKey: "pk_live_abc" });
+    h.element.addEventListener("pulsarix:submit", (e) =>
+      events.push(e as CustomEvent),
+    );
+    submitDelay = 2_000;
+    const form = field<HTMLFormElement>(h, "form");
+    fireEvent.submit(form);
+    await waitFor(() => expect(submitStarted).toBe(1), { timeout: 8_000 });
+    h.setLocale("fr");
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).toContain("Signaler un problème"),
+    );
+    // Not re-keyed: the same form is still there, and the submit goes on.
+    expect(form.isConnected).toBe(true);
+    await waitFor(() => expect(events).toHaveLength(1), { timeout: 8_000 });
+    expect(events).toHaveLength(1);
+  });
+
+  test("setLocale on the confirmation keeps it", async () => {
+    const h = await openWithDraft({ projectKey: "pk_live_abc" });
+    fireEvent.submit(field(h, "form"));
+    await waitFor(
+      () => expect(shadowOf(h).textContent).toContain(MESSAGES.en.done.title),
+      { timeout: 8_000 },
+    );
+    const confirmation = [...shadowOf(h).querySelectorAll("[tabindex]")].find(
+      (el) => el.textContent?.includes(MESSAGES.en.done.title),
+    );
+    h.setLocale("fr");
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).toContain(MESSAGES.fr.done.title),
+    );
+    expect(confirmation?.isConnected).toBe(true);
+    expect(h.element.isOpen).toBe(true);
+  });
+
+  test("the requests tab stays selected through setLocale", async () => {
+    const h = await openWithDraft({
+      projectKey: "pk_live_abc",
+      identity: "a.b",
+    });
+    const tab = (name: string) =>
+      [...shadowOf(h).querySelectorAll('[role="tab"]')].find((el) =>
+        el.textContent?.includes(name),
+      ) as HTMLElement;
+    const user = userEvent.setup();
+    await user.click(tab(MESSAGES.en.tabs.myRequests));
+    await waitFor(() =>
+      expect(
+        tab(MESSAGES.en.tabs.myRequests).getAttribute("aria-selected"),
+      ).toBe("true"),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const dialog = shadowOf(h).querySelector('[role="dialog"]');
+    h.setLocale("fr");
+    await waitFor(() =>
+      expect(shadowOf(h).textContent).toContain(MESSAGES.fr.tabs.myRequests),
+    );
+    expect(dialog?.isConnected).toBe(true);
+    expect(tab(MESSAGES.fr.tabs.myRequests).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+  });
+
+  test("a theme attribute written after setTheme gives the mode back to the host", () => {
+    const html = document.documentElement;
+    html.classList.add("light");
+    html.style.setProperty("--primary", "#00aa00");
+    handle = mount({ projectKey: "pk_live_abc", launcher: false });
+    const mode = () => handle?.element.getAttribute("data-resolved-theme");
+    handle.setTheme("dark");
+    expect(mode()).toBe("dark");
+    handle.element.setAttribute("theme", "auto");
+    expect(mode()).toBe("light");
+    html.classList.remove("light");
+    html.style.removeProperty("--primary");
   });
 });

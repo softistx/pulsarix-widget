@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { mount, type WidgetHandle } from "./element";
+import { mount, type WidgetHandle } from "./mount";
 
 let handle: WidgetHandle | null = null;
 afterEach(() => {
