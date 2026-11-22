@@ -3,8 +3,6 @@ import type { Messages } from "./types";
 /** The French words of the widget. */
 export const FR: Messages = {
   launcher: "Signaler un problème",
-  unreadReplies: (count) =>
-    `${count} réponse${count === 1 ? "" : "s"} non lue${count === 1 ? "" : "s"}`,
   title: "Signaler un problème",
   intro: "Dites-nous ce qui ne va pas, nous allons regarder.",
   introFor: (project) =>

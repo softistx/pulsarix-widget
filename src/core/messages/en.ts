@@ -3,8 +3,6 @@ import type { Messages } from "./types";
 /** The English words of the widget. */
 export const EN: Messages = {
   launcher: "Report a problem",
-  unreadReplies: (count) =>
-    `${count} unread ${count === 1 ? "reply" : "replies"}`,
   title: "Report a problem",
   intro: "Tell us what went wrong and we will look into it.",
   introFor: (project) =>

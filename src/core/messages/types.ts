@@ -1,7 +1,6 @@
 export interface Messages {
   launcher: string;
   /** The launcher's accessible addition while replies wait: "3 unread replies". */
-  unreadReplies: (count: number) => string;
   title: string;
   intro: string;
   /** The intro once the project's name is known. */
