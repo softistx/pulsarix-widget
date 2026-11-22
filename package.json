@@ -18,7 +18,7 @@
     "@graphql-codegen/typescript": "^7.0.1",
     "@graphql-codegen/typescript-operations": "^7.0.1",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@softistx/material": "^3.270.1",
+    "@softistx/material": "^3.271.0",
     "@softistx/material-core": "^0.96.1",
     "@tailwindcss/cli": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
