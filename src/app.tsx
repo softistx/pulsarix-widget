@@ -30,6 +30,7 @@ export type { AppProps } from "./app-props";
  */
 export function App({
   themeName = themeNameFor(null),
+  hostTokens,
   messages,
   locale,
   projectKey,
@@ -174,6 +175,7 @@ export function App({
       ref={setRoot}
       className={dark ? "pulsarix-root dark" : "pulsarix-root"}
       data-nxgt-theme={themeName}
+      style={hostTokens}
       lang={locale}
     >
       {root ? (

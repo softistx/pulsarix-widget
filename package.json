@@ -52,6 +52,7 @@
     "verify": "bun run lint && bun run schema:check && bun run generate:check && bun run build && bun run typecheck && bun run test && bun run check:deps && bun run size",
     "release": "bun scripts/publish.ts",
     "capture": "bun scripts/capture.ts",
+    "capture:theme": "bun scripts/capture-theme.ts",
     "capture:requests": "bun scripts/capture-requests.ts",
     "capture:thread": "bun scripts/capture-thread.ts",
     "capture:privacy": "bun scripts/capture-privacy.ts"
