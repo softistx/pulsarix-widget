@@ -132,8 +132,32 @@ A script-tag loader and an npm import are two separate instances: use one route 
 | `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
 | `target`       | `Element`                         | `document.body`                                      |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
+`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
+`setMetadata(metadata \| null)` (see "Changing theme, locale and metadata at run time"), `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
+
+## Changing theme, locale and metadata at run time
+
+When your app switches organisation, language or light/dark mode, do not remount the widget: a remount loses
+a report being typed. Call the setters instead. Each applies live, keeps the dialog open and keeps what the
+reporter typed.
+
+```ts
+widget.setTheme("dark"); // "light" | "dark" | "auto"
+widget.setLocale("fr"); // "en" | "fr": the strings re-render
+widget.setMetadata({ org: "acme", plan: "pro" }); // replaces the metadata of the next report; null clears it
+```
+
+The same three exist on the script-tag global (`PulsarixWidget.setTheme("dark")`, ...); a call made before the
+bundle has loaded is queued. An unsupported theme or locale is ignored.
+
+- `"auto"` follows the operating system (`prefers-color-scheme`), not your page's own mode. To follow your
+  app's Clair / Sombre / Système switch, pass the resolved `"light"` or `"dark"` to `setTheme` whenever it changes.
+- `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
+  the metadata it was sent with.
+- `setLocale` re-renders the dialog's contents in the new language: the dialog stays open and the typed
+  fields, the chosen type and the tab are kept. Files or a screenshot already attached are dropped, so
+  set the locale before the reporter attaches anything when you can (the language rarely changes mid-report).
 
 ## The report form
 

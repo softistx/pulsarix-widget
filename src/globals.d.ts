@@ -19,6 +19,11 @@ interface Window {
     open(): void;
     close(): void;
     identify(token: string | null): void;
+    setTheme(theme: "light" | "dark" | "auto"): void;
+    setLocale(locale: "en" | "fr"): void;
+    setMetadata(
+      metadata: Record<string, string | number | boolean> | null,
+    ): void;
     destroy(): void;
     on(name: string, cb: (e: CustomEvent) => void): () => void;
   };

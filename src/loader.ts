@@ -26,6 +26,9 @@ interface Handle {
   open(): void;
   close(): void;
   identify(token: string | null): void;
+  setTheme(theme: string): void;
+  setLocale(locale: string): void;
+  setMetadata(metadata: unknown): void;
   destroy(): void;
   on(name: string, cb: (e: CustomEvent) => void): () => void;
 }
@@ -81,6 +84,9 @@ window.PulsarixWidget = {
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
   identify: (token: string | null) => whenReady((h) => h.identify(token)),
+  setTheme: (theme: string) => whenReady((h) => h.setTheme(theme)),
+  setLocale: (locale: string) => whenReady((h) => h.setLocale(locale)),
+  setMetadata: (metadata: unknown) => whenReady((h) => h.setMetadata(metadata)),
   destroy: () => {
     generation++;
     handle?.destroy();

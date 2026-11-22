@@ -12,6 +12,10 @@ export function mount() {
     close: () => state.__stubOpened?.push("close"),
     identify: (token: string | null) =>
       state.__stubOpened?.push(`identify:${token}`),
+    setTheme: (theme: string) => state.__stubOpened?.push(`theme:${theme}`),
+    setLocale: (locale: string) => state.__stubOpened?.push(`locale:${locale}`),
+    setMetadata: (metadata: unknown) =>
+      state.__stubOpened?.push(`metadata:${JSON.stringify(metadata)}`),
     destroy() {},
     on: () => () => {},
   };

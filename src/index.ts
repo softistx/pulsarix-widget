@@ -1,6 +1,7 @@
 export type { Locale, Position, ThemeMode, WidgetConfig } from "./config";
 export {
   defineWidget,
+  type MountMetadata,
   type MountOptions,
   mount,
   PulsarixWidgetElement,

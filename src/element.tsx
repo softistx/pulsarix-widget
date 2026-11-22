@@ -3,8 +3,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
 import {
   identityOf,
+  type Locale,
   OBSERVED_ATTRIBUTES,
   readConfig,
+  type ThemeMode,
   type WidgetConfig,
 } from "./config";
 import { MESSAGES } from "./core/messages";
@@ -12,6 +14,12 @@ import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
 
 export const TAG_NAME = "pulsarix-widget";
+
+const THEMES: readonly string[] = ["light", "dark", "auto"];
+const LOCALES: readonly string[] = ["en", "fr"];
+
+/** Flat strings stored with each report. */
+export type MountMetadata = Record<string, string | number | boolean>;
 
 export type WidgetEvent =
   | "pulsarix:ready"
@@ -100,6 +108,36 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#render();
   }
 
+  /**
+   * Changes the widget's own light or dark mode at run time. No remount: an open dialog and its
+   * draft stay as they are. `"auto"` follows the OS (`prefers-color-scheme`), never the host
+   * page's own mode: pass `"light"` or `"dark"` to follow the host's.
+   */
+  setTheme(theme: ThemeMode) {
+    if (!THEMES.includes(theme)) return;
+    this.setAttribute("theme", theme);
+  }
+
+  /** Changes the language of the strings at run time; the dialog and its draft stay. */
+  setLocale(locale: Locale) {
+    if (!LOCALES.includes(locale)) return;
+    this.setAttribute("locale", locale);
+  }
+
+  /**
+   * Replaces the metadata sent with the next report (the same limits as `mount()`); `null` or
+   * `{}` clears it. A report already sent is not changed, and the draft stays.
+   */
+  setMetadata(metadata: MountMetadata | null) {
+    if (
+      metadata &&
+      typeof metadata === "object" &&
+      Object.keys(metadata).length
+    )
+      this.setAttribute("metadata", JSON.stringify(metadata));
+    else this.removeAttribute("metadata");
+  }
+
   open() {
     this.#setOpen(true);
   }
@@ -185,7 +223,7 @@ export interface MountOptions {
   /** Starting values of the form; the reporter can change them. */
   prefill?: { email?: string; title?: string };
   /** Flat strings stored with each report (20 entries, 2 KB at most; the rest is dropped). */
-  metadata?: Record<string, string | number | boolean>;
+  metadata?: MountMetadata;
   /** Link to your own privacy page, shown after the privacy line (http or https). */
   privacyUrl?: string;
   /**
@@ -203,6 +241,12 @@ export interface WidgetHandle {
   close(): void;
   /** Signs the reporter in with a signed identity token, or out with `null`. */
   identify(token: string | null): void;
+  /** Light or dark now, without a remount; `"auto"` follows the OS, not the host page. */
+  setTheme(theme: ThemeMode): void;
+  /** Re-renders the strings in another language; the open dialog and its draft stay. */
+  setLocale(locale: Locale): void;
+  /** Replaces the metadata sent with the next report (`null` clears it). */
+  setMetadata(metadata: MountMetadata | null): void;
   destroy(): void;
   on(name: WidgetEvent, callback: (event: CustomEvent) => void): () => void;
 }
@@ -248,6 +292,9 @@ export function mount(options: MountOptions): WidgetHandle {
     open: () => element.open(),
     close: () => element.close(),
     identify: (token) => element.identify(token),
+    setTheme: (theme) => element.setTheme(theme),
+    setLocale: (locale) => element.setLocale(locale),
+    setMetadata: (metadata) => element.setMetadata(metadata),
     destroy: () => element.remove(),
     on(name, callback) {
       const listener = (event: Event) => callback(event as CustomEvent);
