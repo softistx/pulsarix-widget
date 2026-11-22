@@ -27,6 +27,9 @@ interface Handle {
   open(): void;
   close(): void;
   identify(token: string | null): void;
+  setTheme(theme: string): void;
+  setLocale(locale: string): void;
+  setMetadata(metadata: unknown): void;
   destroy(): void;
   on(name: string, cb: (e: CustomEvent) => void): () => void;
 }
@@ -47,12 +50,20 @@ let handle: Handle | null = null;
 let loading: Promise<void> | null = null;
 // Bumped by `destroy`: a bundle that resolves after it must not mount.
 let generation = 0;
-const queue: Array<(h: Handle) => void> = [];
+const queue: Array<{ key?: string; run: (h: Handle) => void }> = [];
 const listeners: Array<[string, (e: CustomEvent) => void]> = [];
 
-function whenReady(fn: (h: Handle) => void) {
-  if (handle) fn(handle);
-  else queue.push(fn);
+/**
+ * Runs `fn` now, or once the bundle has loaded. A keyed call (a setter) replaces the one still
+ * queued under its key: only the last value of a setter matters. The others replay in order.
+ */
+function whenReady(fn: (h: Handle) => void, key?: string) {
+  if (handle) return fn(handle);
+  if (key) {
+    const old = queue.findIndex((entry) => entry.key === key);
+    if (old >= 0) queue.splice(old, 1);
+  }
+  queue.push({ key, run: fn });
 }
 
 function init(given: InitOptions): Promise<void> {
@@ -68,7 +79,7 @@ function init(given: InitOptions): Promise<void> {
       if (mine !== generation) return;
       handle = mod.mount(options);
       for (const [name, cb] of listeners) handle.on(name, cb);
-      for (const fn of queue.splice(0)) fn(handle);
+      for (const entry of queue.splice(0)) entry.run(handle);
     })
     .catch((error: unknown) => {
       if (mine === generation) loading = null;
@@ -82,6 +93,11 @@ window.PulsarixWidget = {
   open: () => whenReady((h) => h.open()),
   close: () => whenReady((h) => h.close()),
   identify: (token: string | null) => whenReady((h) => h.identify(token)),
+  setTheme: (theme: string) => whenReady((h) => h.setTheme(theme), "theme"),
+  setLocale: (locale: string) =>
+    whenReady((h) => h.setLocale(locale), "locale"),
+  setMetadata: (metadata: unknown) =>
+    whenReady((h) => h.setMetadata(metadata), "metadata"),
   destroy: () => {
     generation++;
     handle?.destroy();

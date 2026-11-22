@@ -135,8 +135,39 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 | `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
 | `target`       | `Element`                         | `document.body`                                      |
 
-`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
+`WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
+`setMetadata(metadata \| null)` (see "Changing theme, locale and metadata at run time"), `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
+
+## Changing theme, locale and metadata at run time
+
+When your app switches organisation, language or light/dark mode, do not remount the widget: a remount loses
+a report being typed. Call the setters instead. Each applies live, keeps the dialog open and keeps what the
+reporter typed.
+
+```ts
+widget.setTheme("dark"); // "light" | "dark" | "auto"
+widget.setLocale("fr"); // "en" | "fr": the strings re-render
+widget.setMetadata({ org: "acme", plan: "pro" }); // replaces the metadata of the next report; null clears it
+```
+
+The same three exist on the script-tag global (`PulsarixWidget.setTheme("dark")`, ...); a call made before the
+bundle has loaded is queued. An unsupported theme or locale is ignored.
+
+- `"auto"` follows the operating system (`prefers-color-scheme`), not your page's own mode. To follow your
+  app's Clair / Sombre / Système switch, pass the resolved `"light"` or `"dark"` to `setTheme` whenever it changes.
+- With `inheritTheme`, `setTheme("light" | "dark")` wins over the host's mode and `"auto"` gives it back to the
+  host; inherited colour tokens still win for their value.
+- `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
+  the metadata it was sent with.
+- `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` follow
+  when the form is next idle: on an idle form the typed fields, the type, the impact and the tab are kept
+  and files or a screenshot already attached are dropped; while a report is being sent, on the confirmation
+  or on the "My requests" tab nothing is rebuilt (and nothing is lost), and those labels switch once the
+  reporter is back on the form or the dialog closes.
+- A repeated call before the bundle loads replaces the earlier one: only the last of each setter runs.
+- With `inheritTheme`, an explicit `setTheme` wins over the host's mode until the `theme` attribute is
+  written again; see [docs/integration.md](docs/integration.md#10-changing-theme-locale-and-metadata-at-run-time).
 
 ## Theme
 

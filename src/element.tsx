@@ -3,8 +3,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
 import {
   identityOf,
+  type Locale,
   OBSERVED_ATTRIBUTES,
   readConfig,
+  type ThemeMode,
   type WidgetConfig,
 } from "./config";
 import { MESSAGES } from "./core/messages";
@@ -13,6 +15,12 @@ import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
 
 export const TAG_NAME = "pulsarix-widget";
+
+const THEMES: readonly string[] = ["light", "dark", "auto"];
+const LOCALES: readonly string[] = ["en", "fr"];
+
+/** Flat strings stored with each report. */
+export type MountMetadata = Record<string, string | number | boolean>;
 
 export type WidgetEvent =
   | "pulsarix:ready"
@@ -40,6 +48,8 @@ export class PulsarixWidgetElement extends HTMLElement {
   #themeFor: string | null = null;
   #media: MediaQueryList | null = null;
   #onScheme = () => this.#render();
+  // `setTheme("light" | "dark")` was called: the widget's mode is that one, whatever the host says.
+  #pinnedMode = false;
   #host = createHostFollower(
     document,
     () => ({
@@ -93,10 +103,14 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#releaseBase?.();
     this.#releaseTheme = this.#releaseBase = null;
     this.#themeFor = null;
+    this.#pinnedMode = false;
     this.#open = false;
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name: string) {
+    // A `theme` written as an attribute (mount, markup) is the host's own choice again: it no
+    // longer pins the mode a previous `setTheme` set.
+    if (name === "theme") this.#pinnedMode = false;
     if (!this.#root) return;
     this.#host.sync();
     this.#render();
@@ -111,6 +125,41 @@ export class PulsarixWidgetElement extends HTMLElement {
     // Signing out drops a declarative `data-identity` too.
     if (!token) this.removeAttribute("identity");
     this.#render();
+  }
+
+  /**
+   * Changes the widget's own light or dark mode at run time. No remount: an open dialog and its
+   * draft stay as they are. `"auto"` follows the OS (`prefers-color-scheme`), never the host
+   * page's own mode: pass `"light"` or `"dark"` to follow the host's. With `inheritTheme`, an
+   * explicit `"light"` or `"dark"` wins over the host's mode, `"auto"` gives it back to the host.
+   */
+  setTheme(theme: ThemeMode) {
+    if (!THEMES.includes(theme)) return;
+    // An explicit mode beats the inherited host mode (as `accentColor` beats the host's primary);
+    // `"auto"` hands the choice back to the host's mode (`inheritTheme`) or the OS.
+    this.setAttribute("theme", theme);
+    this.#pinnedMode = theme !== "auto";
+    this.#render();
+  }
+
+  /** Changes the language of the strings at run time; the dialog and its draft stay. */
+  setLocale(locale: Locale) {
+    if (!LOCALES.includes(locale)) return;
+    this.setAttribute("locale", locale);
+  }
+
+  /**
+   * Replaces the metadata sent with the next report (the same limits as `mount()`); `null` or
+   * `{}` clears it. A report already sent is not changed, and the draft stays.
+   */
+  setMetadata(metadata: MountMetadata | null) {
+    if (
+      metadata &&
+      typeof metadata === "object" &&
+      Object.keys(metadata).length
+    )
+      this.setAttribute("metadata", JSON.stringify(metadata));
+    else this.removeAttribute("metadata");
   }
 
   open() {
@@ -146,10 +195,11 @@ export class PulsarixWidgetElement extends HTMLElement {
     }
     // With the host's tokens, the widget's scheme is the host's (they are its current mode's
     // values); the `theme` option then only decides when the host does not say.
-    const dark =
-      this.#host.current.dark ??
-      (config.theme === "dark" ||
-        (config.theme === "auto" && !!this.#media?.matches));
+    const dark = this.#pinnedMode
+      ? config.theme === "dark"
+      : (this.#host.current.dark ??
+        (config.theme === "dark" ||
+          (config.theme === "auto" && !!this.#media?.matches)));
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
@@ -184,104 +234,6 @@ export class PulsarixWidgetElement extends HTMLElement {
 export function defineWidget(): void {
   if (!customElements.get(TAG_NAME))
     customElements.define(TAG_NAME, PulsarixWidgetElement);
-}
-
-export interface MountOptions {
-  projectKey: string;
-  locale?: "en" | "fr";
-  theme?: "light" | "dark" | "auto";
-  position?: "bottom-left" | "bottom-right";
-  accentColor?: string;
-  /**
-   * Wear the host app's `@softistx/material` theme (colours, radius, light or dark) and follow
-   * its changes; a token the host lacks keeps the widget's own. `true` by default; an explicit
-   * `accentColor` still wins over the host's primary. `false` keeps the widget's own look.
-   */
-  inheritTheme?: boolean;
-  /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
-  apiBase?: string;
-  launcher?: boolean;
-  /** The screenshot's "Mask the text on the page" option starts on. */
-  maskText?: boolean;
-  /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
-  attachments?: boolean;
-  /** Starting values of the form; the reporter can change them. */
-  prefill?: { email?: string; title?: string };
-  /** Flat strings stored with each report (20 entries, 2 KB at most; the rest is dropped). */
-  metadata?: Record<string, string | number | boolean>;
-  /** Link to your own privacy page, shown after the privacy line (http or https). */
-  privacyUrl?: string;
-  /**
-   * The identity token your server signed for the signed-in user (`<payload>.<signature>`).
-   * With it the widget shows New request and My requests; change it later with `identify()`.
-   */
-  identity?: string;
-  /** Where to append the element; `document.body` by default. */
-  target?: Element;
-}
-
-export interface WidgetHandle {
-  element: PulsarixWidgetElement;
-  open(): void;
-  close(): void;
-  /** Signs the reporter in with a signed identity token, or out with `null`. */
-  identify(token: string | null): void;
-  destroy(): void;
-  on(name: WidgetEvent, callback: (event: CustomEvent) => void): () => void;
-}
-
-let current: WidgetHandle | null = null;
-
-/**
- * Mounts the widget. One widget per page: while a mounted one is still attached, a second call
- * returns its handle (and warns) instead of adding another element.
- */
-export function mount(options: MountOptions): WidgetHandle {
-  if (current?.element.isConnected) {
-    console.warn(
-      "[pulsarix] the widget is already mounted; the second mount is ignored",
-    );
-    return current;
-  }
-  defineWidget();
-  const element = document.createElement(TAG_NAME) as PulsarixWidgetElement;
-  element.setAttribute("project-key", options.projectKey);
-  if (options.locale) element.setAttribute("locale", options.locale);
-  if (options.theme) element.setAttribute("theme", options.theme);
-  if (options.position) element.setAttribute("position", options.position);
-  if (options.accentColor)
-    element.setAttribute("accent-color", options.accentColor);
-  if (options.inheritTheme === false)
-    element.setAttribute("inherit-theme", "false");
-  if (options.apiBase) element.setAttribute("api-base", options.apiBase);
-  if (options.maskText) element.setAttribute("mask-text", "true");
-  if (options.attachments === false)
-    element.setAttribute("attachments", "false");
-  if (options.privacyUrl)
-    element.setAttribute("privacy-url", options.privacyUrl);
-  if (options.prefill?.email)
-    element.setAttribute("prefill-email", options.prefill.email);
-  if (options.prefill?.title)
-    element.setAttribute("prefill-title", options.prefill.title);
-  if (options.metadata)
-    element.setAttribute("metadata", JSON.stringify(options.metadata));
-  if (options.identity) element.identify(options.identity);
-  if (options.launcher === false) element.setAttribute("launcher", "false");
-  (options.target ?? document.body).append(element);
-  const handle: WidgetHandle = {
-    element,
-    open: () => element.open(),
-    close: () => element.close(),
-    identify: (token) => element.identify(token),
-    destroy: () => element.remove(),
-    on(name, callback) {
-      const listener = (event: Event) => callback(event as CustomEvent);
-      element.addEventListener(name, listener);
-      return () => element.removeEventListener(name, listener);
-    },
-  };
-  current = handle;
-  return handle;
 }
 
 defineWidget();

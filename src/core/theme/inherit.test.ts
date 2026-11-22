@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mount, type WidgetHandle } from "../../element";
+import { mount, type WidgetHandle } from "../../mount";
 import { inheritableTokens, isColor, readHostTheme } from "./inherit";
 
 const html = document.documentElement;

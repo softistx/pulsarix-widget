@@ -345,3 +345,60 @@ inline custom properties:
 - Pairing: the inherited colours are the host's own, so the widget is as readable as the host.
   Mixing a few inherited tokens with the widget's own for the rest (a partial host theme) can
   lower contrast; set `inheritTheme: false` when the host only defines part of the palette.
+
+## 10. Changing theme, locale and metadata at run time
+
+Part of the host integration: the host switches its organisation, language or light/dark mode while a
+reporter may have a dialog open. Never remount the widget for that (a remount drops the report being typed);
+use the setters on the mount handle or on the script-tag global.
+
+```ts
+const widget = mount({ projectKey, apiBase, theme: "light", locale: "en" });
+
+// the app's mode changed (resolve "Système" yourself, from the app's own state)
+widget.setTheme(resolvedMode); // "light" | "dark" | "auto"
+
+// the app's language changed
+widget.setLocale("fr"); // "en" | "fr"
+
+// the app's organisation changed: the next report carries these entries
+widget.setMetadata({ org: orgId, plan });
+widget.setMetadata(null); // none
+```
+
+```js
+PulsarixWidget.setTheme("dark");
+PulsarixWidget.setLocale("fr");
+PulsarixWidget.setMetadata({ org: "acme" });
+```
+
+| Call                   | Effect                                                      | Kept                          |
+| ---------------------- | ----------------------------------------------------------- | ----------------------------- |
+| `setTheme(theme)`      | the widget's own light or dark mode, at once                | the open dialog and its draft |
+| `setLocale(locale)`    | the strings re-render in that language                      | the open dialog and its draft |
+| `setMetadata(entries)` | replaces the metadata of the next report (`null` clears it) | the open dialog and its draft |
+
+Rules:
+
+- `"light"` and `"dark"` are applied exactly. `"auto"` follows the operating system's
+  `prefers-color-scheme`, never the host page's class or attribute. A host with its own mode switch passes the
+  resolved `"light"` or `"dark"` to `setTheme` on each change.
+- `setTheme` is independent of `inheritTheme` (section 9). With `inheritTheme`, the widget follows the host's
+  mode by default, and a `theme` given at mount or written later as the `theme` attribute wins over it; the
+  host mode counts only when the host provides tokens. `setTheme("light")` or `setTheme("dark")` wins over the
+  host's mode until the `theme` attribute is written again (that gives the mode back to the host);
+  `setTheme("auto")` gives it back at once. An inherited token still wins for its colour value.
+- `setTheme` only sets the widget's own mode. The accent (`accentColor`) is a mount option and does not change.
+- `setMetadata` replaces; it does not merge. The limits are those of `metadata` at mount (20 entries, keys of
+  64 characters, values of 512, 2 KB in all). A report already sent is not changed.
+- `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` (the close
+  button, the file list, ...) are read once by its i18n context, so they change when the form is next idle:
+  - On an idle form, the typed fields, the chosen type and impact and the selected tab are kept; files and a
+    screenshot already attached are dropped.
+  - While a report is being sent, on the confirmation screen, or on the "My requests" tab, nothing is rebuilt:
+    those built-in labels switch when the reporter returns to the form (or the dialog closes), and no
+    attachment is lost.
+  - `setTheme` and `setMetadata` drop nothing.
+- An unsupported theme or locale is ignored.
+- Calls before the script-tag bundle has loaded are queued, replayed in order; a repeated call to the same
+  setter replaces the earlier one, so only the last `setTheme`, `setLocale` and `setMetadata` run.

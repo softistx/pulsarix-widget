@@ -60,6 +60,8 @@ export function App({
   const [controls, setControls] = useState(attachments);
   // While the screenshot editor is open the pane widens: the editor needs more than a preview.
   const [editing, setEditing] = useState(false);
+  // A report is on its way: the language of material's own labels must not be re-keyed now.
+  const [submitting, setSubmitting] = useState(false);
   // The key's config survives a tab switch (the form remounts), not a close.
   const [project, setProject] = useState<WidgetProject | null>(null);
   const identified = !!identity && !!projectKey && !!apiBase;
@@ -91,6 +93,16 @@ export function App({
       setProject(null);
     }
   }, [open]);
+  // Temporary, until nxgt-material#5476 (the embed `I18nProvider` follows a language change).
+  // The provider reads its language once, so a new one re-keys the tree and the flow loses its
+  // state. The widget's own strings follow `locale` at once; material's built-in labels (the
+  // dialog's close button, the file list) follow `i18nLocale`, which waits until nothing would
+  // be lost: no report on its way, no confirmation, no requests list. A closed dialog has nothing.
+  const idle = !open || (!submitting && !done && showing === "new");
+  const [i18nLocale, setI18nLocale] = useState(locale);
+  useEffect(() => {
+    if (idle) setI18nLocale(locale);
+  }, [idle, locale]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
@@ -154,6 +166,7 @@ export function App({
           retryDelayMs={retryDelayMs}
           maskText={maskText}
           onDone={setDone}
+          onSubmitting={setSubmitting}
           onEditing={setEditing}
           attachments={attachments}
           prefill={prefill}
@@ -182,11 +195,11 @@ export function App({
         // `/embed` carries its own i18n context (the `AttachmentList` labels); `initialLanguage`
         // keeps it from reading the host page's `localStorage`.
         <I18nProvider
-          // Keyed: the provider reads `initialLanguage` once, a changed `locale` attribute remounts the tree (a rare edge; the host sets it once).
-          key={locale}
-          initialLanguage={locale}
+          // Keyed: the provider reads `initialLanguage` once (see `i18nLocale`).
+          key={i18nLocale}
+          initialLanguage={i18nLocale}
           supportedLanguages={["en", "fr"]}
-          defaultLanguage={locale}
+          defaultLanguage={i18nLocale}
         >
           <PortalContainerProvider container={root}>
             {launcher ? (
