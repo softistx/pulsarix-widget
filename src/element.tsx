@@ -8,12 +8,7 @@ import {
   type WidgetConfig,
 } from "./config";
 import { MESSAGES } from "./core/messages";
-import {
-  type HostTheme,
-  readHostTheme,
-  sameTokens,
-  watchHostTheme,
-} from "./core/theme/inherit";
+import { createHostFollower } from "./core/theme/inherit";
 import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
 
@@ -45,8 +40,14 @@ export class PulsarixWidgetElement extends HTMLElement {
   #themeFor: string | null = null;
   #media: MediaQueryList | null = null;
   #onScheme = () => this.#render();
-  #host: HostTheme = { tokens: {}, dark: null };
-  #stopHost: (() => void) | null = null;
+  #host = createHostFollower(
+    document,
+    () => ({
+      inherit: this.config.inheritTheme,
+      accent: this.config.accentColor !== null,
+    }),
+    () => this.#render(),
+  );
 
   /**
    * The token given by `identify()` / `mount({ identity })`. It is kept here, not written as an
@@ -72,7 +73,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#root = createRoot(this.#shadow);
     this.#media = window.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#media?.addEventListener("change", this.#onScheme);
-    this.#syncHost();
+    this.#host.sync();
     this.#render();
     // Async: a listener added right after `mount()` returns still hears it.
     queueMicrotask(() => {
@@ -85,9 +86,7 @@ export class PulsarixWidgetElement extends HTMLElement {
   disconnectedCallback() {
     this.#media?.removeEventListener("change", this.#onScheme);
     this.#media = null;
-    this.#stopHost?.();
-    this.#stopHost = null;
-    this.#host = { tokens: {}, dark: null };
+    this.#host.stop();
     this.#root?.unmount();
     this.#root = null;
     this.#releaseTheme?.();
@@ -99,39 +98,8 @@ export class PulsarixWidgetElement extends HTMLElement {
 
   attributeChangedCallback() {
     if (!this.#root) return;
-    this.#syncHost();
+    this.#host.sync();
     this.#render();
-  }
-
-  /**
-   * Starts or stops following the host's theme (`inherit-theme`), and re-reads its tokens. They
-   * are read from the host page's `<html>`, so a host without `@softistx/material` tokens yields
-   * nothing and the widget keeps its own.
-   */
-  #syncHost() {
-    const config = this.config;
-    if (!config.inheritTheme) {
-      this.#stopHost?.();
-      this.#stopHost = null;
-      this.#host = { tokens: {}, dark: null };
-      return;
-    }
-    this.#stopHost ??= watchHostTheme(document, () => {
-      const before = this.#host;
-      this.#readHost();
-      if (
-        before.dark !== this.#host.dark ||
-        !sameTokens(before.tokens, this.#host.tokens)
-      )
-        this.#render();
-    });
-    this.#readHost();
-  }
-
-  #readHost() {
-    this.#host = readHostTheme(document, {
-      accent: this.config.accentColor !== null,
-    });
   }
 
   /**
@@ -179,7 +147,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     // With the host's tokens, the widget's scheme is the host's (they are its current mode's
     // values); the `theme` option then only decides when the host does not say.
     const dark =
-      this.#host.dark ??
+      this.#host.current.dark ??
       (config.theme === "dark" ||
         (config.theme === "auto" && !!this.#media?.matches));
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
@@ -187,7 +155,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#root.render(
       <App
         themeName={themeNameFor(config.accentColor)}
-        hostTokens={this.#host.tokens}
+        hostTokens={this.#host.current.tokens}
         messages={MESSAGES[config.locale]}
         locale={config.locale}
         projectKey={config.projectKey}

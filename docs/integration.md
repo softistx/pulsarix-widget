@@ -39,7 +39,8 @@ inline custom properties:
   still are.
 - **Follows the host**: a `MutationObserver` on `<html>` (`class`, `style`, `data-theme`,
   `data-mode`, `data-nxgt-theme`, `data-color-scheme`) and the `prefers-color-scheme` media query
-  re-read the tokens. It stops when the widget is removed (`destroy()`).
+  re-read the tokens (`data-theme` and `data-mode` only trigger a re-read; they never decide
+  dark or light). It stops when the widget is removed (`destroy()`).
 
 ### Limits
 

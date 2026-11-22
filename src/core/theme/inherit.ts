@@ -43,10 +43,15 @@ export function inheritableTokens(): ReadonlyMap<string, Kind> {
 const PRIMARY = /^--(inverse-)?primary/;
 
 /** A colour is a hex, a function (`oklch(...)`, `rgb(...)`, `color-mix(...)`) or one keyword. */
-const COLOR_SHAPE = /^(?:#[0-9a-f]{3,8}|[a-z-]+\(.+\)|[a-z]+)$/i;
+const COLOR_SHAPE = /^(?:#[0-9a-f]{3,8}|[a-z-]+\([^;{}"'\\]*\)|[a-z]+)$/i;
 
-const isColor = (value: string) =>
+/** Keywords that would not be the host's colour but a lookup (`inherit`, `currentcolor`, ...), and `url(`. */
+const NOT_A_COLOR =
+  /^(?:inherit|initial|unset|revert|revert-layer|currentcolor)$|url\(/i;
+
+export const isColor = (value: string) =>
   COLOR_SHAPE.test(value) &&
+  !NOT_A_COLOR.test(value) &&
   typeof CSS !== "undefined" &&
   typeof CSS.supports === "function" &&
   CSS.supports("color", value);
@@ -132,5 +137,47 @@ export function watchHostTheme(
   return () => {
     observer.disconnect();
     media?.removeEventListener("change", onChange);
+  };
+}
+
+/**
+ * Follows the host's theme for one widget: `sync()` starts or stops watching (per its options)
+ * and re-reads the tokens; `onChange` runs only when what the widget wears changed.
+ */
+export function createHostFollower(
+  doc: Document,
+  options: () => { inherit: boolean; accent: boolean },
+  onChange: () => void,
+) {
+  let current: HostTheme = { tokens: {}, dark: null };
+  let stop: (() => void) | null = null;
+  const read = () => {
+    current = readHostTheme(doc, { accent: options().accent });
+  };
+  return {
+    get current() {
+      return current;
+    },
+    sync() {
+      if (!options().inherit) {
+        this.stop();
+        return;
+      }
+      stop ??= watchHostTheme(doc, () => {
+        const before = current;
+        read();
+        if (
+          before.dark !== current.dark ||
+          !sameTokens(before.tokens, current.tokens)
+        )
+          onChange();
+      });
+      read();
+    },
+    stop() {
+      stop?.();
+      stop = null;
+      current = { tokens: {}, dark: null };
+    },
   };
 }

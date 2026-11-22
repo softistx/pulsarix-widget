@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mount, type WidgetHandle } from "../../element";
-import { inheritableTokens, readHostTheme } from "./inherit";
+import { inheritableTokens, isColor, readHostTheme } from "./inherit";
 
 const html = document.documentElement;
 let handle: WidgetHandle | null = null;
@@ -47,6 +47,29 @@ describe("readHostTheme", () => {
     expect(dark).toBeNull();
   });
 
+  test("hostile, odd and lookup values are rejected", () => {
+    // (happy-dom splits "a; b" into two declarations, so the injection shapes are checked on isColor.)
+    for (const bad of [
+      "red; background:url(x)",
+      "rgb(0 0 0)}",
+      "rgb(0 0 0} body{color:red)",
+      "rgb(0 0 0); x: y",
+      "inherit",
+      "currentcolor",
+      "url(x)",
+    ])
+      expect(isColor(bad)).toBe(false);
+    expect(isColor("oklch(0.5 0.2 150)")).toBe(true);
+    html.style.setProperty("--background", "rgb(0 0 0)}");
+    html.style.setProperty("--foreground", "rgb(0 0 0} body{color:red)");
+    html.style.setProperty("--card", "inherit");
+    html.style.setProperty("--border", "currentcolor");
+    html.style.setProperty("--muted", "url(x)");
+    html.style.setProperty("--accent", "#123456");
+    const { tokens } = readHostTheme(document, { accent: false });
+    expect(Object.keys(tokens)).toEqual(["--accent"]);
+  });
+
   test("a host with nothing yields nothing", () => {
     expect(readHostTheme(document, { accent: false })).toEqual({
       tokens: {},
@@ -62,7 +85,50 @@ describe("readHostTheme", () => {
   });
 });
 
+describe("the host's scheme", () => {
+  test("color-scheme is the fallback, the light class beats it", () => {
+    html.style.setProperty("--primary", "#00aa00");
+    html.style.colorScheme = "dark";
+    expect(readHostTheme(document, { accent: false }).dark).toBe(true);
+    html.style.colorScheme = "light";
+    expect(readHostTheme(document, { accent: false }).dark).toBe(false);
+    html.style.colorScheme = "dark";
+    html.classList.add("light");
+    expect(readHostTheme(document, { accent: false }).dark).toBe(false);
+  });
+
+  test("data-theme and data-mode do not decide the scheme", () => {
+    html.style.setProperty("--primary", "#00aa00");
+    html.setAttribute("data-theme", "dark");
+    html.setAttribute("data-mode", "dark");
+    expect(readHostTheme(document, { accent: false }).dark).toBeNull();
+    html.removeAttribute("data-theme");
+    html.removeAttribute("data-mode");
+  });
+});
+
 describe("the mounted widget", () => {
+  test("a prefers-color-scheme change re-reads the tokens", async () => {
+    const listeners: (() => void)[] = [];
+    const real = window.matchMedia;
+    window.matchMedia = (() => ({
+      matches: false,
+      addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    try {
+      html.style.setProperty("--primary", "#0b7a75");
+      handle = mount({ projectKey: "pk", apiBase: "https://p.test" });
+      await settle();
+      html.style.setProperty("--primary", "#33ccbb");
+      for (const fn of listeners) fn();
+      await settle();
+      expect(tokenOf(handle, "--primary")).toBe("#33ccbb");
+    } finally {
+      window.matchMedia = real;
+    }
+  });
+
   test("wears the host's tokens on its root; the rest keeps the widget's values", async () => {
     html.style.setProperty("--primary", "#0b7a75");
     handle = mount({ projectKey: "pk", apiBase: "https://p.test" });
