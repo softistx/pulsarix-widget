@@ -133,6 +133,7 @@ export function AttachmentsControl({
               }}
             />
           </div>
+          <p className="text-muted-foreground text-xs">{messages.files.hint}</p>
           {canCapture ? (
             <SwitchField
               variant="plain"
@@ -143,7 +144,6 @@ export function AttachmentsControl({
               helperText={t.maskTextHint}
             />
           ) : null}
-          <p className="text-muted-foreground text-xs">{messages.files.hint}</p>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
           {items.length ? (
             <AttachmentList

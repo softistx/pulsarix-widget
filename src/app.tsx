@@ -1,6 +1,4 @@
 import {
-  Badge,
-  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -39,7 +37,6 @@ export function App({
   dark,
   open,
   launcher,
-  launcherMode = "auto",
   launcherVisible = true,
   position,
   maskText = false,
@@ -91,32 +88,11 @@ export function App({
   }, [open]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
-  // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
-  const opener = useRef<HTMLElement | null>(null);
+  // itself: it cannot hand focus back to the launcher, so the FAB is kept here.
+  const fab = useRef<HTMLButtonElement | null>(null);
   // The typed text outlives the dialog (its content unmounts on close): a close by accident,
   // a click outside or Escape, keeps it for the next opening. A sent report clears it.
   const draft = useRef<ReportValues | null>(null);
-  const toRequests = (
-    <Button
-      type="button"
-      variant="tonal"
-      size="sm"
-      className="mt-2 justify-self-start"
-      onClick={() => {
-        // The form unmounts with its screenshot: the editor is closed with it.
-        setEditing(false);
-        setView("requests");
-      }}
-    >
-      {messages.myRequests}
-      {unread > 0 ? (
-        <Badge size="sm" variant="error" className="ml-1.5">
-          <span aria-hidden="true">{unread > 99 ? "99+" : unread}</span>
-          <span className="sr-only"> {messages.unreadReplies(unread)}</span>
-        </Badge>
-      ) : null}
-    </Button>
-  );
   const body = (
     <>
       {showing === "requests" && identity ? (
@@ -165,7 +141,6 @@ export function App({
           privacyUrl={privacyUrl}
           draft={draft}
           identity={identity}
-          headerExtra={identified ? toRequests : undefined}
           project={project}
           onProject={setProject}
           onClose={() => onOpenChange(false)}
@@ -194,12 +169,19 @@ export function App({
               <Launcher
                 messages={messages}
                 position={position}
-                mode={launcherMode}
                 visible={launcherVisible}
                 open={open}
                 unread={unread}
-                onOpen={(button) => {
-                  opener.current = button;
+                identified={identified}
+                fabRef={fab}
+                onReport={() => {
+                  setEditing(false);
+                  setView("report");
+                  onOpenChange(true);
+                }}
+                onRequests={() => {
+                  setEditing(false);
+                  setView("requests");
                   onOpenChange(true);
                 }}
               />
@@ -213,7 +195,7 @@ export function App({
                 onCloseAutoFocus={(event) => {
                   // A hidden or missing opener (launcher off or hidden) cannot take focus:
                   // let Radix's default run.
-                  const target = opener.current;
+                  const target = fab.current;
                   if (!target?.isConnected || target.closest("[hidden]"))
                     return;
                   event.preventDefault();

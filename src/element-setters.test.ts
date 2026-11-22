@@ -305,12 +305,25 @@ describe("run-time setters", () => {
   });
 
   test("the requests view stays open through setLocale", async () => {
-    const h = await openWithDraft({
+    handle = mount({
+      apiBase: "https://pulsarix.test",
       projectKey: "pk_live_abc",
       identity: "a.b",
     });
+    const h = handle as WidgetHandle;
     const user = userEvent.setup();
-    const toRequests = [...shadowOf(h).querySelectorAll("button")].find((el) =>
+    await waitFor(() =>
+      expect(shadowOf(h).querySelector("button[aria-label]")).not.toBeNull(),
+    );
+    await user.click(
+      shadowOf(h).querySelector("button[aria-label]") as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(shadowOf(h).querySelector('[role="menuitem"]')).not.toBeNull(),
+    );
+    const toRequests = [
+      ...shadowOf(h).querySelectorAll('[role="menuitem"]'),
+    ].find((el) =>
       el.textContent?.includes(MESSAGES.en.myRequests),
     ) as HTMLElement;
     await user.click(toRequests);

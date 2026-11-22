@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@softistx/material/embed";
-import type { ReactNode } from "react";
 import type { Messages } from "../../../core/messages";
 import { FORM_ID } from "./fields";
 
@@ -13,11 +12,9 @@ import { FORM_ID } from "./fields";
 export function FormHeader({
   messages,
   projectName,
-  headerExtra,
 }: {
   messages: Messages;
   projectName: string | null;
-  headerExtra?: ReactNode;
 }) {
   return (
     <DialogHeader>
@@ -33,7 +30,6 @@ export function FormHeader({
       <DialogDescription>
         {projectName ? messages.introFor(projectName) : messages.intro}
       </DialogDescription>
-      {headerExtra}
     </DialogHeader>
   );
 }

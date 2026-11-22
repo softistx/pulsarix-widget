@@ -254,7 +254,7 @@ Script-tag attributes and `init` / `mount` options (all optional except the key)
 | `data-theme` / `theme`                              | `light`, `dark` or `auto` (default)                                |
 | `data-position` / `position`                        | `bottom-right` (default) or `bottom-left`                          |
 | `data-accent-color` / `accentColor`                 | a hex seed for the theme                                           |
-| `data-launcher` / `launcher`                        | `auto` (default), `pill`, `icon`, or `false` for none (section 11) |
+| `data-launcher` / `launcher`                        | `false` for none; any other value gives the round FAB (section 11) |
 | `data-offset-bottom`, `data-offset-side` / `offset` | launcher distance from the bottom and its side (section 11)        |
 | `data-attachments="false"`                          | no screenshot and no file controls                                 |
 | `data-mask-text="true"`                             | "Mask the text on the page" starts on                              |
@@ -465,15 +465,14 @@ attribute and a `mount()` option.
 
 ### Look: `launcher`
 
-| Value              | Result                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `"auto"` (default) | The icon below 640 px of viewport width, the text pill from 640 px up. Live: it follows a resize or a rotation. |
-| `"pill"`           | Always the text pill (the 0.3 look).                                                                            |
-| `"icon"`           | Always a 48 px round button with a speech-bubble icon.                                                          |
-| `false`            | No launcher; open the dialog with `open()`.                                                                     |
+The launcher is one round floating action button (FAB) with the pulsarix mark, at every width. The
+`launcher` option no longer changes its look: `"auto"`, `"pill"` and `"icon"` all give the FAB (they
+are still read so existing embeds keep working), and `false` removes it (open the dialog with `open()`).
 
-The icon button keeps the localized label as its accessible name (and as its `title`, so a
-pointer hover shows it), carries the unread count in that name, and shows a visible focus ring.
+Without a token the FAB opens the report form directly. With a token it opens a small menu anchored
+to it with two items, "Report a problem" and "My requests" (with its unread badge); each opens one
+view, never tabs. The FAB keeps the localized label as its accessible name and carries the unread
+count in it ("Report a problem, 3"), with a visible focus ring.
 
 ```html
 <script src="https://<pulsarix-host>/widget/v1/loader.js" async

@@ -14,7 +14,7 @@ export interface AppProps {
   dark: boolean;
   open: boolean;
   launcher: boolean;
-  /** The launcher's look; `auto` (default) is the icon below 640 px and the pill above. */
+  /** Read for compatibility: every value (`auto`, `pill`, `icon`) is the round FAB. */
   launcherMode?: LauncherMode;
   /** `setLauncherVisible(false)` hides the launcher only, never an open dialog. */
   launcherVisible?: boolean;
@@ -29,7 +29,7 @@ export interface AppProps {
   metadata?: MetadataEntry[];
   /** The integrator's privacy page, linked in the privacy line. */
   privacyUrl?: string | null;
-  /** The host's signed identity token; with it the dialog has New request and My requests tabs. */
+  /** The host's signed identity token; with it the FAB opens a menu: report a problem, or My requests (one view each, no tabs). */
   identity?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;

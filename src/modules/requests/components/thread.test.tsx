@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { App } from "../../../app";
 import { MESSAGES } from "../../../core/messages";
+import { openRequests, TestHost } from "../../../test-host";
 
 const originalFetch = globalThis.fetch;
 const originalXhr = globalThis.XMLHttpRequest;
@@ -198,10 +198,8 @@ const props = () => ({
 async function openThread(row: Record<string, unknown> = base) {
   detail = { ...base, ...row };
   list = [detail];
-  const view = render(<App {...props()} />);
-  await userEvent.click(
-    await screen.findByRole("button", { name: /My requests/ }),
-  );
+  const view = render(<TestHost {...props()} />);
+  await openRequests();
   await userEvent.click(
     await screen.findByRole("button", { name: /Open request/ }),
   );
@@ -374,10 +372,8 @@ describe("request thread", () => {
         await held;
       return real(url, init);
     }) as unknown as typeof fetch;
-    render(<App {...props()} />);
-    await userEvent.click(
-      await screen.findByRole("button", { name: /My requests/ }),
-    );
+    render(<TestHost {...props()} />);
+    await openRequests();
     await userEvent.click(
       await screen.findByRole("button", { name: /Open request/ }),
     );
@@ -449,10 +445,8 @@ describe("request thread", () => {
 
   test("no stream runs while only the list is open", async () => {
     list = [base];
-    render(<App {...props()} />);
-    await userEvent.click(
-      await screen.findByRole("button", { name: /My requests/ }),
-    );
+    render(<TestHost {...props()} />);
+    await openRequests();
     await screen.findByRole("button", { name: /Open request/ });
     expect(streams).toHaveLength(0);
   });

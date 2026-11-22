@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { App } from "../../../app";
+import type { App } from "../../../app";
 import { MESSAGES } from "../../../core/messages";
+import { openRequests, TestHost } from "../../../test-host";
 
 const originalFetch = globalThis.fetch;
 
@@ -98,10 +99,8 @@ const props = {
 };
 
 async function openList(extra: Partial<Parameters<typeof App>[0]> = {}) {
-  render(<App {...props} {...extra} open />);
-  await userEvent.click(
-    await screen.findByRole("button", { name: /My requests/ }),
-  );
+  render(<TestHost {...props} {...extra} />);
+  await openRequests();
   await screen.findByText("Pay button broken");
 }
 

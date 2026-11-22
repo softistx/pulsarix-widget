@@ -1,7 +1,6 @@
 /**
- * Captures the launcher in the host fixture: the icon at 360 px (`auto`) and the pill at 1440 px
- * (`auto`), light and dark, and one 360 px capture with an `offset` clearing a sticky action bar.
- * Also checks that `auto` really switches when the viewport is resized.
+ * Captures the launcher in the host fixture: the round FAB at 360 and 1440 px, light and dark,
+ * and one 360 px capture with an `offset` clearing a sticky action bar.
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright-core";
@@ -30,9 +29,9 @@ const SETUP_BAR = () => {
 };
 
 try {
-  for (const [width, height, name] of [
-    [360, 780, "icon"],
-    [1440, 900, "pill"],
+  for (const [width, height] of [
+    [360, 780],
+    [1440, 900],
   ] as const) {
     for (const scheme of ["light", "dark"] as const) {
       const page = await (
@@ -48,56 +47,29 @@ try {
           ?.shadowRoot?.querySelector("button"),
       );
       await page.evaluate((s) => {
-        const el = document.querySelector("pulsarix-widget");
-        el?.setAttribute("theme", s);
-        el?.removeAttribute("launcher");
+        document.querySelector("pulsarix-widget")?.setAttribute("theme", s);
       }, scheme);
       await page.waitForTimeout(300);
-      const kind = () =>
-        page
-          .locator("pulsarix-widget")
-          .evaluate(
-            (el) =>
-              el.shadowRoot
-                ?.querySelector("[data-launcher]")
-                ?.getAttribute("data-launcher") ?? null,
-          );
-      check((await kind()) === name, `auto is the ${name} at ${width} px`);
-      if (name === "icon") {
-        const box = await page
-          .getByRole("button", { name: "Report a problem" })
-          .boundingBox();
-        check(
-          Math.round(box?.width ?? 0) === 48 &&
-            Math.round(box?.height ?? 0) === 48,
-          `the icon is 48 px (${box?.width} x ${box?.height})`,
+      const kind = await page
+        .locator("pulsarix-widget")
+        .evaluate(
+          (el) =>
+            el.shadowRoot
+              ?.querySelector("[data-launcher]")
+              ?.getAttribute("data-launcher") ?? null,
         );
-        await page.keyboard.press("Tab");
-        await page.keyboard.press("Tab");
-        await page.keyboard.press("Tab");
-        await page.keyboard.press("Tab");
-        await page.keyboard.press("Tab");
-      }
-      await page.screenshot({
-        path: `${out}/launcher-${name}-${width}-${scheme}.png`,
-      });
-      // Live switch: resize across 640 px.
-      await page.setViewportSize({
-        width: name === "icon" ? 900 : 400,
-        height,
-      });
-      await page.waitForTimeout(300);
+      check(kind === "fab", `the launcher is the round FAB at ${width} px`);
+      const fab = page.getByRole("button", { name: "Report a problem" });
+      const box = await fab.boundingBox();
       check(
-        (await kind()) === (name === "icon" ? "pill" : "icon"),
-        `auto switches live when the viewport leaves ${width} px`,
+        !!box && Math.abs(box.width - box.height) < 1 && box.width >= 48,
+        `the FAB is round and at least 48 px (${box?.width} x ${box?.height})`,
       );
-      if (name === "icon" && scheme === "light") {
-        await page.setViewportSize({ width, height });
-        await page.waitForTimeout(300);
+      await page.screenshot({
+        path: `${out}/launcher-${width}-${scheme}.png`,
+      });
+      if (width === 360 && scheme === "light") {
         await page.evaluate(SETUP_BAR);
-        await page.screenshot({
-          path: `${out}/launcher-offset-before-${width}-${scheme}.png`,
-        });
         await page.evaluate(() => {
           document
             .querySelector("pulsarix-widget")
@@ -105,11 +77,9 @@ try {
         });
         await page.waitForTimeout(300);
         const bar = await page.locator("#fake-bar button").boundingBox();
-        const fab = await page
-          .getByRole("button", { name: "Report a problem" })
-          .boundingBox();
+        const lifted = await fab.boundingBox();
         check(
-          !!bar && !!fab && fab.y + fab.height <= bar.y - 4,
+          !!bar && !!lifted && lifted.y + lifted.height <= bar.y - 4,
           "the offset lifts the launcher above the sticky bar's button",
         );
         await page.screenshot({

@@ -70,7 +70,7 @@ export async function fillAndSend(page: Page) {
   await page
     .getByRole("textbox", { name: /What happened/ })
     .fill("Pay does nothing");
-  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: "Send", exact: true }).click();
 }
 
 const puts = async (base: string) =>

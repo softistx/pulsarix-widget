@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Locale, MetadataEntry } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { WidgetProject } from "../api";
@@ -50,8 +49,6 @@ export interface ReportFlowProps {
   draft?: { current: ReportValues | null };
   /** The host's identity token: the report is the reporter's own and shows in My requests. */
   identity?: string | null;
-  /** Rendered in the dialog's header, under the description (the way to "My requests" until the dock). */
-  headerExtra?: ReactNode;
   /** The key's project, when the owner of the dialog already read it (a switch of view remounts this). */
   project?: WidgetProject | null;
   onProject?: (project: WidgetProject | null) => void;

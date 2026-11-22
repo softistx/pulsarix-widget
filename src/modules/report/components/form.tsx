@@ -71,8 +71,6 @@ export interface FormProps {
   editor: ReactNode;
   /** The integrator's privacy page, linked after the privacy line. */
   privacyUrl?: string | null;
-  /** Under the description: the way to "My requests" until the dock. */
-  headerExtra?: ReactNode;
 }
 
 /** The report: one form, from the title to the attachments, then Cancel and Send on one line. */
@@ -91,7 +89,6 @@ export function Form({
   attachments,
   editor,
   privacyUrl,
-  headerExtra,
 }: FormProps) {
   if (editor)
     return (
@@ -104,11 +101,7 @@ export function Form({
     );
   return (
     <>
-      <FormHeader
-        messages={messages}
-        projectName={projectName}
-        headerExtra={headerExtra}
-      />
+      <FormHeader messages={messages} projectName={projectName} />
       <DialogBody role="region" aria-label={messages.title}>
         <form
           id={FORM_ID}

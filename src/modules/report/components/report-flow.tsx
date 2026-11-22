@@ -41,7 +41,6 @@ export function ReportFlow({
   privacyUrl,
   draft,
   identity,
-  headerExtra,
   project,
   onProject,
 }: ReportFlowProps) {
@@ -248,7 +247,6 @@ export function ReportFlow({
         ) : null
       }
       privacyUrl={privacyUrl}
-      headerExtra={headerExtra}
     />
   );
 }

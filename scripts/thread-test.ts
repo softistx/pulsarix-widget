@@ -111,7 +111,7 @@ try {
       .catch(() => false),
     "the composer shows the attached file",
   );
-  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await page.getByText("Thanks, found it").waitFor();
   const putsNow = async () =>
     (await (await fetch(`${base}/__puts`)).json()) as {

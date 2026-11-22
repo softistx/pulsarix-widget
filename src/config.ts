@@ -3,7 +3,7 @@
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
 export type Position = "bottom-right" | "bottom-left";
-/** `auto` shows the icon below 640 px of viewport width and the text pill above it. */
+/** Every value gives the round FAB; the values are read so existing embeds keep working. */
 export type LauncherMode = "auto" | "pill" | "icon";
 /** A launcher offset: a number is pixels, a string is any CSS length (`"2rem"`, `"env(...)"`). */
 export interface LauncherOffset {
@@ -16,7 +16,7 @@ export interface WidgetConfig {
   locale: Locale;
   theme: ThemeMode;
   position: Position;
-  /** The launcher's look (`launcher="icon"`); `launcher="false"` is read by the element. */
+  /** Read for compatibility (`launcher="pill"`, `"icon"`): the launcher is always the round FAB; `launcher="false"` is read by the element. */
   launcherMode: LauncherMode;
   /** The launcher's offsets (`offset-bottom`, `offset-side`), as CSS lengths, or null. */
   offset: { bottom: string | null; side: string | null };

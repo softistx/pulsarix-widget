@@ -196,11 +196,11 @@ describe("the launcher options", () => {
     ).toBe("");
   });
 
-  test("the launcher option reaches the element; false keeps its old meaning", async () => {
+  test("the launcher option reaches the element (every mode is the FAB); false keeps its old meaning", async () => {
     handle = mount({ projectKey: "pk_live_abc", launcher: "icon" });
     expect(handle.element.config.launcherMode).toBe("icon");
     await settle();
-    expect(box()?.dataset.launcher).toBe("icon");
+    expect(box()?.dataset.launcher).toBe("fab");
     handle.destroy();
     handle = mount({ projectKey: "pk_live_abc", launcher: false });
     await settle();

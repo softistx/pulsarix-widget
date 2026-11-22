@@ -37,6 +37,11 @@ An embeddable widget is not a BFF: it keeps the invariants above and takes the U
 (`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
 follow yet, the rule is the target and names its slice (tracking issue #134).
 
+- **UX (owner, 2026-11-22, #172)**: the launcher is one round icon FAB at every width (the `launcher`
+  values `auto|pill|icon` are still parsed and all give the FAB); an identified reporter's FAB opens a
+  menu (report, My requests with its unread badge), each item one view, never tabs; the report is one
+  unsplit form with one attachments control. An uploaded image is a plain attachment (no annotation,
+  no megapixel cap); only a captured screenshot opens the editor. Test helper: `src/test-host.tsx` (a root file, so it may import `App`; tests only).
 - **Layout** (alignment W5, #134): the entry files `index.ts`, `loader.ts`, `element.tsx` and
   `config.ts` stay at the root of `src/` (they are the shipped `.d.ts`), with `app.tsx` and
   `app-props.ts`, the composition root that mounts the modules. The rest is

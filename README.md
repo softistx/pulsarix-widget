@@ -50,7 +50,7 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 `data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`) or `data-launcher="auto|pill|icon"`
-(`auto` is the default: icon below 640 px, pill above), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
+(any value other than `false` gives the round FAB), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
 (no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
 own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
@@ -181,8 +181,9 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 
 ## The launcher
 
-`launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
-pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
+The launcher is one round FAB with the pulsarix mark at every width; with an identity token it opens a
+menu with "Report a problem" and "My requests" (unread badge), and its accessible name carries the unread
+count. `"auto"`, `"pill"` and `"icon"` all give the FAB, `false` removes it (the `pill` and `icon` values are kept for compatibility and are no-ops; the text pill is gone). With the launcher removed or held hidden, an identified reporter has no way to the requests list: keep it visible for them. To clear a sticky bar,
 `offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
 `setLauncherVisible(false)` hides only the launcher, never an open dialog, and `holdLauncher()` hides it the same way while a host's own sticky bar is up (ref-counted, call the returned function to release); with the script tag it is
 `window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
@@ -221,10 +222,10 @@ is kept in the widget's memory and is not written to the page; a token in `data-
 attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
 
 - Without a token the dialog is the one report form, and the e-mail field is asked.
-- With one, the report form has a "My requests" button (no e-mail field). My requests is its own view, with its own title, and one list with
+- With one, the FAB opens a menu with "Report a problem" and "My requests" (no e-mail field). My requests is its own view, with its own title, and one list with
   filter chips and their counts (Open by default, Resolved, Declined, All); requests with
   unread replies come first, and the list is read again each time the dialog opens.
-- The launcher and the My requests button show the unread count.
+- The FAB (in its name) and the My requests menu item show the unread count.
 - Opening a request shows its thread: the original message, then the replies of the team (plain
   text, with their file names). The reporter can reply, with up to three files sent the same way as
   a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.
