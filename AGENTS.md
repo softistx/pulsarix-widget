@@ -14,7 +14,7 @@ invariants and where it departs from the UI conventions.
   is a `devDependency`, so `dependencies` stays empty and the package itself has no
   runtime dependencies. The npm entry has `.d.ts` files (`tsconfig.build.json`, run by the build).
 - The shipped declarations are only those reachable from `dist/types/index.d.ts` (`index`,
-  `config`, `element`), listed in `files`; they must import nothing but each other (no `react`,
+  `config`, `element`, `mount`), listed in `files`; they must import nothing but each other (no `react`,
   no `react-hook-form`, no generated CSS). If `index.d.ts` starts to reach another file, add it to
   `files` and keep the throwaway-tsconfig check (`skipLibCheck: false`, no react installed) clean.
 - `@softistx/pulsarix-widget/server` (`src/server.ts`, built to `dist/server.js` and `dist/types/server.d.ts`, both in

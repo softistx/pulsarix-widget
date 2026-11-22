@@ -42,6 +42,7 @@ export function AttachmentsSection({
   return (
     <div data-testid="attachments">
       <I18nProvider
+        key={locale}
         initialLanguage={locale}
         supportedLanguages={["en", "fr"]}
         defaultLanguage={locale}

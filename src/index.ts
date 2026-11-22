@@ -8,10 +8,9 @@ export type {
 } from "./config";
 export {
   defineWidget,
-  type MountOptions,
-  mount,
+  type MountMetadata,
   PulsarixWidgetElement,
   TAG_NAME,
   type WidgetEvent,
-  type WidgetHandle,
 } from "./element";
+export { type MountOptions, mount, type WidgetHandle } from "./mount";

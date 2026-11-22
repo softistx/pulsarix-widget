@@ -76,6 +76,7 @@
     "dist/types/index.d.ts",
     "dist/types/config.d.ts",
     "dist/types/element.d.ts",
+    "dist/types/mount.d.ts",
     "dist/server.js",
     "dist/types/server.d.ts",
     "docs/integration.md"

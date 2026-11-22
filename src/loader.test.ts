@@ -15,6 +15,9 @@ interface Api {
   close(): void;
   identify(token: string | null): void;
   setLauncherVisible(visible: boolean): void;
+  setTheme(theme: string): void;
+  setLocale(locale: string): void;
+  setMetadata(metadata: unknown): void;
   destroy(): void;
 }
 const pulsarix = () =>
@@ -92,10 +95,24 @@ test("calls before the bundle loads are queued and replayed on mount", async () 
   api.open();
   api.close();
   api.identify("a.b");
+  api.setTheme("dark");
+  api.setLocale("fr");
+  api.setMetadata({ org: "a" });
+  // Only the last value of a setter is replayed.
+  api.setTheme("light");
+  api.setMetadata({ org: "b" });
+  api.setTheme("dark");
   expect(opened).toEqual([]);
   release();
   await loading;
-  expect(opened).toEqual(["open", "close", "identify:a.b"]);
+  expect(opened).toEqual([
+    "open",
+    "close",
+    "identify:a.b",
+    "locale:fr",
+    'metadata:{"org":"b"}',
+    "theme:dark",
+  ]);
   api.destroy();
 });
 

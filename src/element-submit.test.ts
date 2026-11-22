@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { mount, type WidgetHandle } from "./element";
+import { mount, type WidgetHandle } from "./mount";
 
 // The spam guard holds a submit for 3 s after the dialog opens.
 setDefaultTimeout(15_000);
