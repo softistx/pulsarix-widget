@@ -96,6 +96,21 @@ describe("run-time setters", () => {
     expect(handle.element.config.theme).toBe("auto");
   });
 
+  test("with a host mode inherited, an explicit setTheme wins and auto hands it back", () => {
+    const html = document.documentElement;
+    html.classList.add("dark");
+    html.style.setProperty("--primary", "#00aa00");
+    handle = mount({ projectKey: "pk_live_abc", launcher: false });
+    const mode = () => handle?.element.getAttribute("data-resolved-theme");
+    expect(mode()).toBe("dark");
+    handle.setTheme("light");
+    expect(mode()).toBe("light");
+    handle.setTheme("auto");
+    expect(mode()).toBe("dark");
+    html.classList.remove("dark");
+    html.style.removeProperty("--primary");
+  });
+
   test("a theme given at mount is honoured, and an unknown value is ignored", () => {
     handle = mount({ projectKey: "pk_live_abc", theme: "dark" });
     expect(handle.element.getAttribute("data-resolved-theme")).toBe("dark");

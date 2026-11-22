@@ -70,7 +70,10 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   exist only for `network`, `config` (a non-API refusal included), unreachable, a lapsed live-stream
   session (made client-side) and `unknown`.
 - **Theme**: `lavande` by default. The host accent is the documented exception: an embed matches its
-  host page, so the host may set its accent instead of the app's `--primary`.
+  host page: it inherits the host's `@softistx/material` theme (tokens read from `<html>`, validated,
+  set inline on the widget's root, followed live; `inheritTheme: false` opts out; `src/core/theme/inherit.ts`,
+  docs/integration.md), with `lavande` as the fallback for every token the host lacks, and the host's explicit
+  accent still wins over the inherited `--primary`.
 - **Checks** (alignment W2/W3/W5, #134): `verify` grows `check:deps` (the layout's import direction),
   `generate:check` and `schema:check` (generated types and the schema copy in sync), and a gzipped
   budget for the main bundle beside the loader cap in `scripts/check-size.ts`.

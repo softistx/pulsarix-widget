@@ -47,7 +47,7 @@ and isolated in the widget's shadow root, so it never clashes with the page's ow
 
 Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data-theme`
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
-`data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
+`data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
@@ -130,6 +130,7 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 | `theme`        | `"light" \| "dark" \| "auto"`     | `"auto"`                                             |
 | `position`     | `"bottom-right" \| "bottom-left"` | `"bottom-right"`                                     |
 | `accentColor`  | hex string                        | none: the built-in `lavande` theme                   |
+| `inheritTheme` | `boolean`                         | `true`: wear the host's `@softistx/material` theme   |
 | `launcher`     | `boolean`                         | `true` (`false` hides the floating button)           |
 | `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
 | `target`       | `Element`                         | `document.body`                                      |
@@ -155,11 +156,20 @@ bundle has loaded is queued. An unsupported theme or locale is ignored.
 
 - `"auto"` follows the operating system (`prefers-color-scheme`), not your page's own mode. To follow your
   app's Clair / Sombre / Système switch, pass the resolved `"light"` or `"dark"` to `setTheme` whenever it changes.
+- With `inheritTheme`, `setTheme("light" | "dark")` wins over the host's mode and `"auto"` gives it back to the
+  host; inherited colour tokens still win for their value.
 - `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
   the metadata it was sent with.
 - `setLocale` re-renders the dialog's contents in the new language: the dialog stays open and the typed
   fields, the chosen type and the tab are kept. Files or a screenshot already attached are dropped, so
   set the locale before the reporter attaches anything when you can (the language rarely changes mid-report).
+
+## Theme
+
+The widget wears the host app's `@softistx/material` theme (colours, radius, light or dark) when the host has
+one, and follows its theme picker; its own `lavande` values (or `accentColor`) are the fallback for every token
+the host lacks. `inheritTheme: false` (`data-inherit-theme="false"`) keeps the widget's own look. How it
+works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-the-host-apps-theme).
 
 ## The report form
 
