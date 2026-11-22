@@ -191,7 +191,9 @@ export function App({
                 layout="stack"
                 size="md"
                 // The editor needs room (px, not rem: the host owns the root font size).
-                className={editing ? "max-w-[1100px]" : undefined}
+                className={
+                  editing ? "outline-none max-w-[1100px]" : "outline-none"
+                }
                 onCloseAutoFocus={(event) => {
                   // A hidden or missing opener (launcher off or hidden) cannot take focus:
                   // let Radix's default run.

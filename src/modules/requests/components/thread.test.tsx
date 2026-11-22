@@ -352,6 +352,31 @@ describe("request thread", () => {
     expect(screen.getByPlaceholderText("Write a reply...")).toBeTruthy();
   });
 
+  test("the team's reply is rendered as markdown, what the reporter typed stays plain text", async () => {
+    await openThread({
+      description: "My **bold** text https://example.com/x",
+      thread: [
+        message(
+          "m1",
+          "team",
+          "See **this** and [the guide](https://example.com/g) <b>x</b>",
+        ),
+      ],
+    });
+    const log = await screen.findByRole("log");
+    // The renderer is a lazy chunk: plain text first, then the markup.
+    await waitFor(() =>
+      expect(log.querySelector("strong")?.textContent).toBe("this"),
+    );
+    expect(log.querySelector("a")?.textContent).toBe("the guide");
+    // Raw HTML is never drawn.
+    expect(log.querySelector("b")).toBeNull();
+    // The reporter's own words: a text node, no markup and no auto-link.
+    expect(log.textContent).toContain("My **bold** text https://example.com/x");
+    expect(log.querySelectorAll("strong")).toHaveLength(1);
+    expect(log.querySelectorAll("a")).toHaveLength(1);
+  });
+
   test("a read-only thread keeps its messages and says why the composer is off", async () => {
     await openThread({ canReply: false, publicState: "declined" });
     await screen.findByText("Under Account, then Billing.");

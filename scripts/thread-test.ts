@@ -76,7 +76,7 @@ try {
   await page
     .getByRole("button", { name: /Open request: How do I change/ })
     .click();
-  await page.getByText("It is under Account, then Billing").waitFor();
+  await page.getByRole("link", { name: "billing guide" }).waitFor();
   check(
     await until(async () => (await live()).open === 1),
     "the live stream opens with the thread",

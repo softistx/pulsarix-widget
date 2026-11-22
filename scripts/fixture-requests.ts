@@ -94,7 +94,7 @@ function seed(): Request[] {
         team(
           "m1",
           "2026-11-17T10:00:00Z",
-          "Hello! It is under Account, then Billing. The e-mail field is the second one.",
+          "Hello! It is under **Account**, then **Billing**:\n\n1. Open the *Billing* tab.\n2. The `e-mail` field is the second one.\n\nThe [billing guide](https://example.com/billing) has screenshots.",
         ),
         team(
           "m2",

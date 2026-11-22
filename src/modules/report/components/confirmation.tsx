@@ -43,7 +43,7 @@ export function Confirmation({
       <DialogBody>
         <div ref={doneRef} tabIndex={-1} role="status" className="outline-none">
           <Alert
-            variant="success"
+            variant={tracking ? "success" : "info"}
             description={
               tracking ? messages.done.tracking : messages.done.noTracking
             }

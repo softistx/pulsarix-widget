@@ -234,6 +234,10 @@ Content-Security-Policy:
 - Nothing else is needed for images or capture: thumbnails and the screenshot editor draw on canvases,
   so there is no `img-src blob:`. Screen capture needs `display-capture` in your `Permissions-Policy`
   (uploading an image works without it).
+- Lazy chunks come from the same pulsarix host, so no extra `script-src` entry: the screenshot editor
+  (fetched on the first capture) and the markdown renderer of the team's replies (`chat-markdown-*.js`,
+  about 740 KB, 221 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
+  every file of the widget's folder beside the entry, with the bundle's cache headers.
 - The widget's styles are adopted into its shadow root: no `style-src 'unsafe-inline'`. The requests
   thread injects one `<style>` element; under a strict `style-src` give your page a nonce, which the
   widget reads from a `nonce` attribute on a `style` or `script` element or from this tag:

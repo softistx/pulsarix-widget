@@ -36,6 +36,7 @@ export function RequestsListBody({
   onOpen,
   onNewRequest,
   onErase,
+  onClose,
 }: {
   messages: Messages;
   locale: Locale;
@@ -46,47 +47,61 @@ export function RequestsListBody({
   onOpen: (request: RequestSummary) => void;
   onNewRequest: () => void;
   onErase?: (detail: { requests: number }) => void;
+  /** Closes the dialog: the action of a refused identity, which a retry cannot mend. */
+  onClose?: () => void;
 }) {
   const text = REQUESTS_MESSAGES[locale];
   const { filter, counts, nodes, load } = list;
   const total = counts?.all ?? null;
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-      {total === 0 && load.status === "ready" ? null : (
-        <ChipGroupField
-          label={text.filterLabel}
-          hideLabel
-          overflow="scroll-phone"
-          value={filter}
-          onValueChange={(value) =>
-            value && list.setFilter(value as RequestFilter)
-          }
-          options={FILTERS.map((value) => ({
-            value,
-            label: text.filters[value],
-            ...(counts ? { count: counts[COUNT_KEY[value]] } : {}),
-          }))}
-        />
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-3">
+      {(total === 0 && load.status === "ready") ||
+      load.status === "error" ? null : (
+        <div className="max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)]">
+          <ChipGroupField
+            label={text.filterLabel}
+            hideLabel
+            overflow="scroll-phone"
+            value={filter}
+            onValueChange={(value) =>
+              value && list.setFilter(value as RequestFilter)
+            }
+            options={FILTERS.map((value) => ({
+              value,
+              label: text.filters[value],
+              ...(counts ? { count: counts[COUNT_KEY[value]] } : {}),
+            }))}
+          />
+        </div>
       )}
       {load.status === "error" ? (
         <Alert
           variant="error"
           title={text.errors.title}
           description={errorText(text, load.error)}
-          {...(load.error.kind === "identity"
-            ? {}
-            : {
-                actions: (
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    size="sm"
-                    onClick={list.reload}
-                  >
-                    {text.retry}
-                  </Button>
-                ),
-              })}
+          actions={
+            load.error.kind === "identity" ? (
+              onClose ? (
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  onClick={onClose}
+                >
+                  {messages.close}
+                </Button>
+              ) : undefined
+            ) : (
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={list.reload}
+              >
+                {text.retry}
+              </Button>
+            )
+          }
         />
       ) : null}
       {list.erased !== null ? (

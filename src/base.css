@@ -21,3 +21,8 @@
   line-height: 1.5;
   color: var(--foreground);
 }
+/* Material's upload bar asks for `accent-primary`, a class the widget's CSS does not emit: the
+   browser's own green showed. */
+progress {
+  accent-color: var(--primary);
+}

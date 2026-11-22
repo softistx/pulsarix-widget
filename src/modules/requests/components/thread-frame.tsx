@@ -25,7 +25,9 @@ export function ThreadHeader({
   const state = detail?.publicState;
   return (
     <DialogHeader>
-      <DialogTitle>{detail?.title ?? title}</DialogTitle>
+      <DialogTitle className="max-sm:line-clamp-2 max-sm:text-lg">
+        {detail?.title ?? title}
+      </DialogTitle>
       <DialogDescription className="flex flex-wrap items-center gap-2">
         {state ? (
           <Badge variant="soft" tone={STATE_TONE[state]}>
