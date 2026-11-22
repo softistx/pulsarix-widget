@@ -14,19 +14,15 @@ type Kind = "color" | "length" | "percent";
 /** The token names (and what each holds) come from the built-in theme's own stylesheet. */
 let tokens: ReadonlyMap<string, Kind> | null = null;
 
-/**
- * The tokens the widget takes from its host: those the built-in theme declares as a literal value
- * (a colour, a length or a percentage). A token declared from another (`--ground`, `--destructive`)
- * is left to the widget's own rule, so it follows the inherited ones; fonts are never inherited.
- */
-export function inheritableTokens(): ReadonlyMap<string, Kind> {
-  if (tokens) return tokens;
-  const block = themeCssFor(null).split(".dark")[0] ?? "";
-  const found = new Map<string, Kind>();
+/** With an explicit `accentColor`, the host's primary family stays out: the accent wins. */
+const PRIMARY = /^--(inverse-)?primary/;
+
+/** The custom properties a theme block declares as literals (a colour, a length or a percentage). */
+function literalsOf(block: string, into: Map<string, Kind>) {
   for (const [, name, value] of block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
     if (!name || !value || name.startsWith("--font-") || value.includes("var("))
       continue;
-    found.set(
+    into.set(
       name,
       name === "--radius"
         ? "length"
@@ -35,12 +31,28 @@ export function inheritableTokens(): ReadonlyMap<string, Kind> {
           : "color",
     );
   }
+}
+
+/**
+ * The tokens the widget takes from its host: those the built-in theme declares as a literal value
+ * (a colour, a length or a percentage) in its light block. A token derived from another
+ * (`--ground`, `--destructive`) is left to the widget's own rule, so it follows the inherited ones.
+ * A primary-family token derived in light but literal in dark (`--primary-text`,
+ * `--primary-indicator`: the eyebrow, links and icons) is read too, or the dark scheme would keep
+ * the widget's own literal under the host's primary. Fonts are never inherited.
+ */
+export function inheritableTokens(): ReadonlyMap<string, Kind> {
+  if (tokens) return tokens;
+  const [light = "", ...dark] = themeCssFor(null).split(".dark");
+  const found = new Map<string, Kind>();
+  literalsOf(light, found);
+  const darkOnly = new Map<string, Kind>();
+  literalsOf(dark.join(".dark"), darkOnly);
+  for (const [name, kind] of darkOnly)
+    if (PRIMARY.test(name) && !found.has(name)) found.set(name, kind);
   tokens = found;
   return found;
 }
-
-/** With an explicit `accentColor`, the host's primary family stays out: the accent wins. */
-const PRIMARY = /^--(inverse-)?primary/;
 
 /** A colour is a hex, a function (`oklch(...)`, `rgb(...)`, `color-mix(...)`) or one keyword. */
 const COLOR_SHAPE = /^(?:#[0-9a-f]{3,8}|[a-z-]+\([^;{}"'\\]*\)|[a-z]+)$/i;
