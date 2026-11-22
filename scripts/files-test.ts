@@ -65,6 +65,25 @@ export async function openWidget(
 export const filesInput = (page: Page) =>
   page.locator('pulsarix-widget [data-testid="attachments-input"]');
 
+/**
+ * Chooses files. An image opens the editor right away (the first one, when several are chosen):
+ * cancelling it keeps the file as chosen, so the form comes back with its list.
+ */
+export async function chooseFiles(
+  page: Page,
+  files: Parameters<ReturnType<typeof filesInput>["setInputFiles"]>[0],
+  cancel = "Cancel",
+) {
+  await filesInput(page).setInputFiles(files);
+  const list = Array.isArray(files) ? files : [files];
+  const opensEditor = list.some(
+    (f) =>
+      typeof f !== "string" && "mimeType" in f && f.mimeType === "image/png",
+  );
+  if (opensEditor)
+    await page.getByRole("button", { name: cancel, exact: true }).click();
+}
+
 export async function fillAndSend(page: Page) {
   await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
   await page
@@ -90,7 +109,7 @@ if (import.meta.main) {
         browser,
         `${base}/strict`,
       );
-      await filesInput(page).setInputFiles([
+      await chooseFiles(page, [
         png("trace.png"),
         {
           name: "notes.txt",
@@ -130,7 +149,7 @@ if (import.meta.main) {
     }
     {
       const { page, context } = await openWidget(browser, `${base}/strict`);
-      await filesInput(page).setInputFiles([png("a.png"), png("b.png")]);
+      await chooseFiles(page, [png("a.png"), png("b.png")]);
       await fillAndSend(page);
       await page.getByText("Your 2 files are attached.").waitFor();
       check(true, "two files are attached and the confirmation counts them");

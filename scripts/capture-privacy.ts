@@ -38,7 +38,7 @@ try {
         page.screenshot({ path: `${out}/${name}-${width}-${scheme}.png` });
       await page.getByRole("button", { name: /Report a problem/ }).click();
       await page.getByRole("dialog").waitFor();
-      await page.getByRole("button", { name: /My requests/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
       const toggle = page.getByRole("switch", {
         name: /E-mails about my requests/,
       });

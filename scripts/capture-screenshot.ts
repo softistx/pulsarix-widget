@@ -40,7 +40,7 @@ async function drag(page: Page, from: [number, number], to: [number, number]) {
 
 const notice = (page: Page) =>
   page
-    .getByTestId("screenshot-pane")
+    .getByTestId("attachments")
     .locator('[role="status"]:not(:empty)')
     .waitFor();
 
@@ -75,9 +75,10 @@ try {
         return { page, context };
       };
       const shot = async (page: Page, name: string) => {
-        await page
-          .getByTestId("screenshot-pane")
-          .evaluate((el) => el.scrollIntoView({ block: "center" }));
+        // The attachments control is not on screen while the editor is open.
+        const pane = page.getByTestId("attachments");
+        if (await pane.count())
+          await pane.evaluate((el) => el.scrollIntoView({ block: "center" }));
         await page.waitForTimeout(300);
         await page.screenshot({
           path: `${out}/${name}-${width}-${scheme}.png`,
@@ -132,7 +133,13 @@ try {
           path: `${out}/editor-annotated-scrolled-${width}-${scheme}.png`,
         });
         await b.page.getByRole("button", { name: "Attach" }).click();
-        await b.page.getByTestId("screenshot-preview").waitFor();
+        await b.page
+          .locator("pulsarix-widget [data-slot='attachment']")
+          .first()
+          .waitFor();
+        await b.page
+          .locator("pulsarix-widget [data-testid=attachments]")
+          .evaluate((el) => el.scrollIntoView({ block: "center" }));
         await b.page.waitForTimeout(500);
         await shot(b.page, "pane-kept");
         await b.context.close();

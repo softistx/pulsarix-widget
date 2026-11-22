@@ -7,7 +7,13 @@
 import { mkdirSync } from "node:fs";
 import type { Page } from "playwright-core";
 import { chromium } from "playwright-core";
-import { filesInput, fillAndSend, openWidget, png } from "./files-test";
+import {
+  chooseFiles,
+  filesInput,
+  fillAndSend,
+  openWidget,
+  png,
+} from "./files-test";
 import { serveFixture } from "./serve-fixture";
 
 const out = process.argv[2] ?? "captures-files";
@@ -38,7 +44,7 @@ try {
           scheme,
         });
         await shot(a.page, "1-empty", width, scheme);
-        await filesInput(a.page).setInputFiles([
+        await chooseFiles(a.page, [
           png("checkout-error.png", 48_000),
           {
             name: "console-log.pdf",
@@ -48,7 +54,7 @@ try {
         ]);
         await a.page.waitForTimeout(400);
         await shot(a.page, "2-listed", width, scheme);
-        await filesInput(a.page).setInputFiles([
+        await chooseFiles(a.page, [
           {
             name: "notes.txt",
             mimeType: "text/plain",
@@ -68,9 +74,7 @@ try {
           height,
           scheme,
         });
-        await filesInput(b.page).setInputFiles([
-          png("slow-trace.png", 400_000),
-        ]);
+        await chooseFiles(b.page, [png("slow-trace.png", 400_000)]);
         await fillAndSend(b.page);
         await b.page.waitForTimeout(4200);
         await shot(b.page, "4-uploading", width, scheme);
@@ -81,10 +85,7 @@ try {
           height,
           scheme,
         });
-        await filesInput(c.page).setInputFiles([
-          png("trace.png"),
-          png("fail-me.png", 4096),
-        ]);
+        await chooseFiles(c.page, [png("trace.png"), png("fail-me.png", 4096)]);
         await fillAndSend(c.page);
         await c.page.getByText("Some files were not attached").waitFor();
         await c.page.waitForTimeout(400);

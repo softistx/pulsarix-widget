@@ -33,17 +33,25 @@ export function PaneStatus({
 export function EditorHost({
   messages,
   source,
+  pageUrl,
   onSave,
   onCancel,
 }: {
   messages: Messages;
   source: Blob;
+  /** The page the capture was taken on, shown above the editor. */
+  pageUrl?: string;
   onSave: (file: File) => void;
   onCancel: () => void;
 }) {
   const t = messages.screenshot;
   return (
-    <section aria-label={t.editorLabel} className="min-h-0">
+    <section aria-label={t.editorLabel} className="grid min-h-0 gap-2">
+      {pageUrl ? (
+        <p className="truncate text-muted-foreground text-xs">
+          {t.capturedOn(pageUrl)}
+        </p>
+      ) : null}
       <Suspense
         fallback={
           <div

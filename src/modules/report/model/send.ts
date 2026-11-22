@@ -1,4 +1,9 @@
-import type { MetadataEntry } from "../../../config";
+import {
+  METADATA_MAX_BYTES,
+  METADATA_MAX_ENTRIES,
+  METADATA_VALUE_MAX,
+  type MetadataEntry,
+} from "../../../config";
 import type { Messages } from "../../../core/messages";
 import { fitScreenshot, screenshotName } from "../../files/model/rules";
 import {
@@ -23,35 +28,84 @@ export interface Upload {
  */
 export async function collectUploads({
   controls,
-  screenshot,
   ready,
   messages,
 }: {
   controls: boolean;
-  screenshot: File | null;
-  ready: { id: string; file: File }[];
+  /** Every ready attachment, in order; a capture is flagged by its page. */
+  ready: { id: string; file: File; pageUrl?: string }[];
   messages: Messages;
 }): Promise<{ toSend: Upload[]; leftOut: UploadOutcome[] }> {
   const toSend: Upload[] = [];
   const leftOut: UploadOutcome[] = [];
-  if (controls && screenshot) {
-    const fitted = await fitScreenshot(screenshot);
-    if (fitted)
-      toSend.push({ id: "screenshot", role: "screenshot", file: fitted });
+  if (!controls) return { toSend, leftOut };
+  // The first capture goes up as the report's screenshot; the others, and the files, as files.
+  const firstCapture = ready.find((entry) => entry.pageUrl !== undefined);
+  for (const entry of ready) {
+    if (entry.pageUrl === undefined) {
+      toSend.push({ id: entry.id, role: "file", file: entry.file });
+      continue;
+    }
+    const role = entry === firstCapture ? "screenshot" : "file";
+    const fitted = await fitScreenshot(entry.file);
+    if (fitted) toSend.push({ id: entry.id, role, file: fitted });
     else
       leftOut.push({
         name: messages.files.screenshot,
-        role: "screenshot",
-        type: screenshot.type,
-        size: screenshot.size,
+        role,
+        type: entry.file.type,
+        size: entry.file.size,
         ok: false,
         reason: "size",
       });
   }
-  if (controls)
-    for (const entry of ready)
-      toSend.push({ id: entry.id, role: "file", file: entry.file });
   return { toSend, leftOut };
+}
+
+/** The page of each capture that goes up, in order (a capture with no page, a `file://` one, has none). */
+export function capturePagesOf(
+  ready: { id: string; pageUrl?: string }[],
+  toSend: Upload[],
+): string[] {
+  const sent = new Set(toSend.map((item) => item.id));
+  return ready
+    .filter((entry) => entry.pageUrl && sent.has(entry.id))
+    .map((entry) => entry.pageUrl as string);
+}
+
+/**
+ * The page the widget runs on: origin and path only, since the query string and the fragment can
+ * carry a host page's tokens. None from a `file://` page or a sandboxed frame, whose origin is the
+ * string "null".
+ */
+export function pageOf(): string | undefined {
+  return location.origin === "null"
+    ? undefined
+    : (location.origin + location.pathname).slice(0, 2_048);
+}
+
+const encoder = new TextEncoder();
+const sizeOf = (e: MetadataEntry) =>
+  encoder.encode(e.key).length + encoder.encode(e.value).length;
+
+/**
+ * The host's metadata with one `capture-N-page` entry per capture. The captures' entries are kept
+ * and the host's are dropped from the end until the whole fits the API's limits (entries, bytes).
+ */
+function withCapturePages(
+  host: MetadataEntry[],
+  pages: string[],
+): MetadataEntry[] {
+  const own = pages.map((value, index) => ({
+    key: `capture-${index + 1}-page`,
+    value: value.slice(0, METADATA_VALUE_MAX),
+  }));
+  const room = (list: MetadataEntry[]) =>
+    list.length + own.length <= METADATA_MAX_ENTRIES &&
+    [...list, ...own].reduce((n, e) => n + sizeOf(e), 0) <= METADATA_MAX_BYTES;
+  const kept = [...host];
+  while (kept.length && !room(kept)) kept.pop();
+  return [...kept, ...own];
 }
 
 const nameOf = (item: Upload) =>
@@ -65,6 +119,7 @@ export function buildInput({
   honeypot,
   filledInMs,
   toSend,
+  capturePages = [],
 }: {
   values: ReportValues;
   locale: ReportInput["locale"];
@@ -72,23 +127,21 @@ export function buildInput({
   honeypot: string;
   filledInMs: number;
   toSend: Upload[];
+  /** The page of each capture, in order: the first is the report's page, each is also metadata. */
+  capturePages?: string[];
 }): ReportInput {
+  const allMetadata = withCapturePages(metadata ?? [], capturePages);
   return {
     title: values.title.trim(),
     description: values.description.trim(),
     email: values.email.trim(),
-    // Origin and path only: the query string and the fragment can carry a host page's tokens.
-    // None from a `file://` page or a sandboxed frame, whose origin is the string "null".
-    pageUrl:
-      location.origin === "null"
-        ? undefined
-        : (location.origin + location.pathname).slice(0, 2_048),
+    pageUrl: capturePages[0] ?? pageOf(),
     locale,
     ...(values.type ? { type: values.type } : {}),
     ...(values.impact ? { impact: values.impact } : {}),
     website: honeypot,
     filledInMs,
-    ...(metadata?.length ? { metadata } : {}),
+    ...(allMetadata.length ? { metadata: allMetadata } : {}),
     files: toSend.map((item) => ({
       role: item.role,
       name: nameOf(item),

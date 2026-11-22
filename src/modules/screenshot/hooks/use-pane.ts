@@ -31,9 +31,8 @@ function useEditingSignal(
 }
 
 /**
- * The capture's state and actions: capture the screen, hold the picture being edited, and tell
- * the dialog when the editor is open. An uploaded image is a plain attachment (the `files`
- * module), never edited.
+ * The capture's state and actions: capture the screen, hold the picture being edited (a capture
+ * or an uploaded image, `edit`), and tell the dialog when the editor is open.
  */
 export function usePane(
   messages: Messages,
@@ -44,20 +43,21 @@ export function usePane(
   const region = useRef<HTMLDivElement>(null);
   const alive = useAlive();
   const [canCapture] = useState(captureAvailable);
-  // The picture being edited: dropped (and so unreachable) once it is saved or cancelled.
-  const [source, setSource] = useState<Blob | null>(null);
+  // The attachment being edited and its picture: dropped once it is saved or cancelled.
+  const [edit, setEdit] = useState<{ id: string; source: Blob } | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [maskText, setMaskText] = useState(maskTextDefault);
 
-  useEditingSignal(source !== null, onEditingChange);
+  useEditingSignal(edit !== null, onEditingChange);
   // After a commit: the control may have been unmounted while the editor was open.
   const focusRegion = useCallback(
     () => setTimeout(() => region.current?.focus(), 0),
     [],
   );
 
-  const capture = async () => {
+  /** Takes the picture, then hands it to `onCaptured` (which adds it and opens the editor). */
+  const capture = async (onCaptured: (blob: Blob) => void) => {
     setNotice(null);
     setBusy(true);
     try {
@@ -65,7 +65,7 @@ export function usePane(
         hostOf(region.current),
         maskText,
       );
-      if (alive.current) setSource(blob);
+      if (alive.current) onCaptured(blob);
     } catch (error) {
       if (alive.current) setNotice(t.errors[failureOf(error)]);
     } finally {
@@ -77,8 +77,8 @@ export function usePane(
   return {
     region,
     canCapture,
-    source,
-    setSource,
+    edit,
+    setEdit,
     busy,
     notice,
     setNotice,

@@ -66,7 +66,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`${base}/strict-identified`);
   await page.getByRole("button", { name: /Report a problem/ }).click();
-  await page.getByRole("button", { name: /My requests/ }).click();
+  await page.getByRole("menuitem", { name: /My requests/ }).click();
   check(
     (await live()).open === 0,
     "no stream runs while only the list is open",

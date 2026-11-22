@@ -64,6 +64,7 @@ interface Declared {
   size: number;
 }
 let declared: Declared[] = [];
+let lastInput: Record<string, unknown> = {};
 let configAttachments: boolean | undefined;
 /** The tickets the API returns, by declared index; null drops one. */
 let tickets: (index: number, file: Declared) => Record<string, unknown> | null;
@@ -142,6 +143,7 @@ beforeEach(() => {
           },
         },
       });
+    lastInput = (body.variables.input ?? {}) as Record<string, unknown>;
     declared = body.variables.input?.files ?? [];
     return json({
       data: {
@@ -332,6 +334,8 @@ describe("the screenshot upload path", () => {
     await user.upload(fileInput() as HTMLInputElement, [
       new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
     ]);
+    // The uploaded image opens in the editor right away: saving it keeps it a file.
+    await user.click(await screen.findByText("stub-shot"));
     await send(user);
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     expect(puts).toHaveLength(0);
@@ -373,5 +377,66 @@ describe("closing while the files go up", () => {
       reportId: "r1",
       files: [expect.objectContaining({ role: "screenshot", uploaded: false })],
     });
+  });
+});
+
+describe("the editor opens on capture and upload, and each capture keeps its page", () => {
+  const here = `${location.origin}${location.pathname}`;
+  const pageEntries = () =>
+    ((lastInput.metadata ?? []) as { key: string; value: string }[]).filter(
+      (m) => m.key.startsWith("capture-"),
+    );
+
+  test("a capture opens the editor at once, and its page is shown and sent", async () => {
+    const { user, onSubmitted } = setup();
+    await shoot(user);
+    expect(
+      await screen.findByText(`Captured on ${here}`, { exact: false }),
+    ).toBeTruthy();
+    await send(user);
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
+    expect(lastInput.pageUrl).toBe(here);
+    expect(pageEntries()).toEqual([{ key: "capture-1-page", value: here }]);
+  });
+
+  test("Edit reopens an attachment in the editor", async () => {
+    const { user } = setup();
+    await shoot(user);
+    await user.click(await screen.findByRole("button", { name: "Edit x.png" }));
+    expect(await screen.findByText("stub-shot")).toBeTruthy();
+  });
+
+  test("an uploaded image opens the editor, and Edit is offered on it", async () => {
+    const { user } = setup();
+    await screen.findByRole("button", { name: "Upload an image" });
+    await user.upload(fileInput() as HTMLInputElement, [
+      new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
+    ]);
+    expect(await screen.findByText("stub-shot")).toBeTruthy();
+    await user.click(screen.getByText("stub-shot"));
+    expect(await screen.findByRole("button", { name: /^Edit / })).toBeTruthy();
+  });
+
+  test("each capture's page goes in the metadata, one entry per capture", async () => {
+    const { user, onSubmitted } = setup();
+    await shoot(user);
+    await shoot(user);
+    await send(user);
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
+    expect(pageEntries()).toEqual([
+      { key: "capture-1-page", value: here },
+      { key: "capture-2-page", value: here },
+    ]);
+  });
+
+  test("three more captures fit beside the first, the next one is refused with the count notice", async () => {
+    const { user } = setup();
+    for (let n = 0; n < 4; n++) await shoot(user);
+    await user.click(
+      await screen.findByRole("button", { name: "Add a screenshot" }),
+    );
+    expect(
+      await screen.findByText("A report takes 3 files at most."),
+    ).toBeTruthy();
   });
 });

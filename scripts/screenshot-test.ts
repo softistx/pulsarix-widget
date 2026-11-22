@@ -314,6 +314,13 @@ try {
       (await thumbs(page).count()) === 1,
       "the kept export is one thumbnail in the attachments list",
     );
+    check(
+      await page
+        .getByText("Captured on ", { exact: false })
+        .first()
+        .isVisible(),
+      "the attachment shows the page it was captured on",
+    );
     // A second capture is a second attachment (no Retake: remove one, add another).
     await page.getByRole("button", { name: "Add a screenshot" }).click();
     await tool(page, "Redact").waitFor();
@@ -325,14 +332,15 @@ try {
       "a second capture ends its tracks, and cancelling keeps the first export",
     );
     check(
-      (await thumbs(page).count()) === 1,
-      "cancelling the editor adds nothing",
+      (await thumbs(page).count()) === 2,
+      "cancelling the editor keeps the raw capture beside the first",
     );
-    await page
-      .locator("pulsarix-widget [data-testid='attachments']")
-      .getByRole("button", { name: /remove|delete/i })
-      .first()
-      .click();
+    for (let left = await thumbs(page).count(); left > 0; left--)
+      await page
+        .locator("pulsarix-widget [data-testid='attachments']")
+        .getByRole("button", { name: /remove|delete/i })
+        .first()
+        .click();
     await page.waitForFunction(
       () =>
         !document
@@ -370,11 +378,16 @@ try {
       mimeType: "image/png",
       buffer: await pngBytes(page, 4000, 2000),
     });
+    // An uploaded image opens the editor right away; cancelling keeps it as chosen.
+    await tool(page, "Redact").waitFor();
+    check(true, "an uploaded image opens in the editor");
+    await page.getByRole("button", { name: "Cancel" }).click();
     await thumbs(page).first().waitFor();
     const n = await thumbs(page).count();
+    check(n >= 1, `an uploaded image is kept as an attachment (${n} listed)`);
     check(
-      n >= 1,
-      `an uploaded image is a plain attachment, not annotated (${n} listed)`,
+      (await page.getByRole("button", { name: /^Edit / }).count()) === 1,
+      "Edit reopens it",
     );
     check(
       (await spy(page)).calls.length === 0,

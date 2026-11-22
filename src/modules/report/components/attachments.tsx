@@ -17,6 +17,8 @@ import type { Entry } from "../../files/hooks/use-attachments";
 import { ACCEPTED_TYPES, MAX_FILE_BYTES } from "../../files/model/rules";
 import { PaneStatus } from "../../screenshot/components/editor-host";
 
+const canEdit = (e: Entry) => !e.refusal && e.file.type.startsWith("image/");
+
 export interface AttachmentsControlProps {
   messages: Messages;
   locale: Locale;
@@ -37,6 +39,8 @@ export interface AttachmentsControlProps {
   onCapture: () => void;
   onDrop: (accepted: File[], refused: DropRefusal[]) => void;
   onRemove: (id: string) => void;
+  /** Reopens an image in the editor. */
+  onEdit: (id: string) => void;
 }
 
 /**
@@ -60,6 +64,7 @@ export function AttachmentsControl({
   onCapture,
   onDrop,
   onRemove,
+  onEdit,
 }: AttachmentsControlProps) {
   const t = messages.screenshot;
   const label = useId();
@@ -145,12 +150,34 @@ export function AttachmentsControl({
             />
           ) : null}
           <PaneStatus messages={messages} busy={busy} notice={notice} />
-          {items.length ? (
-            <AttachmentList
-              items={items}
-              onRemove={locked ? undefined : onRemove}
-            />
-          ) : null}
+          <AttachmentList
+            items={items}
+            onRemove={locked ? undefined : onRemove}
+          />
+          {items
+            .filter((i) => i.pageUrl || canEdit(i))
+            .map((item) => (
+              <div
+                key={item.id}
+                className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 ps-1"
+              >
+                <p className="min-w-0 truncate text-muted-foreground text-xs">
+                  {item.pageUrl ? t.capturedOn(item.pageUrl) : item.file.name}
+                </p>
+                {canEdit(item) ? (
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    size="sm"
+                    aria-label={`${t.edit} ${item.file.name}`}
+                    disabled={locked || busy}
+                    onClick={() => onEdit(item.id)}
+                  >
+                    {t.edit}
+                  </Button>
+                ) : null}
+              </div>
+            ))}
           {overTotal ? (
             <Alert
               variant="warning"

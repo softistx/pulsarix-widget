@@ -346,17 +346,22 @@ choice). The one "Attachments" control of the form offers:
   itself again. Not offered on a phone, without the API, or under a Permissions-Policy that blocks
   `display-capture`.
 - **Upload an image**: always offered, and the only choice where capture is unavailable or was
-  refused. PNG, JPEG, WebP or PDF; an uploaded file is a plain attachment, it is not annotated.
+  refused. PNG, JPEG, WebP or PDF. An uploaded image opens in the same editor as a capture (a PDF is
+  a plain attachment).
 - **Mask the text on the page** (off by default; `data-mask-text="true"`, or `maskText: true` in `init` / `mount`, turns it on when the dialog opens): covers the
   page's text with opaque boxes before the picture is taken. It needs the current tab to be shared;
   otherwise the widget says it cannot and nothing is captured. Mark anything that must stay visible
   with `data-capture-unmask`.
 
-The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
+A capture or an uploaded image opens straight in the editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
 an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
 picture before it is kept. Only the flattened
 export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
-revoked and no media track stays live. The screenshot and the files share one list of removable thumbnails. A report is complete without
+revoked and no media track stays live. The screenshot and the files share one list of removable thumbnails. Every image has an "Edit" button that reopens it (the
+kept image, not the raw capture). Each capture records the page it was taken on (origin and path, never
+the query or the fragment), shown under it ("Captured on ...") and in the editor. The report's
+`pageUrl` is the first capture's page, and each capture's page is also sent as a `metadata` entry
+(`capture-1-page`, `capture-2-page`, ...). A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
 `Permissions-Policy` without `display-capture` turns the capture button off.
 

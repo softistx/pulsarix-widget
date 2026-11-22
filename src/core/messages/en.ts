@@ -20,6 +20,8 @@ export const EN: Messages = {
       "Covers every character of the page with black boxes before the picture is taken.",
     capturing: "Taking the screenshot...",
     editorLabel: "Annotate the screenshot",
+    edit: "Edit",
+    capturedOn: (url) => `Captured on ${url}`,
     save: "Attach",
     loadingEditor: "Opening the editor...",
     errors: {

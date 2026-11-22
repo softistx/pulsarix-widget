@@ -7,7 +7,13 @@ import { usePane } from "../../screenshot/hooks/use-pane";
 import { submitReport } from "../api";
 import { useProject } from "../hooks/use-project";
 import { useReportForm } from "../hooks/use-report-form";
-import { buildInput, collectUploads, uploadAll } from "../model/send";
+import {
+  buildInput,
+  capturePagesOf,
+  collectUploads,
+  pageOf,
+  uploadAll,
+} from "../model/send";
 import { MIN_FILL_MS, type ReportFlowProps } from "../model/types";
 import { AttachmentsControl } from "./attachments";
 import { Confirmation, type UploadOutcome } from "./confirmation";
@@ -64,26 +70,16 @@ export function ReportFlow({
     attachments,
     onProject,
   });
-  // The flattened export of the annotated screenshot (W2c sends it); nothing else of the capture lives on.
-  const [screenshot, setScreenshot] = useState<File | null>(null);
   const [sent, setSent] = useState<{
     tracking: boolean;
     uploads: UploadOutcome[];
   } | null>(null);
   const files = useAttachments(messages.files);
-  // How far the screenshot's upload is, 0 to 100, once the files go up.
-  const [shotProgress, setShotProgress] = useState<number | undefined>();
   const pane = usePane(messages, maskText, onEditing);
-  // The kept screenshot leads the list, then the chosen files: one list, each removable.
-  const items: Entry[] = [
-    ...(screenshot
-      ? [{ id: "screenshot", file: screenshot, progress: shotProgress }]
-      : []),
-    ...files.entries,
-  ];
+  // Captures and files are one list, each removable; every image can be edited again.
+  const items: Entry[] = files.entries;
   const readyBytes = files.ready.reduce((sum, e) => sum + e.file.size, 0);
-  const overTotal =
-    controls && (screenshot?.size ?? 0) + readyBytes > MAX_TOTAL_BYTES;
+  const overTotal = controls && readyBytes > MAX_TOTAL_BYTES;
 
   // A failure shows in the scrolling body, above the sticky footer on a phone.
   useEffect(() => {
@@ -113,7 +109,6 @@ export function ReportFlow({
     if (aborted.current.signal.aborted) return;
     const { toSend, leftOut } = await collectUploads({
       controls,
-      screenshot,
       ready: files.ready,
       messages,
     });
@@ -124,6 +119,7 @@ export function ReportFlow({
       honeypot: honeypot.current?.value ?? "",
       filledInMs: Date.now() - openedAt.current,
       toSend,
+      capturePages: capturePagesOf(files.ready, toSend),
     });
     try {
       const report = await submitReport({
@@ -134,13 +130,8 @@ export function ReportFlow({
         signal: aborted.current.signal,
       });
       const progress = (id: string, percent: number) =>
-        id === "screenshot"
-          ? setShotProgress(percent)
-          : files.patch(id, { progress: percent });
-      const first = toSend[0];
-      if (first?.id === "screenshot") setShotProgress(0);
-      for (const item of toSend)
-        if (item.id !== "screenshot") progress(item.id, 0);
+        files.patch(id, { progress: percent });
+      for (const item of toSend) progress(item.id, 0);
       const results = await uploadAll({
         apiBase,
         report,
@@ -219,28 +210,58 @@ export function ReportFlow({
             notice={pane.notice}
             maskText={pane.maskText}
             onMaskText={pane.setMaskText}
-            onCapture={() => void pane.capture()}
-            onDrop={(accepted, refused) =>
-              files.add(accepted, refused, screenshot?.size ?? 0)
+            onCapture={() =>
+              void pane.capture((blob) => {
+                const page = pageOf();
+                const entry = files.addCapture(
+                  new File([blob], screenshotName(blob.type), {
+                    type: blob.type,
+                  }),
+                  page ?? "",
+                );
+                if (entry) pane.setEdit({ id: entry.id, source: blob });
+                else pane.setNotice(messages.files.count);
+              })
             }
-            onRemove={(id) =>
-              id === "screenshot" ? setScreenshot(null) : files.remove(id)
-            }
+            onDrop={(accepted, refused) => {
+              const added = files.add(accepted, refused);
+              // An uploaded image opens in the editor right away, like a capture.
+              const image = added.find((e) => e.file.type.startsWith("image/"));
+              if (image) pane.setEdit({ id: image.id, source: image.file });
+            }}
+            onEdit={(id) => {
+              const entry = files.entries.find((e) => e.id === id);
+              if (entry) pane.setEdit({ id, source: entry.file });
+            }}
+            onRemove={files.remove}
           />
         ) : null
       }
       editor={
-        pane.source ? (
+        pane.edit ? (
           <EditorHost
             messages={messages}
-            source={pane.source}
+            source={pane.edit.source}
+            pageUrl={files.entries.find((e) => e.id === pane.edit?.id)?.pageUrl}
             onSave={(file) => {
-              pane.setSource(null);
-              setScreenshot(file);
+              const editing = pane.edit;
+              pane.setEdit(null);
+              const entry = files.entries.find((e) => e.id === editing?.id);
+              if (editing && entry)
+                files.patch(editing.id, {
+                  file:
+                    entry.pageUrl === undefined
+                      ? new File(
+                          [file],
+                          `${entry.file.name.replace(/\.[^.]+$/, "")}.png`,
+                          { type: file.type },
+                        )
+                      : file,
+                });
               pane.focusRegion();
             }}
             onCancel={() => {
-              pane.setSource(null);
+              pane.setEdit(null);
               pane.focusRegion();
             }}
           />

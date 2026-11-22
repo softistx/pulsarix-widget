@@ -20,6 +20,8 @@ export const FR: Messages = {
       "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
     capturing: "Capture en cours...",
     editorLabel: "Annoter la capture",
+    edit: "Modifier",
+    capturedOn: (url) => `Capturée sur ${url}`,
     save: "Joindre",
     loadingEditor: "Ouverture de l'éditeur...",
     errors: {

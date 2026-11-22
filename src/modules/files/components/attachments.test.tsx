@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 import {
   cleanup,
   render,
@@ -7,7 +15,23 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { App } from "../../../app";
+import { useEffect } from "react";
+
+// An uploaded image opens the editor, which needs a canvas: a stub that cancels at once keeps the
+// file as it was chosen, so these specs stay on the attachment list. `mock.module` is process-wide.
+const realEditor = {
+  ...(await import("../../screenshot/components/editor-host")),
+};
+function CancelAtOnce({ onCancel }: { onCancel: () => void }) {
+  useEffect(() => onCancel(), [onCancel]);
+  return null;
+}
+mock.module("../../screenshot/components/editor-host", () => ({
+  ...realEditor,
+  EditorHost: CancelAtOnce,
+}));
+const { App } = await import("../../../app");
+
 import type { Locale } from "../../../config";
 import { MESSAGES } from "../../../core/messages";
 
@@ -440,4 +464,8 @@ describe("French", () => {
       screen.getByText(new RegExp(fr.files.reasons.size.slice(0, 14))),
     ).toBeTruthy();
   });
+});
+
+afterAll(() => {
+  mock.module("../../screenshot/components/editor-host", () => realEditor);
 });
