@@ -132,7 +132,7 @@ describe("the page of each capture", () => {
       { id: "3", role: "file", file: png("notes.png") },
     ];
     const input = buildInput({ ...base, toSend });
-    expect(input.files.map((f) => f.name)).toEqual([
+    expect(input.files?.map((f) => f.name)).toEqual([
       "screenshot.png",
       "screenshot-2.png",
       "notes.png",
