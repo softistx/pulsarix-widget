@@ -96,3 +96,23 @@ test.skipIf(!existsSync(join(dist, "types/index.d.ts")))(
     expect(bad).toEqual([]);
   },
 );
+
+// The server helper is its own file: it imports only `node:crypto`, and neither the browser
+// bundle nor the loader carries any of it.
+test.skipIf(!existsSync(join(dist, "server.js")))(
+  "the server helper stays out of the browser bundle and the loader",
+  async () => {
+    const server = await Bun.file(join(dist, "server.js")).text();
+    expect(server).toContain("signPulsarixIdentity");
+    const imports = [...server.matchAll(/from\s*["']([^"']+)["']/g)].map(
+      (m) => m[1],
+    );
+    expect(imports).toEqual(["node:crypto"]);
+    const manifest = await Bun.file(join(dist, "manifest.json")).json();
+    for (const file of ["index.js", "loader.js", manifest.widget]) {
+      const text = await Bun.file(join(dist, file)).text();
+      expect(text).not.toContain("signPulsarixIdentity");
+      expect(text).not.toContain("node:crypto");
+    }
+  },
+);
