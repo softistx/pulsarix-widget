@@ -102,7 +102,11 @@ export function Form({
   return (
     <>
       <FormHeader messages={messages} projectName={projectName} />
-      <DialogBody role="region" aria-label={messages.title}>
+      <DialogBody
+        role="region"
+        aria-label={messages.title}
+        className="scroll-pt-4"
+      >
         <form
           id={FORM_ID}
           onSubmit={onSubmit}
@@ -115,7 +119,9 @@ export function Form({
             anonymous={anonymous}
             privacyUrl={privacyUrl}
           />
-          {attachments}
+          {attachments ? (
+            <div className="border-border border-t pt-5">{attachments}</div>
+          ) : null}
           <Honeypot inputRef={honeypot} />
           <FailureAlert
             messages={messages}

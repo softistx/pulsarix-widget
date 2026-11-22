@@ -17,6 +17,17 @@ import type { Entry } from "../../files/hooks/use-attachments";
 import { ACCEPTED_TYPES, MAX_FILE_BYTES } from "../../files/model/rules";
 import { PaneStatus } from "../../screenshot/components/editor-host";
 
+/** "Edit capture 2" for a capture (its place among the captures), the file's name otherwise. */
+function editName(
+  item: Entry,
+  items: Entry[],
+  t: Messages["screenshot"],
+): string {
+  if (item.pageUrl === undefined) return `${t.edit} ${item.file.name}`;
+  const n = items.filter((i) => i.pageUrl !== undefined).indexOf(item) + 1;
+  return t.editCapture(n);
+}
+
 const canEdit = (e: Entry) => !e.refusal && e.file.type.startsWith("image/");
 
 export interface AttachmentsControlProps {
@@ -138,7 +149,7 @@ export function AttachmentsControl({
               }}
             />
           </div>
-          <p className="text-muted-foreground text-xs">{messages.files.hint}</p>
+          <p className="text-muted-foreground text-sm">{messages.files.hint}</p>
           {canCapture ? (
             <SwitchField
               variant="plain"
@@ -155,13 +166,13 @@ export function AttachmentsControl({
             onRemove={locked ? undefined : onRemove}
           />
           {items
-            .filter((i) => i.pageUrl || canEdit(i))
+            .filter((i) => i.pageUrl !== undefined || canEdit(i))
             .map((item) => (
               <div
                 key={item.id}
                 className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 ps-1"
               >
-                <p className="min-w-0 truncate text-muted-foreground text-xs">
+                <p className="min-w-0 truncate text-muted-foreground text-sm">
                   {item.pageUrl ? t.capturedOn(item.pageUrl) : item.file.name}
                 </p>
                 {canEdit(item) ? (
@@ -169,7 +180,7 @@ export function AttachmentsControl({
                     type="button"
                     variant="tonal"
                     size="sm"
-                    aria-label={`${t.edit} ${item.file.name}`}
+                    aria-label={editName(item, items, t)}
                     disabled={locked || busy}
                     onClick={() => onEdit(item.id)}
                   >

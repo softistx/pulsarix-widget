@@ -106,7 +106,7 @@ export function ReportFields({
           autoComplete="email"
         />
       ) : null}
-      <p className="text-muted-foreground text-xs">
+      <p className="-mt-2 text-muted-foreground text-sm">
         {messages.privacy}
         {privacyUrl ? (
           <>

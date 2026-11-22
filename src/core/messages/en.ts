@@ -19,6 +19,7 @@ export const EN: Messages = {
     capturing: "Taking the screenshot...",
     editorLabel: "Annotate the screenshot",
     edit: "Edit",
+    editCapture: (n) => `Edit capture ${n}`,
     capturedOn: (url) => `Captured on ${url}`,
     save: "Attach",
     loadingEditor: "Opening the editor...",

@@ -19,6 +19,7 @@ export const FR: Messages = {
     capturing: "Capture en cours...",
     editorLabel: "Annoter la capture",
     edit: "Modifier",
+    editCapture: (n) => `Modifier la capture ${n}`,
     capturedOn: (url) => `Capturée sur ${url}`,
     save: "Joindre",
     loadingEditor: "Ouverture de l'éditeur...",

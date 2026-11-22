@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { App } from "../../app";
 import type { AppProps } from "../../app-props";
 import { MESSAGES } from "../messages";
+import { Launcher } from "./launcher";
 
 afterEach(cleanup);
 
@@ -233,5 +234,34 @@ describe("the launcher for an identified reporter", () => {
       screen.getByRole("menuitem", { name: MESSAGES.en.myRequests }) !== null,
     ).toBe(true);
     globalThis.fetch = realFetch;
+  });
+});
+
+describe("the unread count in the FAB's name", () => {
+  const launcher = (identified: boolean, locale: "en" | "fr") => (
+    <Launcher
+      messages={MESSAGES[locale]}
+      position="bottom-right"
+      open={false}
+      unread={2}
+      identified={identified}
+      fabRef={createRef<HTMLButtonElement>()}
+      onReport={() => {}}
+      onRequests={() => {}}
+    />
+  );
+
+  test("is in the FAB's accessible name, anonymous or identified, in both languages", () => {
+    for (const identified of [false, true]) {
+      for (const locale of ["en", "fr"] as const) {
+        const { unmount } = render(launcher(identified, locale));
+        expect(
+          screen.getByRole("button", {
+            name: `${MESSAGES[locale].launcher}, 2`,
+          }),
+        ).toBeTruthy();
+        unmount();
+      }
+    }
   });
 });

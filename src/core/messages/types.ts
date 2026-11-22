@@ -19,6 +19,7 @@ export interface Messages {
     editorLabel: string;
     /** The button that reopens an attachment in the editor. */
     edit: string;
+    editCapture: (n: number) => string;
     /** The page a capture was taken on (origin and path). */
     capturedOn: (url: string) => string;
     save: string;

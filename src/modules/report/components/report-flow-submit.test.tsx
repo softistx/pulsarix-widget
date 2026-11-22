@@ -402,7 +402,9 @@ describe("the editor opens on capture and upload, and each capture keeps its pag
   test("Edit reopens an attachment in the editor", async () => {
     const { user } = setup();
     await shoot(user);
-    await user.click(await screen.findByRole("button", { name: "Edit x.png" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Edit capture 1" }),
+    );
     expect(await screen.findByText("stub-shot")).toBeTruthy();
   });
 

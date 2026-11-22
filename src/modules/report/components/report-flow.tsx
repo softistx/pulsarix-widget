@@ -1,19 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { IntakeError } from "../../../core/api/api";
+import type { IntakeError } from "../../../core/api/api";
 import { type Entry, useAttachments } from "../../files/hooks/use-attachments";
 import { MAX_TOTAL_BYTES, screenshotName } from "../../files/model/rules";
 import { EditorHost } from "../../screenshot/components/editor-host";
 import { usePane } from "../../screenshot/hooks/use-pane";
-import { submitReport } from "../api";
 import { useProject } from "../hooks/use-project";
 import { useReportForm } from "../hooks/use-report-form";
-import {
-  buildInput,
-  capturePagesOf,
-  collectUploads,
-  pageOf,
-  uploadAll,
-} from "../model/send";
+import { pageOf } from "../model/send";
+import { runSubmit } from "../model/submit";
 import { MIN_FILL_MS, type ReportFlowProps } from "../model/types";
 import { AttachmentsControl } from "./attachments";
 import { Confirmation, type UploadOutcome } from "./confirmation";
@@ -95,79 +89,30 @@ export function ReportFlow({
     if (sent) done.current?.focus();
   }, [sent]);
 
-  const submit = handleSubmit(async (values) => {
-    setFailure(null);
-    const fail = (error: IntakeError) => {
-      setFailure(error);
-      onError({ code: error.code });
-    };
-    if (!projectKey || !apiBase)
-      return fail(new IntakeError("config", "config"));
-    if (overTotal) return;
-    const wait = minFillMs - (Date.now() - openedAt.current);
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-    if (aborted.current.signal.aborted) return;
-    const { toSend, leftOut } = await collectUploads({
-      controls,
-      ready: files.ready,
+  const submit = handleSubmit((values) =>
+    runSubmit(values, {
       messages,
-    });
-    const input = buildInput({
-      values,
       locale,
+      projectKey,
+      apiBase,
+      controls,
+      overTotal,
+      ready: files.ready,
+      patch: files.patch,
       metadata,
+      identity,
+      draft,
+      minFillMs,
+      retryDelayMs,
+      openedAt: openedAt.current,
       honeypot: honeypot.current?.value ?? "",
-      filledInMs: Date.now() - openedAt.current,
-      toSend,
-      capturePages: capturePagesOf(files.ready, toSend),
-    });
-    try {
-      const report = await submitReport({
-        apiBase,
-        publicKey: projectKey,
-        input,
-        identity,
-        signal: aborted.current.signal,
-      });
-      const progress = (id: string, percent: number) =>
-        files.patch(id, { progress: percent });
-      for (const item of toSend) progress(item.id, 0);
-      const results = await uploadAll({
-        apiBase,
-        report,
-        toSend,
-        messages,
-        onProgress: progress,
-        signal: aborted.current.signal,
-        retryDelayMs,
-      });
-      // A close before submitReport resolves aborts it and emits nothing (accepted: the
-      // report may not exist). From here on the report is saved: `pulsarix:submit` fires once even if the dialog closed during
-      // the PUTs (those were aborted and read as not uploaded); only the confirmation is skipped.
-      const uploads = [...leftOut, ...results];
-      // The report exists: the draft is spent, whether or not the dialog is still open.
-      if (draft) draft.current = null;
-      if (!aborted.current.signal.aborted)
-        setSent({ tracking: report.tracking, uploads });
-      onSubmitted({
-        reportId: report.reportId,
-        files: uploads.map(({ name, role, type, size, ok }) => ({
-          name: role === "screenshot" ? screenshotName(type) : name,
-          role,
-          type,
-          size,
-          uploaded: ok,
-        })),
-      });
-    } catch (error) {
-      if (aborted.current.signal.aborted) return;
-      fail(
-        error instanceof IntakeError
-          ? error
-          : new IntakeError("unknown", "unknown"),
-      );
-    }
-  });
+      signal: aborted.current.signal,
+      setFailure,
+      setSent,
+      onSubmitted,
+      onError,
+    }),
+  );
 
   if (sent) {
     return (

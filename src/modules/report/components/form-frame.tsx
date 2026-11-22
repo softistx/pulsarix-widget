@@ -27,7 +27,7 @@ export function FormHeader({
         </p>
       ) : null}
       <DialogTitle>{messages.title}</DialogTitle>
-      <DialogDescription>
+      <DialogDescription className="max-sm:sr-only">
         {projectName ? messages.introFor(projectName) : messages.intro}
       </DialogDescription>
     </DialogHeader>

@@ -48,7 +48,7 @@ export function EditorHost({
   return (
     <section aria-label={t.editorLabel} className="grid min-h-0 gap-2">
       {pageUrl ? (
-        <p className="truncate text-muted-foreground text-xs">
+        <p className="truncate text-muted-foreground text-sm">
           {t.capturedOn(pageUrl)}
         </p>
       ) : null}

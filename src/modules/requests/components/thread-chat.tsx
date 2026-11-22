@@ -1,5 +1,6 @@
 import {
   Badge,
+  ChatMarkdown,
   ChatMessage,
   ChatMessageSeparator,
   ChatThread,
@@ -70,6 +71,8 @@ export function ThreadChat({
         }
       >
         <ChatMessageSeparator label={formatDate(detail.createdAt)} />
+        {/* The team's replies are markdown (a lazy chunk, plain text until it arrives); what the
+            reporter typed stays plain text, never markdown and never auto-linked. */}
         {items.map((message) => (
           <ChatMessage
             key={message.id}
@@ -77,7 +80,7 @@ export function ThreadChat({
             author={message.from === "reporter" ? t.you : t.team}
             avatarFallback={t.team.charAt(0)}
             timestamp={formatTime(message.at)}
-            text={message.body}
+            text={message.from === "reporter" ? message.body : undefined}
             footer={
               message.files.length ? (
                 <ul
@@ -92,7 +95,11 @@ export function ThreadChat({
                 </ul>
               ) : undefined
             }
-          />
+          >
+            {message.from === "reporter" ? undefined : (
+              <ChatMarkdown content={message.body} />
+            )}
+          </ChatMessage>
         ))}
       </ChatThread>
     </NonceProvider>
