@@ -356,12 +356,14 @@ choice). The one "Attachments" control of the form offers:
 A capture or an uploaded image opens straight in the editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
 an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
 picture before it is kept. Only the flattened
-export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
-revoked and no media track stays live. The screenshot and the files share one list of removable thumbnails. Every image has an "Edit" button that reopens it (the
+export (2560 px on its longest side at most) is kept when you save; Cancel in the editor keeps the
+capture as it was taken. No media track stays live. The screenshot and the files share one list of removable thumbnails. Every image has an "Edit" button that reopens it (the
 kept image, not the raw capture). Each capture records the page it was taken on (origin and path, never
 the query or the fragment), shown under it ("Captured on ...") and in the editor. The report's
 `pageUrl` is the first capture's page, and each capture's page is also sent as a `metadata` entry
-(`capture-1-page`, `capture-2-page`, ...). A report is complete without
+(`capture-1-page`, `capture-2-page`, ... by position among the captures; those keys are reserved: a
+host entry of that shape is dropped, and when the whole passes the metadata limits the host's entries
+are dropped from the end first). A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
 `Permissions-Policy` without `display-capture` turns the capture button off.
 

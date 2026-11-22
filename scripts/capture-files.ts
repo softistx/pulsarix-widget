@@ -7,13 +7,7 @@
 import { mkdirSync } from "node:fs";
 import type { Page } from "playwright-core";
 import { chromium } from "playwright-core";
-import {
-  chooseFiles,
-  filesInput,
-  fillAndSend,
-  openWidget,
-  png,
-} from "./files-test";
+import { chooseFiles, fillAndSend, openWidget, png } from "./files-test";
 import { serveFixture } from "./serve-fixture";
 
 const out = process.argv[2] ?? "captures-files";

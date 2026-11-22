@@ -20,6 +20,8 @@ export interface Upload {
   id: string;
   role: "screenshot" | "file";
   file: File;
+  /** Taken with the capture button: its name and page key carry its position among captures. */
+  capture?: boolean;
 }
 
 /**
@@ -48,7 +50,8 @@ export async function collectUploads({
     }
     const role = entry === firstCapture ? "screenshot" : "file";
     const fitted = await fitScreenshot(entry.file);
-    if (fitted) toSend.push({ id: entry.id, role, file: fitted });
+    if (fitted)
+      toSend.push({ id: entry.id, role, file: fitted, capture: true });
     else
       leftOut.push({
         name: messages.files.screenshot,
@@ -62,14 +65,14 @@ export async function collectUploads({
   return { toSend, leftOut };
 }
 
-/** The page of each capture that goes up, in order (a capture with no page, a `file://` one, has none). */
+/** The page of each capture that goes up, in order; "" for a capture with no page (a `file://` one). */
 export function capturePagesOf(
   ready: { id: string; pageUrl?: string }[],
   toSend: Upload[],
 ): string[] {
   const sent = new Set(toSend.map((item) => item.id));
   return ready
-    .filter((entry) => entry.pageUrl && sent.has(entry.id))
+    .filter((entry) => entry.pageUrl !== undefined && sent.has(entry.id))
     .map((entry) => entry.pageUrl as string);
 }
 
@@ -96,20 +99,34 @@ function withCapturePages(
   host: MetadataEntry[],
   pages: string[],
 ): MetadataEntry[] {
-  const own = pages.map((value, index) => ({
-    key: `capture-${index + 1}-page`,
-    value: value.slice(0, METADATA_VALUE_MAX),
-  }));
+  const own = pages.flatMap((value, index) =>
+    value
+      ? [
+          {
+            key: `capture-${index + 1}-page`,
+            value: value.slice(0, METADATA_VALUE_MAX),
+          },
+        ]
+      : [],
+  );
   const room = (list: MetadataEntry[]) =>
     list.length + own.length <= METADATA_MAX_ENTRIES &&
     [...list, ...own].reduce((n, e) => n + sizeOf(e), 0) <= METADATA_MAX_BYTES;
-  const kept = [...host];
+  const kept = host.filter((entry) => !RESERVED_KEY.test(entry.key));
   while (kept.length && !room(kept)) kept.pop();
   return [...kept, ...own];
 }
 
-const nameOf = (item: Upload) =>
-  item.role === "screenshot" ? screenshotName(item.file.type) : item.file.name;
+/** Keys the widget writes itself: a host's entry of the same shape is dropped. */
+const RESERVED_KEY = /^capture-\d+-page$/;
+
+/** A capture is `screenshot.png`, then `screenshot-2.png`…; a file keeps its own name. */
+function nameOf(item: Upload, toSend: Upload[]): string {
+  if (!item.capture) return item.file.name;
+  const no = toSend.filter((u) => u.capture).indexOf(item) + 1;
+  const base = screenshotName(item.file.type);
+  return no > 1 ? base.replace(/(\.\w+)$/, `-${no}$1`) : base;
+}
 
 /** The API's input for a report: the typed values, the page, the honeypot and the file list. */
 export function buildInput({
@@ -135,7 +152,7 @@ export function buildInput({
     title: values.title.trim(),
     description: values.description.trim(),
     email: values.email.trim(),
-    pageUrl: capturePages[0] ?? pageOf(),
+    pageUrl: capturePages[0] || pageOf(),
     locale,
     ...(values.type ? { type: values.type } : {}),
     ...(values.impact ? { impact: values.impact } : {}),
@@ -144,7 +161,7 @@ export function buildInput({
     ...(allMetadata.length ? { metadata: allMetadata } : {}),
     files: toSend.map((item) => ({
       role: item.role,
-      name: nameOf(item),
+      name: nameOf(item, toSend),
       type: item.file.type,
       size: item.file.size,
     })),
@@ -178,7 +195,7 @@ export function uploadAll({
         name:
           item.role === "screenshot"
             ? messages.files.screenshot
-            : item.file.name,
+            : nameOf(item, toSend),
         role: item.role,
         type: item.file.type,
         size: item.file.size,

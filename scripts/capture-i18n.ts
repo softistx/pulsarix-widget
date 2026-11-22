@@ -4,7 +4,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright-core";
-import { chooseFiles, filesInput, png } from "./files-test";
+import { chooseFiles, png } from "./files-test";
 import { serveFixture } from "./serve-fixture";
 
 const out = process.argv[2] ?? "captures-i18n";

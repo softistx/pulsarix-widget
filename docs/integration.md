@@ -264,7 +264,9 @@ Script-tag attributes and `init` / `mount` options (all optional except the key)
 | `data-metadata` / `metadata`                        | a JSON object of strings stored with each report                   |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
-values of 512, 2 KB in all; the rest is dropped.
+values of 512, 2 KB in all; the rest is dropped. The keys `capture-N-page` are reserved: the widget
+writes one per screenshot (the page it was taken on, origin and path), drops a host entry of that shape,
+and drops the host's last entries first when the whole would pass these limits.
 
 ```html
 <script src="https://<pulsarix-host>/widget/v1/loader.js" async
