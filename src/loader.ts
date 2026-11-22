@@ -12,6 +12,7 @@ interface InitOptions {
   theme?: string;
   position?: string;
   accentColor?: string;
+  inheritTheme?: boolean;
   apiBase?: string;
   launcher?: boolean;
   maskText?: boolean;
@@ -109,6 +110,7 @@ if (data?.projectKey) {
     theme: data.theme,
     position: data.position,
     accentColor: data.accentColor,
+    inheritTheme: data.inheritTheme === "false" ? false : undefined,
     apiBase: data.apiBase,
     launcher: data.launcher === "false" ? false : undefined,
     maskText: data.maskText === "true" ? true : undefined,

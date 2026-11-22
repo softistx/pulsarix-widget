@@ -47,7 +47,7 @@ and isolated in the widget's shadow root, so it never clashes with the page's ow
 
 Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data-theme`
 (`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
-`data-accent-color` (a hex seed for the theme; without it the widget wears material's built-in `lavande` theme), `data-api-base` (the
+`data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
@@ -130,12 +130,20 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 | `theme`        | `"light" \| "dark" \| "auto"`     | `"auto"`                                             |
 | `position`     | `"bottom-right" \| "bottom-left"` | `"bottom-right"`                                     |
 | `accentColor`  | hex string                        | none: the built-in `lavande` theme                   |
+| `inheritTheme` | `boolean`                         | `true`: wear the host's `@softistx/material` theme   |
 | `launcher`     | `boolean`                         | `true` (`false` hides the floating button)           |
 | `identity`     | `string \| null`                  | none: today's form only (see "Identified reporters") |
 | `target`       | `Element`                         | `document.body`                                      |
 
 `WidgetHandle`: `open()`, `close()`, `destroy()`, `identify(token \| null)`, `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
+
+## Theme
+
+The widget wears the host app's `@softistx/material` theme (colours, radius, light or dark) when the host has
+one, and follows its theme picker; its own `lavande` values (or `accentColor`) are the fallback for every token
+the host lacks. `inheritTheme: false` (`data-inherit-theme="false"`) keeps the widget's own look. How it
+works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-the-host-apps-theme).
 
 ## The report form
 
