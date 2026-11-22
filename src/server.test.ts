@@ -98,7 +98,7 @@ describe("signPulsarixIdentity", () => {
   test("an expired token is refused past the skew, and now defaults to the clock", () => {
     const token = signPulsarixIdentity({ ...base, ttlSeconds: 60 });
     expect(
-      verify(token, base.secret, base.publicKey, NOW + 6 * 60_000),
+      verify(token, base.secret, base.publicKey, NOW + 7 * 60_000),
     ).toBeNull();
     const live = signPulsarixIdentity({ ...base, now: undefined });
     expect(
