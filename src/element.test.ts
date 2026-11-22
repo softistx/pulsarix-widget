@@ -223,4 +223,74 @@ describe("the launcher options", () => {
     await settle();
     expect(box()?.hidden).toBe(false);
   });
+
+  describe("holdLauncher", () => {
+    const hidden = () => box()?.hidden;
+
+    test("hides the launcher until released, then shows it", async () => {
+      handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+      await settle();
+      const release = handle.holdLauncher();
+      await settle();
+      expect(hidden()).toBe(true);
+      release();
+      await settle();
+      expect(hidden()).toBe(false);
+    });
+
+    test("nested holds keep it hidden until the last one is released", async () => {
+      handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+      const a = handle.holdLauncher();
+      const b = handle.holdLauncher();
+      await settle();
+      a();
+      await settle();
+      expect(hidden()).toBe(true);
+      b();
+      await settle();
+      expect(hidden()).toBe(false);
+    });
+
+    test("a double release counts once", async () => {
+      handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+      const a = handle.holdLauncher();
+      const b = handle.holdLauncher();
+      a();
+      a();
+      await settle();
+      expect(hidden()).toBe(true);
+      b();
+      await settle();
+      expect(hidden()).toBe(false);
+    });
+
+    test("combines with setLauncherVisible: visible only when neither hides it", async () => {
+      handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+      handle.setLauncherVisible(false);
+      const release = handle.holdLauncher();
+      await settle();
+      release();
+      await settle();
+      expect(hidden()).toBe(true);
+      handle.setLauncherVisible(true);
+      await settle();
+      expect(hidden()).toBe(false);
+      const again = handle.holdLauncher();
+      handle.setLauncherVisible(true);
+      await settle();
+      expect(hidden()).toBe(true);
+      again();
+      await settle();
+      expect(hidden()).toBe(false);
+    });
+
+    test("never closes an open dialog", async () => {
+      handle = mount({ projectKey: "pk_live_abc", apiBase: "https://p.test" });
+      handle.open();
+      handle.holdLauncher();
+      await settle();
+      expect(handle.element.isOpen).toBe(true);
+      expect(hidden()).toBe(true);
+    });
+  });
 });

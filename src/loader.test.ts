@@ -15,6 +15,7 @@ interface Api {
   close(): void;
   identify(token: string | null): void;
   setLauncherVisible(visible: boolean): void;
+  holdLauncher(): () => void;
   setTheme(theme: string): void;
   setLocale(locale: string): void;
   setMetadata(metadata: unknown): void;
@@ -216,4 +217,64 @@ test("data-launcher and data-offset-* on the script tag reach mount", async () =
     launcher: "icon",
     offset: { bottom: "88", side: "1.5rem" },
   });
+});
+
+function gated() {
+  g.__WIDGET_FILE__ = STUB;
+  g.__stubMounts = 0;
+  g.__stubOpened = [];
+  let open = () => {};
+  g.__stubGate = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return open;
+}
+
+test("holdLauncher before the bundle loads is replayed in order, and its release works", async () => {
+  const open = gated();
+  const api = pulsarix();
+  const loading = api.init({ projectKey: "pk_live_abc" });
+  const first = api.holdLauncher();
+  api.holdLauncher();
+  open();
+  await loading;
+  expect(g.__stubOpened).toEqual(["hold", "hold"]);
+  first();
+  first();
+  expect(g.__stubOpened).toEqual(["hold", "hold", "release"]);
+});
+
+test("a hold released before the bundle loads is never applied", async () => {
+  const open = gated();
+  const api = pulsarix();
+  const loading = api.init({ projectKey: "pk_live_abc" });
+  api.holdLauncher()();
+  open();
+  await loading;
+  expect(g.__stubOpened).toEqual([]);
+});
+
+test("holdLauncher after the bundle loads goes straight through", async () => {
+  g.__WIDGET_FILE__ = STUB;
+  g.__stubMounts = 0;
+  g.__stubOpened = [];
+  g.__stubGate = Promise.resolve();
+  const api = pulsarix();
+  await api.init({ projectKey: "pk_live_abc" });
+  const release = api.holdLauncher();
+  release();
+  expect(g.__stubOpened).toEqual(["hold", "release"]);
+});
+
+test("destroy() clears the queued holds", async () => {
+  const open = gated();
+  const api = pulsarix();
+  const first = api.init({ projectKey: "pk_live_abc" });
+  api.holdLauncher();
+  api.destroy();
+  open();
+  await first;
+  g.__stubGate = Promise.resolve();
+  await api.init({ projectKey: "pk_live_abc" });
+  expect(g.__stubOpened).toEqual([]);
 });

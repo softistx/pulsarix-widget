@@ -6,6 +6,7 @@ and "My requests" working. Reference for every option and event: the [README](..
 1. [Get a project and a widget key](#1-get-a-project-and-a-widget-key)
 2. [Add the widget](#2-add-the-widget)
 3. [Identify your signed-in users](#3-identify-your-signed-in-users)
+   - [Signing from a root loader with an optional viewer](#signing-from-a-root-loader-with-an-optional-viewer)
 4. [Content Security Policy](#4-content-security-policy)
 5. [Options and metadata](#5-options-and-metadata)
 6. [Events](#6-events)
@@ -14,6 +15,7 @@ and "My requests" working. Reference for every option and event: the [README](..
 9. [Inheriting the host app's theme](#9-inheriting-the-host-apps-theme)
 10. [Changing theme, locale and metadata at run time](#10-changing-theme-locale-and-metadata-at-run-time)
 11. [The launcher: look, position and visibility](#11-the-launcher-look-position-and-visibility)
+    - [Sticky bottom bars: `holdLauncher()`](#sticky-bottom-bars-holdlauncher)
 
 ## 1. Get a project and a widget key
 
@@ -27,7 +29,7 @@ A key has:
   or `https://*.example.com`. A request from any other origin, or with no `Origin`, is refused;
 - an optional **identity secret** for signed-in users (section 3): in the key's "Signed-in users" card,
   press "Generate secret". It is **shown once**: copy it into your server's environment right away
-  (for example `PULSARIX_IDENTITY_SECRET`). It cannot be read again; "Regenerate" makes a new one and
+  (for example `PULSARIX_IDENTITY_SECRET`), with the public key beside it as `PULSARIX_PROJECT_KEY`. It cannot be read again; "Regenerate" makes a new one and
   the old one stops working at once.
 
 The key also has a switch (disabled keys refuse everything) and a "Screenshots and files" switch.
@@ -91,7 +93,7 @@ export function pulsarixTokenFor(user: {
 }) {
   return signPulsarixIdentity({
     secret: process.env.PULSARIX_IDENTITY_SECRET as string,
-    publicKey: process.env.PULSARIX_PUBLIC_KEY as string, // pk_live_xxx
+    publicKey: process.env.PULSARIX_PROJECT_KEY as string, // pk_live_xxx
     sub: user.id,
     email: user.email,
     name: user.name,
@@ -103,7 +105,7 @@ export function pulsarixTokenFor(user: {
 Import the signer only in server code (a loader, or a `*.server.ts` file), never in the browser. Then hand
 the token to the widget, and clear it at sign-out. In a strict-TypeScript host the script tag's global is
 not typed: declare it once with
-`declare global { interface Window { PulsarixWidget?: { identify(token: string | null): void } } }`,
+`declare global { interface Window { PulsarixWidget?: { identify(token: string | null): void; holdLauncher(): () => void } } }`,
 or use the npm route's typed handle:
 
 ```ts
@@ -154,7 +156,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     pulsarixIdentity: signPulsarixIdentity({
       secret: process.env.PULSARIX_IDENTITY_SECRET as string,
-      publicKey: process.env.PULSARIX_PUBLIC_KEY as string,
+      publicKey: process.env.PULSARIX_PROJECT_KEY as string,
       sub: user.id,
       email: user.email,
       name: user.name,
@@ -170,6 +172,50 @@ export default function Layout() {
   return <Outlet />;
 }
 ```
+
+### Signing from a root loader with an optional viewer
+
+The loader above sits under a layout that already requires a signed-in user. When the viewer is
+optional (a public site with an account), sign from the root loader instead and give `identify()`
+`null` for a visitor. Drive it from the loader data, so it also covers sign-out: the loader reruns,
+the token becomes `null` and the widget drops "My requests", with no sign-out hook in your app.
+
+```tsx
+// app/root.tsx
+import { signPulsarixIdentity } from "@softistx/pulsarix-widget/server";
+import { useEffect } from "react";
+import { Outlet, useLoaderData } from "react-router";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getUser(request); // your own session; `null` for a visitor
+  return {
+    pulsarixIdentity: user
+      ? signPulsarixIdentity({
+          secret: process.env.PULSARIX_IDENTITY_SECRET as string,
+          publicKey: process.env.PULSARIX_PROJECT_KEY as string,
+          sub: user.id,
+          email: user.email,
+          name: user.name,
+        })
+      : null,
+  };
+}
+
+export default function Root() {
+  const { pulsarixIdentity } = useLoaderData<typeof loader>();
+  useEffect(() => {
+    window.PulsarixWidget?.identify(pulsarixIdentity);
+  }, [pulsarixIdentity]);
+  return <Outlet />;
+}
+```
+
+The cost: a root loader runs on every document request and on every revalidation, so a signed-in
+viewer is signed once per request (an HMAC, microseconds) and the token in the page changes each
+time, which makes the response differ per user: do not cache it in a shared cache. Keep the life
+short (the default hour) and `identify()` again with the fresh token on each run, as the effect does.
+To sign less often, give the loader `shouldRevalidate` so it reruns only after a sign-in or sign-out,
+and re-sign before expiry (see above). A visitor costs nothing: no signature, and `identify(null)`.
 
 A token given with `identify()` stays in the widget's memory; one in `data-identity` is an attribute of
 the element and visible in the DOM, so prefer `identify()`.
@@ -313,6 +359,11 @@ mount({ projectKey: "pk_live_xxx", inheritTheme: false }); // the widget's own l
 
 Script tag: `data-inherit-theme="false"`. Element attribute: `inherit-theme="false"`.
 
+**`theme` at mount does not turn host inheritance off.** On a host that provides tokens, the widget
+keeps wearing the host's colours and its light or dark mode; the `theme` option (`light`, `dark`,
+`auto`) only decides the mode when the host does not say. To keep the widget's own look, pass
+`inheritTheme: false`; to force the mode at run time, call `setTheme("light" | "dark")`.
+
 ### How it works
 
 The widget lives in a shadow root and declares its own tokens there, so the page's custom
@@ -388,8 +439,8 @@ Rules:
   `prefers-color-scheme`, never the host page's class or attribute. A host with its own mode switch passes the
   resolved `"light"` or `"dark"` to `setTheme` on each change.
 - `setTheme` is independent of `inheritTheme` (section 9). With `inheritTheme`, the widget follows the host's
-  mode by default, and a `theme` given at mount or written later as the `theme` attribute wins over it; the
-  host mode counts only when the host provides tokens. `setTheme("light")` or `setTheme("dark")` wins over the
+  mode when the host provides tokens, and the `theme` given at mount (or written later as the `theme`
+  attribute) decides only when it does not. `setTheme("light")` or `setTheme("dark")` wins over the
   host's mode until the `theme` attribute is written again (that gives the mode back to the host);
   `setTheme("auto")` gives it back at once. An inherited token still wins for its colour value.
 - `setTheme` only sets the widget's own mode. The accent (`accentColor`) is a mount option and does not change.
@@ -473,3 +524,27 @@ widget.setLauncherVisible(true);
 An open dialog is never hidden or closed by it, and `open()` still works while the launcher is hidden.
 With the script tag: `window.PulsarixWidget.setLauncherVisible(false)`. `launcher: false` still
 removes the launcher for good.
+
+### Sticky bottom bars: `holdLauncher()`
+
+A host's own sticky bottom bar (a checkout bar, a cookie banner, an editor toolbar) can sit under the
+launcher. `holdLauncher()` hides the launcher while the bar is on screen and returns a function that
+gives it back. It is ref-counted, so two bars at once keep it hidden until both are released, and the
+returned function is safe to call more than once.
+
+```tsx
+import { useEffect } from "react";
+
+function StickyCheckoutBar() {
+  useEffect(() => {
+    // The script tag's global queues the call until the bundle has loaded.
+    const release = window.PulsarixWidget?.holdLauncher();
+    return () => release?.();
+  }, []);
+  return <div className="sticky bottom-0">…</div>;
+}
+```
+
+With the npm route, `const release = widget.holdLauncher()`. It combines with `setLauncherVisible`: the
+launcher shows only when `setLauncherVisible` is not `false` and no hold is open. Like it, a hold never
+closes or hides an open dialog, and `launcher: false` still removes the launcher for good.
