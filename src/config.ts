@@ -86,9 +86,25 @@ function oneOf<T extends string>(
   return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
+const UNIT_LENGTH =
+  /^\d+(?:\.\d+)?(?:px|r?em|ex|ch|vh|vw|vmin|vmax|svh|lvh|dvh|svw|lvw|dvw|cm|mm|in|pt|pc|%)$/i;
+const FUNCTION_LENGTH = /^(?:calc|min|max|clamp|var|env)\(/i;
+
+/** True when every `(` of the text is closed, none before it opens. */
+function balanced(text: string): boolean {
+  let depth = 0;
+  for (const char of text) {
+    if (char === "(") depth++;
+    else if (char === ")" && --depth < 0) return false;
+  }
+  return depth === 0;
+}
+
 /**
- * A CSS length for the launcher offset (a number of pixels, or `<number><unit>`, `calc(...)`,
- * `var(...)`, `env(...)`), or null. A value with anything else (`;`, `}`, quotes) is dropped.
+ * A CSS length for the launcher offset (a number of pixels, or `<number><unit>`, or a balanced
+ * `calc()`, `min()`, `max()`, `clamp()`, `var()`, `env()` call), or null. A negative value, or
+ * anything else (`;`, `}`, quotes, a bare word), is dropped. The browser's `CSS.supports` has
+ * the last word where it exists.
  */
 export function lengthOf(
   value: string | number | null | undefined,
@@ -98,10 +114,16 @@ export function lengthOf(
   const text = value?.trim() ?? "";
   if (!text) return null;
   if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
-  return /^[\w\s.,+*/()%-]{1,100}$/.test(text) &&
-    /^(\d|calc\(|var\(|env\(|min\(|max\(|clamp\()/.test(text)
-    ? text
-    : null;
+  const shaped =
+    UNIT_LENGTH.test(text) ||
+    (/^[\w\s.,+*/()%-]{1,100}$/.test(text) &&
+      FUNCTION_LENGTH.test(text) &&
+      text.endsWith(")") &&
+      balanced(text));
+  if (!shaped) return null;
+  if (typeof CSS !== "undefined" && typeof CSS.supports === "function")
+    return CSS.supports("bottom", text) ? text : null;
+  return text;
 }
 
 /** A hex colour (#rgb or #rrggbb): the only form accepted as a seed. */

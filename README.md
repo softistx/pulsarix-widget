@@ -121,7 +121,8 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
-`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`.
+`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`, `LauncherMode`,
+`LauncherOffset`.
 
 | `MountOptions` | Type                                                | Default                                              |
 | -------------- | --------------------------------------------------- | ---------------------------------------------------- |
@@ -152,7 +153,8 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 `launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
 pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
 `offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
-`setLauncherVisible(false)` hides only the launcher, never an open dialog. Details and examples:
+`setLauncherVisible(false)` hides only the launcher, never an open dialog; with the script tag it is
+`window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
 [docs/integration.md](docs/integration.md).
 
 ## The report form

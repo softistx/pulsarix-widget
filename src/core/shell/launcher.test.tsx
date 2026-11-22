@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
@@ -63,6 +63,31 @@ function Host() {
   );
 }
 
+/** A host that hides the launcher once the dialog opens, so the opener sits inside [hidden]. */
+function HiddenOnOpenHost() {
+  const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  return (
+    <App
+      messages={MESSAGES.en}
+      locale="en"
+      projectKey="pk_live_abc"
+      apiBase="https://pulsarix.test"
+      dark={false}
+      launcher
+      launcherVisible={visible}
+      position="bottom-right"
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setVisible(false);
+      }}
+      onSubmitted={() => {}}
+      onError={() => {}}
+    />
+  );
+}
+
 describe("focus", () => {
   test("opening from the launcher then pressing Escape puts focus back on it", async () => {
     const realFetch = globalThis.fetch;
@@ -80,6 +105,38 @@ describe("focus", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(launcher));
+    globalThis.fetch = realFetch;
+  });
+
+  test("with the launcher hidden meanwhile, closing does not force focus onto it", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ data: { widgetConfig: null } }), {
+        status: 200,
+      })) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    // The host hides the launcher while the dialog is open: the opener ends up inside [hidden].
+    render(<HiddenOnOpenHost />);
+    await user.click(
+      await screen.findByRole("button", { name: MESSAGES.en.launcher }),
+    );
+    await screen.findByRole("dialog");
+    // The opener is hidden: the app's own handler must not be the one that focuses it, so the
+    // dialog's default close focus runs (the call comes from the library, not from app.tsx).
+    const focusedBy: string[] = [];
+    const realFocus = HTMLElement.prototype.focus;
+    const focus = spyOn(HTMLElement.prototype, "focus").mockImplementation(
+      function (this: HTMLElement, ...args) {
+        if (launcherBox().contains(this))
+          focusedBy.push(new Error().stack ?? "");
+        return realFocus.apply(this, args);
+      },
+    );
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(launcherBox().hidden).toBe(true);
+    focus.mockRestore();
+    expect(focusedBy.some((stack) => /src\/app\.tsx/.test(stack))).toBe(false);
     globalThis.fetch = realFetch;
   });
 });

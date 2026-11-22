@@ -205,4 +205,17 @@ describe("the launcher attributes", () => {
     expect(lengthOf("url(x)")).toBeNull();
     expect(lengthOf("")).toBeNull();
   });
+
+  test("a malformed or negative length is dropped", () => {
+    expect(lengthOf("5foo")).toBeNull();
+    expect(lengthOf("1 2")).toBeNull();
+    expect(lengthOf("calc(")).toBeNull();
+    expect(lengthOf("calc(1px + 2px))")).toBeNull();
+    expect(lengthOf("-4px")).toBeNull();
+    expect(lengthOf("-4")).toBeNull();
+    expect(lengthOf("max(1px, 2px)")).toBe("max(1px, 2px)");
+    expect(lengthOf("env(safe-area-inset-bottom, 0px)")).toBe(
+      "env(safe-area-inset-bottom, 0px)",
+    );
+  });
 });

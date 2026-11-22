@@ -174,6 +174,18 @@ describe("the launcher options", () => {
     expect(handle.element.hasAttribute("style")).toBe(false);
   });
 
+  test("a property the host set itself is not removed, one the widget set is", () => {
+    handle = mount({ projectKey: "pk_live_abc", offset: { side: 24 } });
+    const { element } = handle;
+    element.style.setProperty("--pulsarix-launcher-bottom", "70px");
+    element.setAttribute("offset-side", "bogus;");
+    element.setLauncherVisible(true);
+    expect(element.style.getPropertyValue("--pulsarix-launcher-bottom")).toBe(
+      "70px",
+    );
+    expect(element.style.getPropertyValue("--pulsarix-launcher-side")).toBe("");
+  });
+
   test("an unsafe length is dropped", () => {
     handle = mount({
       projectKey: "pk_live_abc",

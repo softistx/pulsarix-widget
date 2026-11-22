@@ -95,7 +95,6 @@ export function Launcher({
           onClick={(event) => onOpen(event.currentTarget)}
         >
           <ChatIcon />
-          {unreadText ? <span className="sr-only">{unreadText}</span> : null}
         </Button>
       ) : (
         <Button onClick={(event) => onOpen(event.currentTarget)}>

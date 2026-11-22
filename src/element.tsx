@@ -5,7 +5,6 @@ import {
   identityOf,
   type LauncherMode,
   type LauncherOffset,
-  lengthOf,
   OBSERVED_ATTRIBUTES,
   readConfig,
   type WidgetConfig,
@@ -14,6 +13,7 @@ import { MESSAGES } from "./core/messages";
 import { createHostFollower } from "./core/theme/inherit";
 import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
+import { applyOffset, applyOptions } from "./mount";
 
 export const TAG_NAME = "pulsarix-widget";
 
@@ -58,6 +58,7 @@ export class PulsarixWidgetElement extends HTMLElement {
    */
   #identity: string | null = null;
   #launcherVisible = true;
+  #offsetProps = new Set<string>();
 
   get config(): WidgetConfig {
     const config = readConfig((name) => this.getAttribute(name));
@@ -117,7 +118,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#render();
   }
 
-  /** Shows or hides the launcher only: an open dialog stays, and `open()` still works. */
+  /** Shows or hides the launcher only; an open dialog stays. */
   setLauncherVisible(visible: boolean) {
     this.#launcherVisible = visible;
     this.#render();
@@ -160,15 +161,7 @@ export class PulsarixWidgetElement extends HTMLElement {
       this.#host.current.dark ??
       (config.theme === "dark" ||
         (config.theme === "auto" && !!this.#media?.matches));
-    // The launcher's offsets are custom properties on the host: a host's own CSS may set them too.
-    // Only a given option is written, so the host's rule or the default (16 px) stays otherwise.
-    for (const [name, value] of [
-      ["--pulsarix-launcher-bottom", config.offset.bottom],
-      ["--pulsarix-launcher-side", config.offset.side],
-    ] as const) {
-      if (value) this.style.setProperty(name, value);
-      else this.style.removeProperty(name);
-    }
+    applyOffset(this, config.offset, this.#offsetProps);
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
@@ -221,16 +214,9 @@ export interface MountOptions {
   inheritTheme?: boolean;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
-  /**
-   * The floating button: `"auto"` (default; the icon below 640 px of viewport width, the text
-   * pill above, live), `"pill"`, `"icon"` (a 48 px round button), or `false` for none.
-   */
+  /** The floating button: `"auto"` (icon below 640 px, pill above), `"pill"`, `"icon"`, or `false`. */
   launcher?: boolean | LauncherMode;
-  /**
-   * Distance of the launcher from the bottom and from its side (default 16 px each, plus the
-   * bottom safe area). A number is pixels, a string any CSS length. Sets
-   * `--pulsarix-launcher-bottom` and `--pulsarix-launcher-side` on the element.
-   */
+  /** Launcher distance from the bottom and its side (16 px default): pixels, or a CSS length. */
   offset?: LauncherOffset;
   /** The screenshot's "Mask the text on the page" option starts on. */
   maskText?: boolean;
@@ -278,34 +264,8 @@ export function mount(options: MountOptions): WidgetHandle {
   }
   defineWidget();
   const element = document.createElement(TAG_NAME) as PulsarixWidgetElement;
-  element.setAttribute("project-key", options.projectKey);
-  if (options.locale) element.setAttribute("locale", options.locale);
-  if (options.theme) element.setAttribute("theme", options.theme);
-  if (options.position) element.setAttribute("position", options.position);
-  if (options.accentColor)
-    element.setAttribute("accent-color", options.accentColor);
-  if (options.inheritTheme === false)
-    element.setAttribute("inherit-theme", "false");
-  if (options.apiBase) element.setAttribute("api-base", options.apiBase);
-  if (options.maskText) element.setAttribute("mask-text", "true");
-  if (options.attachments === false)
-    element.setAttribute("attachments", "false");
-  if (options.privacyUrl)
-    element.setAttribute("privacy-url", options.privacyUrl);
-  if (options.prefill?.email)
-    element.setAttribute("prefill-email", options.prefill.email);
-  if (options.prefill?.title)
-    element.setAttribute("prefill-title", options.prefill.title);
-  if (options.metadata)
-    element.setAttribute("metadata", JSON.stringify(options.metadata));
+  applyOptions(element, options);
   if (options.identity) element.identify(options.identity);
-  if (options.launcher === false) element.setAttribute("launcher", "false");
-  else if (typeof options.launcher === "string")
-    element.setAttribute("launcher", options.launcher);
-  const bottom = lengthOf(options.offset?.bottom);
-  const side = lengthOf(options.offset?.side);
-  if (bottom) element.setAttribute("offset-bottom", bottom);
-  if (side) element.setAttribute("offset-side", side);
   (options.target ?? document.body).append(element);
   const handle: WidgetHandle = {
     element,

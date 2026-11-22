@@ -11,6 +11,8 @@ and "My requests" working. Reference for every option and event: the [README](..
 6. [Events](#6-events)
 7. [Local development origins](#7-local-development-origins)
 8. [Troubleshooting](#8-troubleshooting)
+9. [Inheriting the host app's theme](#9-inheriting-the-host-apps-theme)
+10. [The launcher: look, position and visibility](#10-the-launcher-look-position-and-visibility)
 
 ## 1. Get a project and a widget key
 
@@ -197,21 +199,22 @@ Content-Security-Policy:
 
 Script-tag attributes and `init` / `mount` options (all optional except the key):
 
-| Attribute / option                         | Effect                                                |
-| ------------------------------------------ | ----------------------------------------------------- |
-| `data-project-key` / `projectKey`          | the public key (required)                             |
-| `data-api-base` / `apiBase`                | the pulsarix origin; required on the npm route        |
-| `data-locale` / `locale`                   | `en` (default) or `fr`                                |
-| `data-theme` / `theme`                     | `light`, `dark` or `auto` (default)                   |
-| `data-position` / `position`               | `bottom-right` (default) or `bottom-left`             |
-| `data-accent-color` / `accentColor`        | a hex seed for the theme                              |
-| `data-launcher="false"` / `launcher`       | no floating button; open with `PulsarixWidget.open()` |
-| `data-attachments="false"`                 | no screenshot and no file controls                    |
-| `data-mask-text="true"`                    | "Mask the text on the page" starts on                 |
-| `data-privacy-url` / `privacyUrl`          | an http(s) link to your privacy page                  |
-| `data-prefill-email`, `data-prefill-title` | starting values of the form                           |
-| `data-identity` / `identity`               | the signed token (section 3)                          |
-| `data-metadata` / `metadata`               | a JSON object of strings stored with each report      |
+| Attribute / option                                  | Effect                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| `data-project-key` / `projectKey`                   | the public key (required)                                          |
+| `data-api-base` / `apiBase`                         | the pulsarix origin; required on the npm route                     |
+| `data-locale` / `locale`                            | `en` (default) or `fr`                                             |
+| `data-theme` / `theme`                              | `light`, `dark` or `auto` (default)                                |
+| `data-position` / `position`                        | `bottom-right` (default) or `bottom-left`                          |
+| `data-accent-color` / `accentColor`                 | a hex seed for the theme                                           |
+| `data-launcher` / `launcher`                        | `auto` (default), `pill`, `icon`, or `false` for none (section 10) |
+| `data-offset-bottom`, `data-offset-side` / `offset` | launcher distance from the bottom and its side (section 10)        |
+| `data-attachments="false"`                          | no screenshot and no file controls                                 |
+| `data-mask-text="true"`                             | "Mask the text on the page" starts on                              |
+| `data-privacy-url` / `privacyUrl`                   | an http(s) link to your privacy page                               |
+| `data-prefill-email`, `data-prefill-title`          | starting values of the form                                        |
+| `data-identity` / `identity`                        | the signed token (section 3)                                       |
+| `data-metadata` / `metadata`                        | a JSON object of strings stored with each report                   |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
 values of 512, 2 KB in all; the rest is dropped.
@@ -386,9 +389,9 @@ mount({ projectKey: "pk_live_xxx", offset: { bottom: 88, side: "1.5rem" } });
 ```
 
 A number is pixels; a string is any CSS length (`"2rem"`, `"calc(var(--bar-height) + 8px)"`,
-`"env(...)"`). Anything that is not a length is ignored. The option sets two custom properties on the
-`<pulsarix-widget>` element, which a host can also set in its own CSS (for example from a media query,
-or following the height of its bar):
+`"env(...)"`). Negative values and anything that is not a length are ignored. The option sets two custom
+properties on the `<pulsarix-widget>` element, which a host can also set in its own stylesheet (for example
+from a media query, or following the height of its bar); the widget only ever removes a property it set itself:
 
 ```css
 pulsarix-widget {
