@@ -29,8 +29,6 @@ export interface ReportFlowProps {
   onClose: () => void;
   /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
   onDone?: (done: boolean) => void;
-  /** A report is on its way (the fill-time wait, the request and the uploads). */
-  onSubmitting?: (submitting: boolean) => void;
   /** Told when the screenshot editor opens or closes (the dialog widens its pane). */
   onEditing?: (editing: boolean) => void;
   /** Overridable for specs; the API's own minimum otherwise. */

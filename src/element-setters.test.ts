@@ -155,6 +155,7 @@ describe("run-time setters", () => {
   test("setLocale re-renders the strings and keeps the dialog and the draft", async () => {
     const h = await openWithDraft({ projectKey: "pk_live_abc" });
     expect(shadowOf(h).textContent).toContain("Report a problem");
+    const form = field<HTMLFormElement>(h, "form");
     h.setLocale("fr");
     await waitFor(() =>
       expect(shadowOf(h).textContent).toContain("Signaler un problème"),
@@ -163,6 +164,8 @@ describe("run-time setters", () => {
       shadowOf(h).querySelector(".pulsarix-root")?.getAttribute("lang"),
     ).toBe("fr");
     expect(h.element.isOpen).toBe(true);
+    // Not remounted: the same form node, with the typed title still in it.
+    expect(form.isConnected).toBe(true);
     expect(typed(h)).toEqual(DRAFT);
     h.setLocale("en");
     await waitFor(() =>
@@ -245,7 +248,7 @@ describe("run-time setters", () => {
     expect(pressed(chip(fr.impact.annoying))).toBe("true");
   });
 
-  test("setLocale on an idle form drops the files already attached", async () => {
+  test("setLocale keeps the files already attached and the form mounted", async () => {
     withAttachments = true;
     const h = await openWithDraft({ projectKey: "pk_live_abc" });
     const user = userEvent.setup({ applyAccept: false });
@@ -259,9 +262,7 @@ describe("run-time setters", () => {
     await waitFor(() =>
       expect(shadowOf(h).textContent).toContain("Signaler un problème"),
     );
-    await waitFor(() =>
-      expect(shadowOf(h).textContent).not.toContain("log.txt"),
-    );
+    expect(shadowOf(h).textContent).toContain("log.txt");
     expect(typed(h)).toEqual(DRAFT);
   });
 

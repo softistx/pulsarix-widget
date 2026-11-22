@@ -30,7 +30,6 @@ export function ReportFlow({
   onError,
   onClose,
   onDone,
-  onSubmitting,
   onEditing,
   minFillMs = MIN_FILL_MS,
   maskText = false,
@@ -94,11 +93,6 @@ export function ReportFlow({
     if (sent) done.current?.focus();
     onDone?.(!!sent);
   }, [sent, onDone]);
-  const submitting = formState.isSubmitting;
-  useEffect(() => {
-    onSubmitting?.(submitting);
-  }, [submitting, onSubmitting]);
-  useEffect(() => () => onSubmitting?.(false), [onSubmitting]);
   // Closing unmounts the flow: the next opening starts split again.
   useEffect(() => () => onDone?.(false), [onDone]);
 
