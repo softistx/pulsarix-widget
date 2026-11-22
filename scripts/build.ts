@@ -9,7 +9,8 @@
  *   2. Bun bundles the custom element to a hashed ESM file, dist/widget.<hash>.js, with its lazy
  *      chunks (dist/<name>.<hash>.js, listed in the manifest); dist/index.js is an unsplit copy for npm.
  *   3. tsc emits the declarations of the npm entry to dist/types.
- *   4. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
+ *   4. Bun bundles the server helper (src/server.ts) to dist/server.js, apart from the widget.
+ *   5. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
  *      hashed file name baked in.
  * dist/manifest.json names both; the UI serves the hashed file with a long cache and
  * loader.js with a short one (plan section 13).
@@ -111,6 +112,19 @@ async function build() {
     define: { "process.env.NODE_ENV": '"production"' },
   });
   if (!single.success) throw new Error(single.logs.join("\n"));
+
+  // The server helper (`@softistx/pulsarix-widget/server`): its own Node-targeted bundle, with
+  // `node:crypto` left external. Nothing in the widget or the loader imports it.
+  const server = await Bun.build({
+    entrypoints: [join(root, "src/server.ts")],
+    outdir: dist,
+    target: "node",
+    format: "esm",
+    minify: false,
+    naming: "server.js",
+    external: ["node:crypto"],
+  });
+  if (!server.success) throw new Error(server.logs.join("\n"));
 
   const loader = await Bun.build({
     entrypoints: [join(root, "src/loader.ts")],

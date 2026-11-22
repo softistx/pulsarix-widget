@@ -17,6 +17,9 @@ invariants and where it departs from the UI conventions.
   `config`, `element`), listed in `files`; they must import nothing but each other (no `react`,
   no `react-hook-form`, no generated CSS). If `index.d.ts` starts to reach another file, add it to
   `files` and keep the throwaway-tsconfig check (`skipLibCheck: false`, no react installed) clean.
+- `@softistx/pulsarix-widget/server` (`src/server.ts`, built to `dist/server.js` and `dist/types/server.d.ts`, both in
+  `files`) is the one server-only entry: it imports only `node:crypto` and nothing imports it, so the
+  browser bundle and the loader stay unchanged (`tests/build.test.ts` checks it).
 - Release (npmjs, public, CI only; no local publish): from an up-to-date `develop` worktree, bump
   `version` in `package.json`, merge that PR, then tag it: `git tag v<version> && git push origin v<version>`.
   `.github/workflows/publish.yml` (tags `v*` and `**@*`, a published release, or `workflow_dispatch`; concurrency
