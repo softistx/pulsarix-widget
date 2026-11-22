@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../../app";
 import { MESSAGES } from "../../../core/messages";
@@ -93,15 +99,15 @@ afterEach(() => {
 });
 
 describe("My requests", () => {
-  test("no identity: no tabs and no list call", async () => {
+  test("no identity: no way to My requests and no list call", async () => {
     answer([]);
     render(<App {...props(null)} open />);
     await screen.findByRole("dialog");
-    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: /My requests/ })).toBeNull();
     expect(calls.some((c) => c.id === "myRequests")).toBe(false);
   });
 
-  test("an identified reporter gets tabs, the list with counts, and the launcher badge", async () => {
+  test("an identified reporter gets the way to the list with counts, and the launcher badge", async () => {
     answer([row("r1", "Pay button broken", 2)]);
     render(<App {...props("a.b")} open={false} />);
     await waitFor(() =>
@@ -112,11 +118,11 @@ describe("My requests", () => {
     expect(calls[0]?.identity).toBe("a.b");
   });
 
-  test("the My requests tab lists the rows and refetches on a filter change", async () => {
+  test("My requests lists the rows and refetches on a filter change", async () => {
     answer([row("r1", "Pay button broken", 2)]);
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByText("Pay button broken");
     expect(calls.at(-1)?.variables.filter).toBe("OPEN");
@@ -133,7 +139,7 @@ describe("My requests", () => {
     });
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await userEvent.click(
       await screen.findByRole("button", { name: /New request/ }),
@@ -145,7 +151,7 @@ describe("My requests", () => {
     answer([], { counts: { open: 0, resolved: 0, declined: 0, all: 3 } });
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByText("No open requests.");
     expect(screen.queryByText("No requests yet")).toBeNull();
@@ -165,7 +171,7 @@ describe("My requests", () => {
     }) as unknown as typeof fetch;
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     const busy = await screen.findByText("Loading your requests...");
     expect(busy.closest('[role="status"]')?.getAttribute("aria-busy")).toBe(
@@ -183,7 +189,7 @@ describe("My requests", () => {
     answer([], {}, 401);
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByText(/Your session expired/);
     expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
@@ -193,7 +199,7 @@ describe("My requests", () => {
     answer([], {}, 401);
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByText(/Your session expired/);
     expect(errors).toEqual([{ code: "intake.errors.identity-invalid" }]);
@@ -203,7 +209,7 @@ describe("My requests", () => {
     answer([row("r1", "Billing question", 3)]);
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     const button = await screen.findByRole("button", {
       name: /Open request: Billing question/,
@@ -212,30 +218,33 @@ describe("My requests", () => {
     expect(button.getAttribute("aria-label")).toMatch(/3/);
   });
 
-  test("each tab controls a real tabpanel that it labels", async () => {
+  test("My requests is its own view, with its own title and no tabs", async () => {
     answer([]);
     render(<App {...props("a.b")} open />);
-    const tabs = await screen.findAllByRole("tab");
-    for (const tab of tabs) {
-      const panel = document.getElementById(
-        tab.getAttribute("aria-controls") ?? "",
-      );
-      expect(panel?.getAttribute("role")).toBe("tabpanel");
-      expect(panel?.getAttribute("aria-labelledby")).toBe(tab.id);
-    }
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /My requests/ }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("heading", { name: "My requests" }),
+    ).toBeTruthy();
+    expect(
+      within(dialog).queryByRole("heading", { name: "Report a problem" }),
+    ).toBeNull();
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
   });
 
-  test("the unread count in the tab is announced once", async () => {
+  test("the unread count on the way to the list is announced once", async () => {
     answer([row("r1", "Billing question", 2)]);
-    render(<App {...props("a.b")} open />);
-    await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
-    );
-    await screen.findByRole("button", { name: /Billing question/ });
-    const tab = screen.getByRole("tab", { name: /My requests/ });
-    await waitFor(() => expect(tab.textContent).toMatch(/2/));
-    expect(tab.querySelector('[aria-hidden="true"]')?.textContent).toBe("2");
-    expect(tab.textContent?.match(/2/g)).toHaveLength(2);
+    const view = render(<App {...props("a.b")} open={false} />);
+    await screen.findByRole("button", { name: /2 unread replies/ });
+    // The count is read while the dialog is closed, then carried into it.
+    view.rerender(<App {...props("a.b")} open />);
+    const button = await screen.findByRole("button", { name: /My requests/ });
+    await waitFor(() => expect(button.textContent).toMatch(/2/));
+    expect(button.querySelector('[aria-hidden="true"]')?.textContent).toBe("2");
+    expect(button.textContent?.match(/2/g)).toHaveLength(2);
   });
 
   test("Show more reads the next page with its cursor and appends it", async () => {
@@ -270,7 +279,7 @@ describe("My requests", () => {
     }) as unknown as typeof fetch;
     render(<App {...props("a.b")} open />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByRole("button", { name: /First page/ });
     await userEvent.click(screen.getByRole("button", { name: "Show more" }));

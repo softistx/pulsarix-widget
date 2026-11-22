@@ -423,7 +423,7 @@ try {
           upload.x + upload.width <= box.x + box.width),
       `identified, ${width}px: the screenshot pane's button is inside the dialog`,
     );
-    await page.getByRole("tab", { name: /My requests/ }).click();
+    await page.getByRole("button", { name: /My requests/ }).click();
     await page.getByText("The pay button does nothing").waitFor();
     check(
       (await page.getByRole("button", { name: "Upload an image" }).count()) ===

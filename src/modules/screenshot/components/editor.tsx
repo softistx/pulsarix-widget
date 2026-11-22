@@ -33,10 +33,7 @@ export default function Editor({
     return release;
   }, []);
   return (
-    <div
-      ref={mark}
-      className="h-full min-h-0 max-md:-mx-8 max-md:w-[calc(100%+64px)] md:w-full"
-    >
+    <div ref={mark} className="min-h-0 w-full">
       {styled ? (
         <ImageMarkupEditor
           src={source}
@@ -48,7 +45,7 @@ export default function Editor({
           saveLabel={saveLabel}
           onSave={({ file }) => onSave(file)}
           onCancel={onCancel}
-          className="h-[780px] w-full md:h-full md:min-h-0"
+          className="h-[min(640px,70dvh)] w-full"
         />
       ) : null}
     </div>

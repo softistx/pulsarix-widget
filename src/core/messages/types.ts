@@ -7,27 +7,17 @@ export interface Messages {
   /** The intro once the project's name is known. */
   introFor: (project: string) => string;
   close: string;
-  sections: {
-    problem: string;
-    details: string;
-    files: string;
-    contact: string;
-  };
-  /** The two tabs of an identified reporter. */
-  tabs: { label: string; newRequest: string; myRequests: string };
-  aside: { title: string; empty: string };
+  /** The title of the identified reporter's own view. */
+  myRequests: string;
+  /** The report dialog's Cancel. */
+  cancel: string;
   screenshot: {
     add: string;
     upload: string;
-    retake: string;
-    remove: string;
     maskText: string;
     maskTextHint: string;
     capturing: string;
     editorLabel: string;
-    previewAlt: string;
-    saved: string;
-    hint: string;
     save: string;
     loadingEditor: string;
     errors: {
@@ -35,16 +25,12 @@ export interface Messages {
       unavailable: string;
       maskUnavailable: string;
       failed: string;
-      type: string;
-      tooLarge: string;
-      unreadable: string;
     };
   };
   files: {
+    label: string;
     hint: string;
     dropTitle: string;
-    zoneTitle: string;
-    browse: string;
     screenshot: string;
     count: string;
     total: string;

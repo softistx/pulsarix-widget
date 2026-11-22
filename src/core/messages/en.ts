@@ -10,34 +10,16 @@ export const EN: Messages = {
   introFor: (project) =>
     `Tell us what went wrong in ${project} and we will look into it.`,
   close: "Close",
-  sections: {
-    problem: "The problem",
-    details: "Details",
-    files: "Files",
-    contact: "Follow-up",
-  },
-  tabs: {
-    label: "Report or follow a request",
-    newRequest: "New request",
-    myRequests: "My requests",
-  },
-  aside: {
-    title: "Screenshot",
-    empty: "A screenshot of the page will show here.",
-  },
+  myRequests: "My requests",
+  cancel: "Cancel",
   screenshot: {
     add: "Add a screenshot",
     upload: "Upload an image",
-    retake: "Retake",
-    remove: "Remove",
     maskText: "Mask the text on the page",
     maskTextHint:
       "Covers every character of the page with black boxes before the picture is taken.",
     capturing: "Taking the screenshot...",
     editorLabel: "Annotate the screenshot",
-    previewAlt: "Your screenshot",
-    saved: "Your screenshot is attached.",
-    hint: "Optional. You can draw on it and hide anything private before it is sent.",
     save: "Attach",
     loadingEditor: "Opening the editor...",
     errors: {
@@ -48,16 +30,12 @@ export const EN: Messages = {
         "Masking needs this tab to be the one shared. Share this tab, or turn masking off.",
       failed:
         "The screenshot could not be taken. Try again, or upload an image.",
-      type: "Choose a PNG, JPEG or WebP image.",
-      tooLarge: "This image is too large (25 megapixels at most).",
-      unreadable: "This image could not be read.",
     },
   },
   files: {
-    hint: "Optional. Up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
+    label: "Attachments (optional)",
+    hint: "A screenshot, plus up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
     dropTitle: "Drop files to attach",
-    zoneTitle: "Drag files here",
-    browse: "Browse",
     screenshot: "Screenshot",
     count: "A report takes 3 files at most.",
     total: "This file would take the report past 12 MB.",
@@ -90,7 +68,7 @@ export const EN: Messages = {
   privacy:
     "Your e-mail, if given, the address of this page and your browser are sent with the report.",
   privacyLink: "Privacy policy",
-  submit: "Send report",
+  submit: "Send",
   submitting: "Sending...",
   errors: {
     titleRequired: "Enter a title.",

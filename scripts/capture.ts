@@ -43,7 +43,7 @@ try {
       await page.getByRole("dialog").waitFor();
       await page.waitForTimeout(500);
       await shot("form");
-      await page.getByRole("button", { name: "Send report" }).click();
+      await page.getByRole("button", { name: "Send" }).click();
       await page.getByText("Enter a title.").waitFor();
       await page.waitForTimeout(300);
       await shot("errors");
@@ -51,14 +51,14 @@ try {
       await page
         .getByRole("textbox", { name: /What happened/ })
         .fill("The pay button does nothing on the cart page.");
-      await page.getByRole("button", { name: "Send report" }).click();
+      await page.getByRole("button", { name: "Send" }).click();
       await page.getByText("Your report was not sent").waitFor();
       await page.waitForTimeout(300);
       await shot("failure");
       await page
         .getByRole("textbox", { name: /Title/ })
         .fill("Checkout limited");
-      await page.getByRole("button", { name: "Send report" }).click();
+      await page.getByRole("button", { name: "Send" }).click();
       await page.getByText("Try again in 10 minutes").waitFor();
       await page.waitForTimeout(300);
       await shot("ratelimit");
@@ -69,7 +69,7 @@ try {
       await page
         .getByRole("textbox", { name: /e-mail/i })
         .fill("ada@example.com");
-      await page.getByRole("button", { name: "Send report" }).click();
+      await page.getByRole("button", { name: "Send" }).click();
       await page.getByText("We e-mailed you a link").waitFor();
       await page.waitForTimeout(300);
       await shot("done");

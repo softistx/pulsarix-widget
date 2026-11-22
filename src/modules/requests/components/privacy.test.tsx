@@ -100,7 +100,7 @@ const props = {
 async function openList(extra: Partial<Parameters<typeof App>[0]> = {}) {
   render(<App {...props} {...extra} open />);
   await userEvent.click(
-    await screen.findByRole("tab", { name: /My requests/ }),
+    await screen.findByRole("button", { name: /My requests/ }),
   );
   await screen.findByText("Pay button broken");
 }

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { IntakeError } from "../../../core/api/api";
-import { AttachmentsSection } from "../../files/components/section";
 import { type Entry, useAttachments } from "../../files/hooks/use-attachments";
 import { MAX_TOTAL_BYTES, screenshotName } from "../../files/model/rules";
+import { EditorHost } from "../../screenshot/components/editor-host";
+import { usePane } from "../../screenshot/hooks/use-pane";
 import { submitReport } from "../api";
 import { useProject } from "../hooks/use-project";
 import { useReportForm } from "../hooks/use-report-form";
 import { buildInput, collectUploads, uploadAll } from "../model/send";
 import { MIN_FILL_MS, type ReportFlowProps } from "../model/types";
+import { AttachmentsControl } from "./attachments";
 import { Confirmation, type UploadOutcome } from "./confirmation";
 import { Form } from "./form";
 
@@ -29,12 +31,10 @@ export function ReportFlow({
   onSubmitted,
   onError,
   onClose,
-  onDone,
   onEditing,
   minFillMs = MIN_FILL_MS,
   maskText = false,
   attachments = true,
-  onControls,
   retryDelayMs,
   prefill,
   metadata,
@@ -64,7 +64,6 @@ export function ReportFlow({
     project,
     attachments,
     onProject,
-    onControls,
   });
   // The flattened export of the annotated screenshot (W2c sends it); nothing else of the capture lives on.
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -73,8 +72,16 @@ export function ReportFlow({
     uploads: UploadOutcome[];
   } | null>(null);
   const files = useAttachments(messages.files);
-  // The screenshot's own row, shown only while the files go up.
-  const [shotRow, setShotRow] = useState<Entry | null>(null);
+  // How far the screenshot's upload is, 0 to 100, once the files go up.
+  const [shotProgress, setShotProgress] = useState<number | undefined>();
+  const pane = usePane(messages, maskText, onEditing);
+  // The kept screenshot leads the list, then the chosen files: one list, each removable.
+  const items: Entry[] = [
+    ...(screenshot
+      ? [{ id: "screenshot", file: screenshot, progress: shotProgress }]
+      : []),
+    ...files.entries,
+  ];
   const readyBytes = files.ready.reduce((sum, e) => sum + e.file.size, 0);
   const overTotal =
     controls && (screenshot?.size ?? 0) + readyBytes > MAX_TOTAL_BYTES;
@@ -91,10 +98,7 @@ export function ReportFlow({
 
   useEffect(() => {
     if (sent) done.current?.focus();
-    onDone?.(!!sent);
-  }, [sent, onDone]);
-  // Closing unmounts the flow: the next opening starts split again.
-  useEffect(() => () => onDone?.(false), [onDone]);
+  }, [sent]);
 
   const submit = handleSubmit(async (values) => {
     setFailure(null);
@@ -132,11 +136,10 @@ export function ReportFlow({
       });
       const progress = (id: string, percent: number) =>
         id === "screenshot"
-          ? setShotRow((row) => (row ? { ...row, progress: percent } : row))
+          ? setShotProgress(percent)
           : files.patch(id, { progress: percent });
       const first = toSend[0];
-      if (first?.id === "screenshot")
-        setShotRow({ id: "screenshot", file: first.file, progress: 0 });
+      if (first?.id === "screenshot") setShotProgress(0);
       for (const item of toSend)
         if (item.id !== "screenshot") progress(item.id, 0);
       const results = await uploadAll({
@@ -202,27 +205,48 @@ export function ReportFlow({
       blocked={
         failure?.kind === "rejected" || failure?.kind === "config" || overTotal
       }
-      controls={controls}
-      filesSection={
+      anonymous={!identity}
+      attachments={
         controls ? (
-          <AttachmentsSection
+          <AttachmentsControl
             messages={messages}
             locale={locale}
-            entries={files.entries}
-            screenshot={shotRow}
+            region={pane.region}
+            items={items}
             locked={formState.isSubmitting}
             overTotal={overTotal}
+            canCapture={pane.canCapture}
+            busy={pane.busy}
+            notice={pane.notice}
+            maskText={pane.maskText}
+            onMaskText={pane.setMaskText}
+            onCapture={() => void pane.capture()}
             onDrop={(accepted, refused) =>
               files.add(accepted, refused, screenshot?.size ?? 0)
             }
-            onRemove={files.remove}
+            onRemove={(id) =>
+              id === "screenshot" ? setScreenshot(null) : files.remove(id)
+            }
           />
         ) : null
       }
-      screenshot={screenshot}
-      onScreenshot={setScreenshot}
-      maskText={maskText}
-      onEditing={onEditing}
+      editor={
+        pane.source ? (
+          <EditorHost
+            messages={messages}
+            source={pane.source}
+            onSave={(file) => {
+              pane.setSource(null);
+              setScreenshot(file);
+              pane.focusRegion();
+            }}
+            onCancel={() => {
+              pane.setSource(null);
+              pane.focusRegion();
+            }}
+          />
+        ) : null
+      }
       privacyUrl={privacyUrl}
       headerExtra={headerExtra}
     />

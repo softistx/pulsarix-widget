@@ -164,9 +164,9 @@ bundle has loaded is queued. An unsupported theme or locale is ignored.
 - `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
   the metadata it was sent with.
 - `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` follow
-  when the form is next idle: on an idle form the typed fields, the type, the impact and the tab are kept
+  when the form is next idle: on an idle form the typed fields, the type and the impact are kept
   and files or a screenshot already attached are dropped; while a report is being sent, on the confirmation
-  or on the "My requests" tab nothing is rebuilt (and nothing is lost), and those labels switch once the
+  or in the "My requests" view nothing is rebuilt (and nothing is lost), and those labels switch once the
   reporter is back on the form or the dialog closes.
 - A repeated call before the bundle loads replaces the earlier one: only the last of each setter runs.
 - With `inheritTheme`, an explicit `setTheme` wins over the host's mode until the `theme` attribute is
@@ -220,11 +220,11 @@ never in a URL. A malformed token is ignored. A token given with `identify()` or
 is kept in the widget's memory and is not written to the page; a token in `data-identity` is an
 attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
 
-- Without a token the dialog is today's form, with no tabs.
-- With one, the dialog has two tabs, New request and My requests. My requests is one list with
+- Without a token the dialog is the one report form, and the e-mail field is asked.
+- With one, the report form has a "My requests" button (no e-mail field). My requests is its own view, with its own title, and one list with
   filter chips and their counts (Open by default, Resolved, Declined, All); requests with
   unread replies come first, and the list is read again each time the dialog opens.
-- The launcher and the My requests tab show the unread count.
+- The launcher and the My requests button show the unread count.
 - Opening a request shows its thread: the original message, then the replies of the team (plain
   text, with their file names). The reporter can reply, with up to three files sent the same way as
   a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.
@@ -338,14 +338,14 @@ With the npm route, call `widget.identify(token)` on the handle `mount()` return
 ## Screenshots
 
 A report can carry one optional screenshot, never taken without a click (and a per-report
-choice). The right pane of the dialog offers:
+choice). The one "Attachments" control of the form offers:
 
 - **Add a screenshot**: the browser's screen capture (`getDisplayMedia`). The widget hides itself
   (`visibility`, not unmount, so the form keeps its text) while the frame is grabbed, then shows
   itself again. Not offered on a phone, without the API, or under a Permissions-Policy that blocks
   `display-capture`.
 - **Upload an image**: always offered, and the only choice where capture is unavailable or was
-  refused. PNG, JPEG or WebP, 25 megapixels at most.
+  refused. PNG, JPEG, WebP or PDF; an uploaded file is a plain attachment, it is not annotated.
 - **Mask the text on the page** (off by default; `data-mask-text="true"`, or `maskText: true` in `init` / `mount`, turns it on when the dialog opens): covers the
   page's text with opaque boxes before the picture is taken. It needs the current tab to be shared;
   otherwise the widget says it cannot and nothing is captured. Mark anything that must stay visible
@@ -355,7 +355,7 @@ The picture opens in an editor (a separate chunk, fetched when first needed) wit
 an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
 picture before it is kept. Only the flattened
 export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
-revoked and no media track stays live. Retake and Remove are offered. A report is complete without
+revoked and no media track stays live. The screenshot and the files share one list of removable thumbnails. A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
 `Permissions-Policy` without `display-capture` turns the capture button off.
 
@@ -377,7 +377,7 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 ## Attached files
 
 Besides the screenshot, a reporter can attach up to 3 files (PNG, JPEG, WebP or PDF, 5 MB each,
-12 MB for the report, screenshot included) by dropping them on the zone or with Browse. The
+12 MB for the report, screenshot included) by dropping them on the dialog or with Upload an image. The
 checks mirror the API's, so a refused file is shown with its reason and never sent; the list shows
 each file's type icon, name, size, a thumbnail for images, a Remove button, and its progress while
 the report goes out.

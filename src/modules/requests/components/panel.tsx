@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@softistx/material/embed";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { RequestSummary } from "../api";
@@ -21,8 +21,6 @@ export interface RequestsPanelProps {
   apiBase: string | null;
   projectKey: string | null;
   identity: string;
-  /** Rendered in the dialog's header, under the description (the tabs). */
-  headerExtra?: ReactNode;
   /**
    * The unread count over every request, as the API last said it (the launcher's badge). It is
    * called from the list's read, and any identity is fine: the panel keeps it in a ref.
@@ -50,7 +48,6 @@ export default function RequestsPanel({
   apiBase,
   projectKey,
   identity,
-  headerExtra,
   onUnread,
   onReply,
   onError,
@@ -92,11 +89,10 @@ export default function RequestsPanel({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{messages.title}</DialogTitle>
+        <DialogTitle>{messages.myRequests}</DialogTitle>
         <DialogDescription>{text.description}</DialogDescription>
-        {headerExtra}
       </DialogHeader>
-      <DialogBody role="region" aria-label={messages.tabs.myRequests}>
+      <DialogBody role="region" aria-label={messages.myRequests}>
         <RequestsListBody
           messages={messages}
           locale={locale}

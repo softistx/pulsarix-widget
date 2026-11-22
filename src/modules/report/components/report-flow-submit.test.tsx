@@ -21,23 +21,40 @@ import { MESSAGES } from "../../../core/messages";
 
 setDefaultTimeout(30_000);
 
-// The pane's editor needs a canvas: a stub hands the flow a screenshot file by a click.
-// `mock.module` is process-wide and survives the file: keep the real pane to put it back.
-const realPane = { ...(await import("../../screenshot/components/pane")) };
+// The editor needs a canvas and happy-dom cannot capture the screen: a stub capture and a stub
+// editor hand the flow a screenshot file by a click on "Add a screenshot", then "stub-shot".
+// `mock.module` is process-wide and survives the file: keep the real modules to put them back.
+const realCapture = { ...(await import("../../screenshot/model/capture")) };
+const realEditor = {
+  ...(await import("../../screenshot/components/editor-host")),
+};
 let shot = new File([new Uint8Array(100)], "x.png", { type: "image/png" });
-function StubPane({ onImage }: { onImage: (file: File) => void }) {
+function StubEditor({ onSave }: { onSave: (file: File) => void }) {
   return (
-    <button type="button" onClick={() => onImage(shot)}>
+    <button type="button" onClick={() => onSave(shot)}>
       stub-shot
     </button>
   );
 }
-mock.module("../../screenshot/components/pane", () => ({
-  ScreenshotPane: StubPane,
+mock.module("../../screenshot/model/capture", () => ({
+  ...realCapture,
+  captureAvailable: () => true,
+  captureWithHostHidden: async () => new Blob(["x"], { type: "image/png" }),
 }));
+mock.module("../../screenshot/components/editor-host", () => ({
+  ...realEditor,
+  EditorHost: StubEditor,
+}));
+const shoot = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(
+    await screen.findByRole("button", { name: "Add a screenshot" }),
+  );
+  await user.click(await screen.findByText("stub-shot"));
+};
 const { App } = await import("../../../app");
 afterAll(() => {
-  mock.module("../../screenshot/components/pane", () => realPane);
+  mock.module("../../screenshot/model/capture", () => realCapture);
+  mock.module("../../screenshot/components/editor-host", () => realEditor);
 });
 
 interface Declared {
@@ -192,7 +209,9 @@ describe("a widgetConfig without `attachments` (an older API)", () => {
     configAttachments = undefined;
     const { user } = setup();
     await waitFor(() => expect(fileInput()).toBeNull());
-    expect(screen.queryByText("stub-shot")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Add a screenshot" }),
+    ).toBeNull();
     await send(user);
     await screen.findByText(MESSAGES.en.done.noTracking);
     expect(declared).toEqual([]);
@@ -207,7 +226,9 @@ describe("a failed widgetConfig read", () => {
     expect(fileInput()).toBeNull();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(fileInput()).toBeNull();
-    expect(screen.queryByText("stub-shot")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Add a screenshot" }),
+    ).toBeNull();
     await send(user);
     await screen.findByText(MESSAGES.en.done.noTracking);
     expect(declared).toEqual([]);
@@ -217,7 +238,7 @@ describe("a failed widgetConfig read", () => {
 describe("the screenshot upload path", () => {
   test("a screenshot is declared with role screenshot and its name", async () => {
     const { user, onSubmitted } = setup();
-    await user.click(await screen.findByText("stub-shot"));
+    await shoot(user);
     await send(user);
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     expect(declared).toEqual([
@@ -248,7 +269,7 @@ describe("the screenshot upload path", () => {
       type: "image/png",
     });
     const { user, onSubmitted } = setup();
-    await user.click(await screen.findByText("stub-shot"));
+    await shoot(user);
     await send(user);
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     expect(declared).toEqual([]);
@@ -279,7 +300,7 @@ describe("the screenshot upload path", () => {
   };
   const pickScreenshot = async () => {
     const run = setup();
-    await run.user.click(await screen.findByText("stub-shot"));
+    await shoot(run.user);
     await send(run.user);
     return run;
   };
@@ -307,7 +328,7 @@ describe("the screenshot upload path", () => {
       expiresAt: "2026-11-16T12:00:00Z",
     });
     const { user, onSubmitted } = setup();
-    await screen.findByText("stub-shot");
+    await screen.findByRole("button", { name: "Upload an image" });
     await user.upload(fileInput() as HTMLInputElement, [
       new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
     ]);
@@ -325,7 +346,7 @@ describe("closing while the files go up", () => {
   test("pulsarix:submit still fires once, with the file as not uploaded", async () => {
     hold = true;
     const { user, onSubmitted } = setup();
-    await user.click(await screen.findByText("stub-shot"));
+    await shoot(user);
     await send(user);
     await waitFor(() => expect(puts).toHaveLength(1));
     cleanup(); // the dialog closes: the flow unmounts and aborts the PUT
@@ -338,13 +359,13 @@ describe("closing while the files go up", () => {
     });
   });
 
-  test("closing only the dialog (its Close button) still emits one pulsarix:submit", async () => {
+  test("closing only the dialog (its Cancel button) still emits one pulsarix:submit", async () => {
     hold = true;
     const { user, onSubmitted } = setup();
-    await user.click(await screen.findByText("stub-shot"));
+    await shoot(user);
     await send(user);
     await waitFor(() => expect(puts).toHaveLength(1));
-    await user.click(screen.getByRole("button", { name: MESSAGES.en.close }));
+    await user.click(screen.getByRole("button", { name: MESSAGES.en.cancel }));
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(onSubmitted).toHaveBeenCalledTimes(1);

@@ -200,7 +200,7 @@ async function openThread(row: Record<string, unknown> = base) {
   list = [detail];
   const view = render(<App {...props()} />);
   await userEvent.click(
-    await screen.findByRole("tab", { name: /My requests/ }),
+    await screen.findByRole("button", { name: /My requests/ }),
   );
   await userEvent.click(
     await screen.findByRole("button", { name: /Open request/ }),
@@ -376,7 +376,7 @@ describe("request thread", () => {
     }) as unknown as typeof fetch;
     render(<App {...props()} />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await userEvent.click(
       await screen.findByRole("button", { name: /Open request/ }),
@@ -451,7 +451,7 @@ describe("request thread", () => {
     list = [base];
     render(<App {...props()} />);
     await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
+      await screen.findByRole("button", { name: /My requests/ }),
     );
     await screen.findByRole("button", { name: /Open request/ });
     expect(streams).toHaveLength(0);

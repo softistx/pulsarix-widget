@@ -40,7 +40,7 @@ try {
         page.screenshot({ path: `${out}/${name}-${width}-${scheme}.png` });
       await page.getByRole("button", { name: /Report a problem/ }).click();
       await page.getByRole("dialog").waitFor();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("button", { name: /My requests/ }).click();
       await page.getByRole("radio", { name: /^All/ }).click();
 
       const open = async (title: string) => {

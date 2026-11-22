@@ -77,7 +77,7 @@ One widget per page: use the script tag or `mount()`, not both.
 ## 3. Identify your signed-in users
 
 Without an identity the widget is the anonymous report form. With one, reports are filed under the
-reporter, who also gets a "My requests" tab (threads, replies, unread counts, "Delete my data").
+reporter, who also gets a "My requests" view (threads, replies, unread counts, "Delete my data").
 
 Your server signs a short-lived token for the signed-in user with the key's identity secret; the browser
 only carries the token. The helper does the signing:
@@ -448,9 +448,9 @@ Rules:
   64 characters, values of 512, 2 KB in all). A report already sent is not changed.
 - `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` (the close
   button, the file list, ...) are read once by its i18n context, so they change when the form is next idle:
-  - On an idle form, the typed fields, the chosen type and impact and the selected tab are kept; files and a
+  - On an idle form, the typed fields, the chosen type and impact are kept; files and a
     screenshot already attached are dropped.
-  - While a report is being sent, on the confirmation screen, or on the "My requests" tab, nothing is rebuilt:
+  - While a report is being sent, on the confirmation screen, or in the "My requests" view, nothing is rebuilt:
     those built-in labels switch when the reporter returns to the form (or the dialog closes), and no
     attachment is lost.
   - `setTheme` and `setMetadata` drop nothing.

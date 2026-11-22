@@ -57,7 +57,7 @@ try {
         .waitFor({ state: "visible" });
       await page.waitForTimeout(500);
       await shoot(page, "form");
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("button", { name: /My requests/ }).click();
       await page.getByText("The pay button does nothing").waitFor();
       await page.waitForTimeout(400);
       await shoot(page, "list");
@@ -72,7 +72,7 @@ try {
       // No request yet.
       page = await visit("/identified-empty");
       await page.getByRole("button", { name: /Report a problem/ }).click();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("button", { name: /My requests/ }).click();
       await page.getByText("No requests yet").waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "empty");
@@ -81,7 +81,7 @@ try {
       // A refused token: the list says so, and offers no retry.
       page = await visit("/identified-expired");
       await page.getByRole("button", { name: /Report a problem/ }).click();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("button", { name: /My requests/ }).click();
       await page.getByText("Your identity could not be confirmed").waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "expired");

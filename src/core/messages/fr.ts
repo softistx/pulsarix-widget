@@ -10,34 +10,16 @@ export const FR: Messages = {
   introFor: (project) =>
     `Dites-nous ce qui ne va pas dans ${project}, nous allons regarder.`,
   close: "Fermer",
-  sections: {
-    problem: "Le problème",
-    details: "Détails",
-    files: "Fichiers",
-    contact: "Suivi",
-  },
-  tabs: {
-    label: "Signaler ou suivre une demande",
-    newRequest: "Nouvelle demande",
-    myRequests: "Mes demandes",
-  },
-  aside: {
-    title: "Capture d'écran",
-    empty: "Une capture d'écran de la page s'affichera ici.",
-  },
+  myRequests: "Mes demandes",
+  cancel: "Annuler",
   screenshot: {
     add: "Ajouter une capture",
     upload: "Téléverser une image",
-    retake: "Reprendre",
-    remove: "Retirer",
     maskText: "Masquer le texte de la page",
     maskTextHint:
       "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
     capturing: "Capture en cours...",
     editorLabel: "Annoter la capture",
-    previewAlt: "Votre capture d'écran",
-    saved: "Votre capture est jointe.",
-    hint: "Facultatif. Vous pouvez dessiner dessus et masquer ce qui est privé avant l'envoi.",
     save: "Joindre",
     loadingEditor: "Ouverture de l'éditeur...",
     errors: {
@@ -48,16 +30,12 @@ export const FR: Messages = {
       maskUnavailable:
         "Le masquage exige que cet onglet soit celui partagé. Partagez cet onglet, ou désactivez le masquage.",
       failed: "La capture a échoué. Réessayez, ou téléversez une image.",
-      type: "Choisissez une image PNG, JPEG ou WebP.",
-      tooLarge: "Cette image est trop grande (25 mégapixels au plus).",
-      unreadable: "Cette image n'a pas pu être lue.",
     },
   },
   files: {
-    hint: "Facultatif. 3 fichiers au plus : PNG, JPEG, WebP ou PDF, 5 Mo chacun.",
+    label: "Pièces jointes (facultatif)",
+    hint: "Une capture, plus 3 fichiers au plus : PNG, JPEG, WebP ou PDF, 5 Mo chacun.",
     dropTitle: "Déposez les fichiers à joindre",
-    zoneTitle: "Glissez des fichiers ici",
-    browse: "Parcourir",
     screenshot: "Capture d'écran",
     count: "Un signalement accepte 3 fichiers au plus.",
     total: "Ce fichier ferait dépasser 12 Mo au signalement.",

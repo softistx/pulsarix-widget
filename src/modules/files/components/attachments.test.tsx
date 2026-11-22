@@ -394,8 +394,10 @@ describe("the controls can be off", () => {
     const { user } = setup({ attachments: false });
     await screen.findByRole("dialog");
     expect(input()).toBeNull();
-    expect(screen.queryByText(en.sections.files)).toBeNull();
-    expect(screen.queryByText(en.aside.title)).toBeNull();
+    expect(screen.queryByText(en.files.label)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: en.screenshot.upload }),
+    ).toBeNull();
     await fillAndSend(user);
     await screen.findByText(en.done.noTracking);
     expect(declared).toEqual([]);
@@ -404,10 +406,10 @@ describe("the controls can be off", () => {
   test("the key's own switch (widgetConfig.attachments=false) hides them too", async () => {
     configAttachments = false;
     setup();
-    await waitFor(() =>
-      expect(screen.queryByText(en.sections.files)).toBeNull(),
-    );
-    expect(screen.queryByText(en.aside.title)).toBeNull();
+    await waitFor(() => expect(screen.queryByText(en.files.label)).toBeNull());
+    expect(
+      screen.queryByRole("button", { name: en.screenshot.upload }),
+    ).toBeNull();
   });
 });
 
@@ -417,9 +419,10 @@ describe("French", () => {
     answer = () => ({ status: 413, code: "intake.errors.file-too-large" });
     const { user } = setup({ locale: "fr" });
     await screen.findByRole("dialog");
-    expect(screen.getByText(fr.sections.files)).toBeTruthy();
-    expect(screen.getByText(fr.files.zoneTitle)).toBeTruthy();
-    expect(screen.getByRole("button", { name: fr.files.browse })).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(fr.files.label)).toBeTruthy());
+    expect(
+      screen.getByRole("button", { name: fr.screenshot.upload }),
+    ).toBeTruthy();
     await user.upload(input(), [
       file("a.png", "image/png"),
       file("x.gif", "image/gif"),

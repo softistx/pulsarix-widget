@@ -7,9 +7,9 @@ import {
 } from "@softistx/material/embed";
 import type { ReactNode } from "react";
 import type { Messages } from "../../../core/messages";
-import { FORM_ID } from "./form-sections";
+import { FORM_ID } from "./fields";
 
-/** The project name, the title, the intro and the identified reporter's tabs. */
+/** The project name, the title and the intro. */
 export function FormHeader({
   messages,
   projectName,
@@ -52,7 +52,7 @@ export function FormFooter({
   return (
     <DialogFooter>
       <Button type="button" variant="tonal" onClick={onClose}>
-        {messages.close}
+        {messages.cancel}
       </Button>
       <Button
         type="submit"

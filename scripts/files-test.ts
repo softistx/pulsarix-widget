@@ -63,16 +63,14 @@ export async function openWidget(
 
 /** The files input of the "Files" section (the screenshot pane has its own). */
 export const filesInput = (page: Page) =>
-  page.locator(
-    'pulsarix-widget [data-testid="attachments"] input[type="file"]',
-  );
+  page.locator('pulsarix-widget [data-testid="attachments-input"]');
 
 export async function fillAndSend(page: Page) {
   await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
   await page
     .getByRole("textbox", { name: /What happened/ })
     .fill("Pay does nothing");
-  await page.getByRole("button", { name: "Send report" }).click();
+  await page.getByRole("button", { name: "Send" }).click();
 }
 
 const puts = async (base: string) =>

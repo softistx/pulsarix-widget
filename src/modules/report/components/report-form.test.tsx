@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../../app";
 import type { Locale } from "../../../config";
@@ -472,22 +478,26 @@ describe("the split dialog", () => {
     expect(screen.queryByTestId("project-name")).toBeNull();
   });
 
-  test("groups the fields in titled sections and keeps a screenshot pane beside the form", async () => {
+  test("is one unbroken form with the attachments inside it, and no split layout", async () => {
     setup();
     const dialog = await screen.findByRole("dialog");
-    // The pane shows once the key's config says attachments are on.
-    await waitFor(() =>
-      expect(dialog.getAttribute("data-layout")).toBe("split"),
-    );
+    await screen.findByRole("group", { name: m.files.label });
+    expect(dialog.getAttribute("data-layout")).not.toBe("split");
+    // One form holds the fields and the attachments; no titled group, no side pane.
+    const form = dialog.querySelector("form") as HTMLFormElement;
+    expect(form.querySelectorAll("section, hr, h3")).toHaveLength(0);
     expect(
-      screen.getByRole("region", { name: m.sections.problem }),
+      within(form).getByRole("group", { name: m.files.label }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole("region", { name: m.sections.contact }),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("complementary", { name: m.aside.title }),
-    ).toBeTruthy();
+    expect(screen.queryByRole("complementary")).toBeNull();
+    expect(screen.queryByRole("tablist")).toBeNull();
+  });
+
+  test("the buttons are Cancel and Send", async () => {
+    setup();
+    await screen.findByRole("dialog");
+    expect(screen.getByRole("button", { name: m.cancel })).toBeTruthy();
+    expect(screen.getByRole("button", { name: m.submit })).toBeTruthy();
   });
 
   test("sends no widgetConfig read without a key", async () => {
