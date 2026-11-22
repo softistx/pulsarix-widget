@@ -20,6 +20,7 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     launcherMode: "auto",
     offset: { bottom: null, side: null },
     accentColor: null,
+    inheritTheme: true,
     apiBase: null,
     maskText: false,
     attachments: true,
@@ -28,6 +29,12 @@ test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
     metadata: [],
     identity: null,
   });
+});
+
+test("inherit-theme is on unless it says false", () => {
+  expect(read({ "inherit-theme": "false" }).inheritTheme).toBe(false);
+  expect(read({ "inherit-theme": "true" }).inheritTheme).toBe(true);
+  expect(read({ "inherit-theme": "nope" }).inheritTheme).toBe(true);
 });
 
 test("valid attributes are taken", () => {

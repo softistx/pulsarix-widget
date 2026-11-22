@@ -22,6 +22,11 @@ export interface WidgetConfig {
   offset: { bottom: string | null; side: string | null };
   /** A valid hex seed from the host, or null: the built-in lavande theme then applies. */
   accentColor: string | null;
+  /**
+   * The widget wears the host's `@softistx/material` theme when the host has one (`true`, the
+   * default); `data-inherit-theme="false"` keeps the widget's own look.
+   */
+  inheritTheme: boolean;
   /** Origin of the pulsarix host that serves `/public/graphql`; null until given. */
   apiBase: string | null;
   /** The "Mask the text on the page" option starts on (`data-mask-text="true"`). */
@@ -62,6 +67,7 @@ export const OBSERVED_ATTRIBUTES = [
   "offset-bottom",
   "offset-side",
   "accent-color",
+  "inherit-theme",
   "api-base",
   "mask-text",
   "attachments",
@@ -199,6 +205,7 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
       side: lengthOf(get("offset-side")),
     },
     accentColor: isHexColor(accent) ? accent.trim() : null,
+    inheritTheme: get("inherit-theme") !== "false",
     apiBase: apiBaseOf(get("api-base")),
     maskText: get("mask-text") === "true",
     attachments: get("attachments") !== "false",

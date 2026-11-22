@@ -5,6 +5,8 @@ import type { SubmitDetail } from "./modules/report/components/report-flow";
 export interface AppProps {
   /** The `data-nxgt-theme` scope the adopted theme CSS is declared under. */
   themeName?: string;
+  /** Custom properties inherited from the host's theme, set on the root over the theme's own. */
+  hostTokens?: Record<string, string>;
   messages: Messages;
   locale: Locale;
   projectKey: string | null;

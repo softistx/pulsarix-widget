@@ -11,6 +11,7 @@ import {
   type WidgetConfig,
 } from "./config";
 import { MESSAGES } from "./core/messages";
+import { createHostFollower } from "./core/theme/inherit";
 import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
 
@@ -42,6 +43,14 @@ export class PulsarixWidgetElement extends HTMLElement {
   #themeFor: string | null = null;
   #media: MediaQueryList | null = null;
   #onScheme = () => this.#render();
+  #host = createHostFollower(
+    document,
+    () => ({
+      inherit: this.config.inheritTheme,
+      accent: this.config.accentColor !== null,
+    }),
+    () => this.#render(),
+  );
 
   /**
    * The token given by `identify()` / `mount({ identity })`. It is kept here, not written as an
@@ -68,6 +77,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#root = createRoot(this.#shadow);
     this.#media = window.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#media?.addEventListener("change", this.#onScheme);
+    this.#host.sync();
     this.#render();
     // Async: a listener added right after `mount()` returns still hears it.
     queueMicrotask(() => {
@@ -80,6 +90,7 @@ export class PulsarixWidgetElement extends HTMLElement {
   disconnectedCallback() {
     this.#media?.removeEventListener("change", this.#onScheme);
     this.#media = null;
+    this.#host.stop();
     this.#root?.unmount();
     this.#root = null;
     this.#releaseTheme?.();
@@ -90,7 +101,9 @@ export class PulsarixWidgetElement extends HTMLElement {
   }
 
   attributeChangedCallback() {
-    if (this.#root) this.#render();
+    if (!this.#root) return;
+    this.#host.sync();
+    this.#render();
   }
 
   /**
@@ -141,9 +154,12 @@ export class PulsarixWidgetElement extends HTMLElement {
       );
       this.#themeFor = themeKey;
     }
+    // With the host's tokens, the widget's scheme is the host's (they are its current mode's
+    // values); the `theme` option then only decides when the host does not say.
     const dark =
-      config.theme === "dark" ||
-      (config.theme === "auto" && !!this.#media?.matches);
+      this.#host.current.dark ??
+      (config.theme === "dark" ||
+        (config.theme === "auto" && !!this.#media?.matches));
     // The launcher's offsets are custom properties on the host: a host's own CSS may set them too.
     // Only a given option is written, so the host's rule or the default (16 px) stays otherwise.
     for (const [name, value] of [
@@ -158,6 +174,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.#root.render(
       <App
         themeName={themeNameFor(config.accentColor)}
+        hostTokens={this.#host.current.tokens}
         messages={MESSAGES[config.locale]}
         locale={config.locale}
         projectKey={config.projectKey}
@@ -196,6 +213,12 @@ export interface MountOptions {
   theme?: "light" | "dark" | "auto";
   position?: "bottom-left" | "bottom-right";
   accentColor?: string;
+  /**
+   * Wear the host app's `@softistx/material` theme (colours, radius, light or dark) and follow
+   * its changes; a token the host lacks keeps the widget's own. `true` by default; an explicit
+   * `accentColor` still wins over the host's primary. `false` keeps the widget's own look.
+   */
+  inheritTheme?: boolean;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
   /**
@@ -261,6 +284,8 @@ export function mount(options: MountOptions): WidgetHandle {
   if (options.position) element.setAttribute("position", options.position);
   if (options.accentColor)
     element.setAttribute("accent-color", options.accentColor);
+  if (options.inheritTheme === false)
+    element.setAttribute("inherit-theme", "false");
   if (options.apiBase) element.setAttribute("api-base", options.apiBase);
   if (options.maskText) element.setAttribute("mask-text", "true");
   if (options.attachments === false)
