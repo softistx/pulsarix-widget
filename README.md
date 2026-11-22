@@ -138,7 +138,7 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 | `identity`     | `string \| null`                                    | none: today's form only (see "Identified reporters") |
 | `target`       | `Element`                                           | `document.body`                                      |
 
-`WidgetHandle`: `open()`, `close()`, `setLauncherVisible(visible)`, `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
+`WidgetHandle`: `open()`, `close()`, `setLauncherVisible(visible)`, `holdLauncher()` (returns a release function), `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
 `setMetadata(metadata \| null)` (see "Changing theme, locale and metadata at run time"), `on(name, callback)` (returns the function that
 unsubscribes) and `element`, the `<pulsarix-widget>` (`element.isOpen`, `element.config`).
 
@@ -184,7 +184,7 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 `launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
 pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
 `offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
-`setLauncherVisible(false)` hides only the launcher, never an open dialog; with the script tag it is
+`setLauncherVisible(false)` hides only the launcher, never an open dialog, and `holdLauncher()` hides it the same way while a host's own sticky bar is up (ref-counted, call the returned function to release); with the script tag it is
 `window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
 [docs/integration.md](docs/integration.md).
 
@@ -307,7 +307,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     pulsarixIdentity: signPulsarixIdentity({
       secret: process.env.PULSARIX_IDENTITY_SECRET as string,
-      publicKey: process.env.PULSARIX_PUBLIC_KEY as string,
+      publicKey: process.env.PULSARIX_PROJECT_KEY as string,
       sub: user.id,
       email: user.email,
       name: user.name,

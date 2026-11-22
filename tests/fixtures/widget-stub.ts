@@ -14,6 +14,10 @@ export function mount(options?: unknown) {
     close: () => state.__stubOpened?.push("close"),
     setLauncherVisible: (visible: boolean) =>
       state.__stubOpened?.push(`launcher:${visible}`),
+    holdLauncher: () => {
+      state.__stubOpened?.push("hold");
+      return () => state.__stubOpened?.push("release");
+    },
     identify: (token: string | null) =>
       state.__stubOpened?.push(`identify:${token}`),
     setTheme: (theme: string) => state.__stubOpened?.push(`theme:${theme}`),

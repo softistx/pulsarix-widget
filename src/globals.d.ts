@@ -20,6 +20,7 @@ interface Window {
     open(): void;
     close(): void;
     setLauncherVisible(visible: boolean): void;
+    holdLauncher(): () => void;
     identify(token: string | null): void;
     setTheme(theme: "light" | "dark" | "auto"): void;
     setLocale(locale: "en" | "fr"): void;

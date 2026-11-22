@@ -28,6 +28,7 @@ interface Handle {
   open(): void;
   close(): void;
   setLauncherVisible(visible: boolean): void;
+  holdLauncher(): () => void;
   identify(token: string | null): void;
   setTheme(theme: string): void;
   setLocale(locale: string): void;
@@ -96,6 +97,20 @@ window.PulsarixWidget = {
   close: () => whenReady((h) => h.close()),
   setLauncherVisible: (visible: boolean) =>
     whenReady((h) => h.setLauncherVisible(visible)),
+  holdLauncher() {
+    // Holds are not keyed (each counts), so each is queued in order; a release that comes before
+    // the bundle loads cancels its queued hold.
+    let release: (() => void) | null = null;
+    let released = false;
+    whenReady((h) => {
+      if (!released) release = h.holdLauncher();
+    });
+    return () => {
+      released = true;
+      release?.();
+      release = null;
+    };
+  },
   identify: (token: string | null) => whenReady((h) => h.identify(token)),
   setTheme: (theme: string) => whenReady((h) => h.setTheme(theme), "theme"),
   setLocale: (locale: string) =>

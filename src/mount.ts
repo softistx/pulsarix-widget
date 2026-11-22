@@ -56,6 +56,12 @@ export interface WidgetHandle {
   close(): void;
   /** Shows or hides the launcher only; an open dialog is never closed or hidden by it. */
   setLauncherVisible(visible: boolean): void;
+  /**
+   * Hides the launcher until the returned function is called, for a host's own sticky bar.
+   * Ref-counted: the launcher stays hidden while any hold is open, and shows again once every
+   * hold is released and `setLauncherVisible` is not `false`. Releasing twice does nothing.
+   */
+  holdLauncher(): () => void;
   /** Signs the reporter in with a signed identity token, or out with `null`. */
   identify(token: string | null): void;
   /** Light or dark now, without a remount; `"auto"` follows the OS, not the host page. */
@@ -90,11 +96,29 @@ export function mount(options: MountOptions): WidgetHandle {
   applyOptions(element, options);
   if (options.identity) element.identify(options.identity);
   (options.target ?? document.body).append(element);
+  // The launcher shows only when the host did not hide it and no hold is open.
+  let wanted = true;
+  let holds = 0;
+  const applyLauncher = () => element.setLauncherVisible(wanted && holds === 0);
   const handle: WidgetHandle = {
     element,
     open: () => element.open(),
     close: () => element.close(),
-    setLauncherVisible: (visible) => element.setLauncherVisible(visible),
+    setLauncherVisible(visible) {
+      wanted = visible;
+      applyLauncher();
+    },
+    holdLauncher() {
+      let open = true;
+      holds++;
+      applyLauncher();
+      return () => {
+        if (!open) return;
+        open = false;
+        holds--;
+        applyLauncher();
+      };
+    },
     identify: (token) => element.identify(token),
     setTheme: (theme) => element.setTheme(theme),
     setLocale: (locale) => element.setLocale(locale),
