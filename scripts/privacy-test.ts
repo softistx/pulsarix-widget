@@ -62,6 +62,8 @@ async function openList(page: Page, path: string) {
     .getByRole("button", { name: /Open request: /i })
     .first()
     .waitFor();
+  // The e-mail choice and "Delete my data" are in the preferences view, behind the header's gear.
+  await page.getByRole("button", { name: "Preferences" }).click();
 }
 
 const browser = await chromium.launch();

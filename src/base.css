@@ -42,7 +42,7 @@ progress::-moz-progress-bar {
 }
 
 /* Dark mode: material's error fill (about 4.5:1 under its white text) is darkened so the unread
-   counts clear 4.5:1 with margin. Temporary, until material ships a darker dark error badge. */
+   counts clear 4.5:1 with margin. Temporary, until material#5617 (a darker dark error badge). */
 :host([data-resolved-theme="dark"]) .nxgt-fab > [data-slot="fab-count"],
 :host([data-resolved-theme="dark"])
   .nxgt-fab-menu-item

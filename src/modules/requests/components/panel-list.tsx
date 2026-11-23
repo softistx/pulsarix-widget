@@ -11,7 +11,6 @@ import type { RequestCounts, RequestFilter, RequestSummary } from "../api";
 import type { useRequestList } from "../hooks/use-request-list";
 import { errorText } from "../model/error-text";
 import { REQUESTS_MESSAGES } from "../model/messages";
-import { Privacy } from "./privacy";
 import { RequestList } from "./request-list";
 
 const FILTERS: RequestFilter[] = ["OPEN", "RESOLVED", "DECLINED", "ALL"];
@@ -23,29 +22,21 @@ const COUNT_KEY: Record<RequestFilter, keyof RequestCounts> = {
 };
 
 /**
- * The panel's body: the filter chips with their counts, the load and error states, the list,
- * "more" and the privacy controls. The panel owns the list's state and passes it in.
+ * The panel's body: the filter chips with their counts, the load and error states, the list
+ * and "more". The panel owns the list's state and passes it in.
  */
 export function RequestsListBody({
   messages,
   locale,
-  apiBase,
-  projectKey,
-  identity,
   list,
   onOpen,
   onNewRequest,
-  onErase,
 }: {
   messages: Messages;
   locale: Locale;
-  apiBase: string | null;
-  projectKey: string | null;
-  identity: string;
   list: ReturnType<typeof useRequestList>;
   onOpen: (request: RequestSummary) => void;
   onNewRequest: () => void;
-  onErase?: (detail: { requests: number }) => void;
 }) {
   const text = REQUESTS_MESSAGES[locale];
   const { filter, counts, nodes, load } = list;
@@ -149,19 +140,6 @@ export function RequestsListBody({
         >
           {text.more}
         </Button>
-      ) : null}
-      {load.status === "ready" && (total ?? 0) > 0 ? (
-        <Privacy
-          locale={locale}
-          apiBase={apiBase}
-          projectKey={projectKey}
-          identity={identity}
-          emailsOn={list.emailsOn}
-          onErased={(requests) => {
-            list.empty(requests);
-            onErase?.({ requests });
-          }}
-        />
       ) : null}
     </div>
   );

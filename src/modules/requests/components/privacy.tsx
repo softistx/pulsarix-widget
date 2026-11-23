@@ -18,7 +18,7 @@ export interface PrivacyProps {
 }
 
 /**
- * The reporter's privacy choices under the list: whether replies are also sent by e-mail
+ * The reporter's privacy choices, in the preferences view: whether replies are also sent by e-mail
  * (optimistic, put back on a failure) and "Delete my data" behind a confirmation.
  */
 export function Privacy({
@@ -80,7 +80,7 @@ export function Privacy({
   }
 
   return (
-    <div className="grid min-w-0 gap-3 border-border border-t pt-4">
+    <div className="grid min-w-0 gap-4">
       <SwitchField
         variant="plain"
         label={text.privacy.emails}

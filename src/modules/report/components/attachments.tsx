@@ -122,9 +122,9 @@ export function AttachmentsControl({
         >
           <div className="grid gap-2">
             {canCapture ? (
-              // Temporary, until a Menu ships in @softistx/material/embed (to be filed; the
-              // coordinator gives the number): one "Add" button discloses its two choices,
-              // "Capture this page" and "Upload a file".
+              // Temporary, until material#5616 (a Menu in @softistx/material/embed): one "Add"
+              // button discloses its two choices, "Capture this page" and "Upload a file",
+              // and the capture's own setting (mask the page's text).
               // biome-ignore lint/a11y/noStaticElementInteractions: Escape from any control of the disclosure closes it; the keys belong to the buttons inside.
               <div
                 ref={menuHost}
@@ -147,33 +147,39 @@ export function AttachmentsControl({
                 >
                   {t.attach}
                 </Button>
-                <div
-                  id={menuId}
-                  hidden={!menuOpen}
-                  className="grid grid-cols-2 gap-2 max-sm:grid-cols-1"
-                >
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    disabled={locked || busy}
-                    onClick={() => {
-                      closeMenu();
-                      onCapture();
-                    }}
-                  >
-                    {t.add}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    disabled={locked || busy}
-                    onClick={() => {
-                      closeMenu();
-                      input.current?.click();
-                    }}
-                  >
-                    {t.upload}
-                  </Button>
+                <div id={menuId} hidden={!menuOpen} className="grid gap-2">
+                  <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+                    <Button
+                      type="button"
+                      variant="tonal"
+                      disabled={locked || busy}
+                      onClick={() => {
+                        closeMenu();
+                        onCapture();
+                      }}
+                    >
+                      {t.add}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="tonal"
+                      disabled={locked || busy}
+                      onClick={() => {
+                        closeMenu();
+                        input.current?.click();
+                      }}
+                    >
+                      {t.upload}
+                    </Button>
+                  </div>
+                  <SwitchField
+                    variant="plain"
+                    checked={maskText}
+                    disabled={busy || locked}
+                    onCheckedChange={(checked) => onMaskText(checked === true)}
+                    label={t.maskText}
+                    helperText={t.maskTextHint}
+                  />
                 </div>
               </div>
             ) : (
@@ -245,16 +251,6 @@ export function AttachmentsControl({
                 ) : null}
               </div>
             ))}
-          {canCapture ? (
-            <SwitchField
-              variant="plain"
-              checked={maskText}
-              disabled={busy || locked}
-              onCheckedChange={(checked) => onMaskText(checked === true)}
-              label={t.maskText}
-              helperText={t.maskTextHint}
-            />
-          ) : null}
           {overTotal ? (
             <Alert
               variant="warning"

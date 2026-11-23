@@ -13,7 +13,28 @@ import type { RequestSummary } from "../api";
 import { useRequestList } from "../hooks/use-request-list";
 import { REQUESTS_MESSAGES } from "../model/messages";
 import { RequestsListBody } from "./panel-list";
+import { Preferences } from "./preferences";
 import Thread from "./thread";
+
+/** A gear, for the preferences. */
+function GearIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    </svg>
+  );
+}
 
 export interface RequestsPanelProps {
   messages: Messages;
@@ -66,6 +87,8 @@ export default function RequestsPanel({
   });
   // The request whose thread is open; the list stays mounted behind it, so its filter holds.
   const [opened, setOpened] = useState<RequestSummary | null>(null);
+  // The preferences view (e-mails, "Delete my data"), opened from the list's header.
+  const [prefs, setPrefs] = useState(false);
 
   if (opened && apiBase && projectKey)
     return (
@@ -86,23 +109,50 @@ export default function RequestsPanel({
         }}
       />
     );
+  if (prefs)
+    return (
+      <Preferences
+        locale={locale}
+        apiBase={apiBase}
+        projectKey={projectKey}
+        identity={identity}
+        emailsOn={list.emailsOn}
+        onBack={() => setPrefs(false)}
+        onErased={(requests) => {
+          list.empty(requests);
+          onErase?.({ requests });
+          setPrefs(false);
+        }}
+      />
+    );
+  const hasRequests =
+    list.load.status === "ready" && (list.counts?.all ?? 0) > 0;
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{messages.myRequests}</DialogTitle>
+        <div className="flex items-start justify-between gap-2 pe-12">
+          <DialogTitle>{messages.myRequests}</DialogTitle>
+          {hasRequests ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={text.prefs.open}
+              onClick={() => setPrefs(true)}
+            >
+              <GearIcon />
+            </Button>
+          ) : null}
+        </div>
         <DialogDescription>{text.description}</DialogDescription>
       </DialogHeader>
       <DialogBody role="region" aria-label={messages.myRequests}>
         <RequestsListBody
           messages={messages}
           locale={locale}
-          apiBase={apiBase}
-          projectKey={projectKey}
-          identity={identity}
           list={list}
           onOpen={setOpened}
           onNewRequest={onNewRequest}
-          onErase={onErase}
         />
       </DialogBody>
       <DialogFooter>

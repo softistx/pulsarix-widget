@@ -93,9 +93,10 @@ try {
       try {
         const a = await open();
         await shot(a.page, "pane-empty");
+        await openAdd(a.page);
+        await shot(a.page, "add-menu");
         await a.page.getByRole("switch").check();
         await shot(a.page, "pane-mask-text");
-        await openAdd(a.page);
         await a.page.getByRole("button", { name: "Capture this page" }).click();
         await notice(a.page);
         await a.page.waitForTimeout(600);

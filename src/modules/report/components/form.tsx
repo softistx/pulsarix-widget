@@ -41,7 +41,7 @@ function FailureAlert({
   alertBox: Ref<HTMLDivElement>;
 }) {
   return (
-    <div role="alert" ref={alertBox} className="scroll-mb-24">
+    <div role="alert" ref={alertBox} className="scroll-mb-24 lg:col-span-2">
       {failure ? (
         <Alert
           variant="error"
@@ -118,7 +118,7 @@ export function Form({
           id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
-          className="grid gap-5 max-sm:pb-5"
+          className="grid items-start gap-5 max-sm:pb-5 lg:grid-cols-2"
         >
           <ReportFields
             messages={messages}
@@ -127,7 +127,9 @@ export function Form({
             privacyUrl={privacyUrl}
           />
           {attachments ? (
-            <div className="border-border border-t pt-5">{attachments}</div>
+            <div className="border-border border-t pt-5 lg:col-span-2">
+              {attachments}
+            </div>
           ) : null}
           <Honeypot inputRef={honeypot} />
           <FailureAlert

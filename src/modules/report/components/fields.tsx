@@ -65,25 +65,29 @@ export function ReportFields({
 }) {
   return (
     <>
-      <TextFormField
-        control={control}
-        name="title"
-        label={messages.fields.title}
-        helperText={messages.fields.titleHint}
-        maxLength={TITLE_MAX}
-        autoComplete="off"
-        required
-      />
-      <TextareaFormField
-        control={control}
-        name="description"
-        label={messages.fields.description}
-        helperText={messages.fields.descriptionHint}
-        minRows={4}
-        maxRows={10}
-        maxLength={DESCRIPTION_MAX}
-        required
-      />
+      <div className="lg:col-span-2">
+        <TextFormField
+          control={control}
+          name="title"
+          label={messages.fields.title}
+          helperText={messages.fields.titleHint}
+          maxLength={TITLE_MAX}
+          autoComplete="off"
+          required
+        />
+      </div>
+      <div className="lg:col-span-2">
+        <TextareaFormField
+          control={control}
+          name="description"
+          label={messages.fields.description}
+          helperText={messages.fields.descriptionHint}
+          minRows={4}
+          maxRows={10}
+          maxLength={DESCRIPTION_MAX}
+          required
+        />
+      </div>
       <ChoiceChips
         name="type"
         labels={messages.choices.type}
@@ -97,18 +101,20 @@ export function ReportFields({
         control={control}
       />
       {anonymous ? (
-        <EmailFormField
-          control={control}
-          name="email"
-          inputMode="email"
-          label={messages.fields.email}
-          helperText={messages.fields.emailHint}
-          maxLength={EMAIL_MAX}
-          autoComplete="email"
-        />
+        <div>
+          <EmailFormField
+            control={control}
+            name="email"
+            inputMode="email"
+            label={messages.fields.email}
+            helperText={messages.fields.emailHint}
+            maxLength={EMAIL_MAX}
+            autoComplete="email"
+          />
+        </div>
       ) : null}
       {anonymous ? (
-        <p className="-mt-2 text-muted-foreground text-sm">
+        <p className="-mt-2 text-muted-foreground text-sm lg:mt-0 lg:pt-7">
           {messages.privacy}
           {privacyUrl ? (
             <>

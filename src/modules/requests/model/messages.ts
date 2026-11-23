@@ -42,6 +42,11 @@ export interface RequestsMessages {
       files: string;
     };
   };
+  /** The preferences view, opened from the list's header. */
+  prefs: {
+    title: string;
+    open: string;
+  };
   /** The e-mail choice and "Delete my data" (W3c). */
   privacy: {
     emails: string;
@@ -124,6 +129,7 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
           "A file was refused (PNG, JPEG, WebP or PDF, 5 MB each, 3 files).",
       },
     },
+    prefs: { title: "Preferences", open: "Preferences" },
     privacy: {
       emails: "E-mails about my requests",
       emailsHint: "Get an e-mail when the team replies.",
@@ -208,6 +214,7 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
           "Un fichier a été refusé (PNG, JPEG, WebP ou PDF, 5 Mo chacun, 3 fichiers).",
       },
     },
+    prefs: { title: "Préférences", open: "Préférences" },
     privacy: {
       emails: "E-mails sur mes demandes",
       emailsHint: "Recevoir un e-mail quand l'équipe répond.",

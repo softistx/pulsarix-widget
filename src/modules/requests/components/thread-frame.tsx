@@ -66,12 +66,22 @@ export function ThreadFooter({
         {t.back}
       </Button>
       {detail && !declined && !resolved ? (
-        <Button type="button" loading={acting} onClick={onResolve}>
+        <Button
+          type="button"
+          variant="tonal"
+          loading={acting}
+          onClick={onResolve}
+        >
           {t.resolve}
         </Button>
       ) : null}
       {resolved && detail?.canReopen ? (
-        <Button type="button" loading={acting} onClick={onReopen}>
+        <Button
+          type="button"
+          variant="tonal"
+          loading={acting}
+          onClick={onReopen}
+        >
           {t.reopen}
         </Button>
       ) : null}

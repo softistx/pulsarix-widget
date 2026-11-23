@@ -41,11 +41,12 @@ export default function Editor({
           maxExportSize={MAX_EXPORT_SIDE}
           defaultExportOptions={{ format: "image/png", scale: 1 }}
           crop
+          toolbar="floating"
           redactModes={["solid"]}
           saveLabel={saveLabel}
           onSave={({ file }) => onSave(file)}
           onCancel={onCancel}
-          className="h-[min(640px,70dvh)] w-full"
+          className="h-[min(720px,calc(100dvh-170px))] w-full max-sm:h-[calc(100dvh-140px)]"
         />
       ) : null}
     </div>
