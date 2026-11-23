@@ -83,6 +83,7 @@ export const FR: Messages = {
   },
   failure: {
     summary: "Votre signalement n'a pas été envoyé",
+    retry: "Réessayer",
     config: "Ce formulaire est mal configuré. Prévenez le responsable du site.",
     unavailable: "Le service est occupé. Réessayez dans un instant.",
     rateLimited: (minutes) =>

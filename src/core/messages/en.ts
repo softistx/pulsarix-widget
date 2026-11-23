@@ -83,6 +83,7 @@ export const EN: Messages = {
   },
   failure: {
     summary: "Your report was not sent",
+    retry: "Try again",
     config: "This form is not set up correctly. Tell the owner of this site.",
     unavailable: "The service is busy right now. Try again in a moment.",
     rateLimited: (minutes) =>

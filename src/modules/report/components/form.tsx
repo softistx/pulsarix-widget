@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   DialogBody,
   DialogHeader,
   DialogTitle,
@@ -46,6 +47,12 @@ function FailureAlert({
           variant="error"
           title={messages.failure.summary}
           description={failureText(messages, failure)}
+          // Send again: the draft is intact, the same submit.
+          actions={
+            <Button type="submit" form={FORM_ID} variant="tonal" size="sm">
+              {messages.failure.retry}
+            </Button>
+          }
         />
       ) : null}
     </div>

@@ -209,17 +209,12 @@ export function AttachmentsControl({
             />
           </div>
           <p className="text-muted-foreground text-sm">{messages.files.hint}</p>
-          {canCapture ? (
-            <SwitchField
-              variant="plain"
-              checked={maskText}
-              disabled={busy || locked}
-              onCheckedChange={(checked) => onMaskText(checked === true)}
-              label={t.maskText}
-              helperText={t.maskTextHint}
-            />
-          ) : null}
-          <PaneStatus messages={messages} busy={busy} notice={notice} />
+          <PaneStatus
+            messages={messages}
+            busy={busy}
+            notice={notice}
+            onUpload={() => input.current?.click()}
+          />
           <AttachmentList
             items={items}
             onRemove={locked ? undefined : onRemove}
@@ -250,6 +245,16 @@ export function AttachmentsControl({
                 ) : null}
               </div>
             ))}
+          {canCapture ? (
+            <SwitchField
+              variant="plain"
+              checked={maskText}
+              disabled={busy || locked}
+              onCheckedChange={(checked) => onMaskText(checked === true)}
+              label={t.maskText}
+              helperText={t.maskTextHint}
+            />
+          ) : null}
           {overTotal ? (
             <Alert
               variant="warning"

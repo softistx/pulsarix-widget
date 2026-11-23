@@ -1,4 +1,4 @@
-import { Alert, Spinner } from "@softistx/material/embed";
+import { Alert, Button, Spinner } from "@softistx/material/embed";
 import { lazy, Suspense } from "react";
 import type { Messages } from "../../../core/messages";
 
@@ -10,10 +10,13 @@ export function PaneStatus({
   messages,
   busy,
   notice,
+  onUpload,
 }: {
   messages: Messages;
   busy: boolean;
   notice: string | null;
+  /** A way out of a refused capture: the upload the notice talks about. */
+  onUpload?: () => void;
 }) {
   return (
     <div role="status" aria-live="polite" className="empty:hidden">
@@ -27,6 +30,18 @@ export function PaneStatus({
           variant="warning"
           title={messages.screenshot.noticeTitle}
           description={notice}
+          actions={
+            onUpload ? (
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={onUpload}
+              >
+                {messages.screenshot.upload}
+              </Button>
+            ) : undefined
+          }
         />
       ) : null}
     </div>

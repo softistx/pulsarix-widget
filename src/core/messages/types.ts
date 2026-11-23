@@ -83,6 +83,7 @@ export interface Messages {
   };
   failure: {
     summary: string;
+    retry: string;
     config: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;
