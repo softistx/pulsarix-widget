@@ -42,7 +42,7 @@ export function RequestsListBody({
   const { filter, counts, nodes, load } = list;
   const total = counts?.all ?? null;
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-8">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-1">
       {(total === 0 && load.status === "ready") ||
       load.status === "error" ? null : (
         <ChipGroupField

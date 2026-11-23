@@ -33,6 +33,7 @@ export default function Editor({
     return release;
   }, []);
   return (
+    // Temporary, until material#5620 (a scroll cue on the editor tool row at 360 px).
     <div ref={mark} className="min-h-0 w-full">
       {styled ? (
         <ImageMarkupEditor

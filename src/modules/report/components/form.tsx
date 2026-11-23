@@ -112,13 +112,13 @@ export function Form({
       <DialogBody
         role="region"
         aria-label={messages.title}
-        className="scroll-pt-4 max-sm:[mask-image:linear-gradient(to_bottom,#000_calc(100%-20px),transparent)]"
+        className="scroll-pt-4"
       >
         <form
           id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
-          className="grid items-start gap-5 max-sm:pb-5 lg:grid-cols-2"
+          className="grid items-start gap-5 max-sm:pb-20 lg:grid-cols-2"
         >
           <ReportFields
             messages={messages}

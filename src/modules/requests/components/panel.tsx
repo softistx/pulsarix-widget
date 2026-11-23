@@ -130,7 +130,7 @@ export default function RequestsPanel({
   return (
     <>
       <DialogHeader>
-        <div className="flex items-start justify-between gap-2 pe-12">
+        <div className="flex items-start justify-between gap-2">
           <DialogTitle>{messages.myRequests}</DialogTitle>
           {hasRequests ? (
             <Button
