@@ -28,19 +28,23 @@ export interface Composer {
 function useOpenAtLatest(ref: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const host = ref.current;
+    // `role="log"` is the content; its parent, material's scroll-area viewport, is what scrolls.
     const log = host?.querySelector<HTMLElement>('[role="log"]');
-    if (!host || !log) return;
+    const viewport =
+      host?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]') ??
+      log;
+    if (!host || !log || !viewport) return;
     let following = true;
     const toEnd = () => {
-      if (following) log.scrollTop = log.scrollHeight;
+      if (following) viewport.scrollTop = viewport.scrollHeight;
     };
     const stop = () => {
       following = false;
     };
     toEnd();
-    log.addEventListener("wheel", stop, { passive: true });
-    log.addEventListener("touchstart", stop, { passive: true });
-    log.addEventListener("keydown", stop);
+    viewport.addEventListener("wheel", stop, { passive: true });
+    viewport.addEventListener("touchstart", stop, { passive: true });
+    viewport.addEventListener("keydown", stop);
     const observer =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(toEnd);
     observer?.observe(log);
@@ -49,9 +53,9 @@ function useOpenAtLatest(ref: RefObject<HTMLDivElement | null>) {
     return () => {
       clearTimeout(timer);
       observer?.disconnect();
-      log.removeEventListener("wheel", stop);
-      log.removeEventListener("touchstart", stop);
-      log.removeEventListener("keydown", stop);
+      viewport.removeEventListener("wheel", stop);
+      viewport.removeEventListener("touchstart", stop);
+      viewport.removeEventListener("keydown", stop);
     };
   }, [ref]);
 }

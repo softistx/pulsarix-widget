@@ -10,7 +10,7 @@ import {
   filterFiles,
 } from "@softistx/material/files/drop";
 import { I18nProvider } from "@softistx/material/i18n";
-import { type Ref, useId, useRef, useState } from "react";
+import { type Ref, useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
@@ -81,6 +81,16 @@ export function AttachmentsControl({
   const label = useId();
   const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuHost = useRef<HTMLDivElement>(null);
+  // Closing hands the focus back to the "Add" button, so a cancelled picker or a dismissed menu
+  // never leaves it on a hidden control.
+  const closeMenu = () => {
+    setMenuOpen(false);
+    menuHost.current?.querySelector("button")?.focus();
+  };
+  useEffect(() => {
+    if (busy) setMenuOpen(false);
+  }, [busy]);
   const input = useRef<HTMLInputElement>(null);
   return (
     // biome-ignore lint/a11y/useSemanticElements: a fieldset cannot take programmatic focus after the editor closes without browser-specific layout quirks
@@ -112,9 +122,20 @@ export function AttachmentsControl({
         >
           <div className="grid gap-2">
             {canCapture ? (
-              // Temporary, until a Menu ships in @softistx/material/embed (to be filed): one "Add"
-              // button discloses its two choices, "Capture this page" and "Upload a file".
-              <>
+              // Temporary, until a Menu ships in @softistx/material/embed (to be filed; the
+              // coordinator gives the number): one "Add" button discloses its two choices,
+              // "Capture this page" and "Upload a file".
+              // biome-ignore lint/a11y/noStaticElementInteractions: Escape from any control of the disclosure closes it; the keys belong to the buttons inside.
+              <div
+                ref={menuHost}
+                className="grid gap-2"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && menuOpen) {
+                    event.stopPropagation();
+                    closeMenu();
+                  }
+                }}
+              >
                 <Button
                   type="button"
                   variant="tonal"
@@ -123,9 +144,6 @@ export function AttachmentsControl({
                   aria-controls={menuId}
                   disabled={locked || busy}
                   onClick={() => setMenuOpen((open) => !open)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") setMenuOpen(false);
-                  }}
                 >
                   {t.attach}
                 </Button>
@@ -139,7 +157,7 @@ export function AttachmentsControl({
                     variant="tonal"
                     disabled={locked || busy}
                     onClick={() => {
-                      setMenuOpen(false);
+                      closeMenu();
                       onCapture();
                     }}
                   >
@@ -150,14 +168,14 @@ export function AttachmentsControl({
                     variant="tonal"
                     disabled={locked || busy}
                     onClick={() => {
-                      setMenuOpen(false);
+                      closeMenu();
                       input.current?.click();
                     }}
                   >
                     {t.upload}
                   </Button>
                 </div>
-              </>
+              </div>
             ) : (
               <Button
                 type="button"

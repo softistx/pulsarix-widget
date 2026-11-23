@@ -411,7 +411,9 @@ try {
     await page.getByRole("button", { name: "Capture this page" }).click();
     await page.getByText("The capture was refused.").waitFor();
     check(
-      await page.getByRole("button", { name: "Add", exact: true }).isEnabled(),
+      await openAdd(page).then(() =>
+        page.getByRole("button", { name: "Upload a file" }).isEnabled(),
+      ),
       "after a refusal the upload is still offered",
     );
     await context.close();

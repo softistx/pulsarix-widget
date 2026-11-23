@@ -240,6 +240,26 @@ describe("a failed widgetConfig read", () => {
 });
 
 describe("the screenshot upload path", () => {
+  test("the Add disclosure toggles and closes after a choice, focus back on Add", async () => {
+    const { user } = setup();
+    const toggle = () => screen.getByRole("button", { name: "Add" });
+    await screen.findByRole("button", { name: "Add" });
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("button", { name: "Upload a file" })).toBeNull();
+    await user.click(toggle());
+    expect(toggle().getAttribute("aria-expanded")).toBe("true");
+    await user.click(toggle());
+    expect(toggle().getAttribute("aria-expanded")).toBe("false");
+    await user.click(toggle());
+    await user.click(
+      await screen.findByRole("button", { name: "Upload a file" }),
+    );
+    await waitFor(() =>
+      expect(toggle().getAttribute("aria-expanded")).toBe("false"),
+    );
+    expect(document.activeElement === toggle()).toBe(true);
+  });
+
   test("a screenshot is declared with role screenshot and its name", async () => {
     const { user, onSubmitted } = setup();
     await shoot(user);
