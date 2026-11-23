@@ -46,7 +46,6 @@ export function RequestsListBody({
   onOpen: (request: RequestSummary) => void;
   onNewRequest: () => void;
   onErase?: (detail: { requests: number }) => void;
-  /** Closes the dialog: the action of a refused identity, which a retry cannot mend. */
 }) {
   const text = REQUESTS_MESSAGES[locale];
   const { filter, counts, nodes, load } = list;
