@@ -162,7 +162,7 @@ export default function RequestsPanel({
         </Button>
         {(list.counts?.all ?? 0) > 0 ? (
           <Button type="button" variant="tonal" onClick={onNewRequest}>
-            {messages.launcher}
+            {text.none.action}
           </Button>
         ) : null}
       </DialogFooter>

@@ -27,7 +27,7 @@ export function ThreadHeader({
     <DialogHeader>
       <DialogTitle
         title={detail?.title ?? title}
-        className="max-sm:line-clamp-1 max-sm:text-lg"
+        className="max-sm:line-clamp-2 max-sm:text-lg"
       >
         {detail?.title ?? title}
       </DialogTitle>
