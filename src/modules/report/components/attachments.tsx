@@ -148,7 +148,7 @@ export function AttachmentsControl({
                   {t.attach}
                 </Button>
                 <div id={menuId} hidden={!menuOpen} className="grid gap-2">
-                  <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+                  <div className="grid gap-2">
                     <Button
                       type="button"
                       variant="tonal"
