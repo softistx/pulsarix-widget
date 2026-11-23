@@ -160,6 +160,16 @@ export function AttachmentsControl({
                     >
                       {t.add}
                     </Button>
+                    <SwitchField
+                      variant="plain"
+                      checked={maskText}
+                      disabled={busy || locked}
+                      onCheckedChange={(checked) =>
+                        onMaskText(checked === true)
+                      }
+                      label={t.maskText}
+                      helperText={t.maskTextHint}
+                    />
                     <Button
                       type="button"
                       variant="tonal"
@@ -172,14 +182,6 @@ export function AttachmentsControl({
                       {t.upload}
                     </Button>
                   </div>
-                  <SwitchField
-                    variant="plain"
-                    checked={maskText}
-                    disabled={busy || locked}
-                    onCheckedChange={(checked) => onMaskText(checked === true)}
-                    label={t.maskText}
-                    helperText={t.maskTextHint}
-                  />
                 </div>
               </div>
             ) : (

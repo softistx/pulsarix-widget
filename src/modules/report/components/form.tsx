@@ -49,7 +49,7 @@ function FailureAlert({
           description={failureText(messages, failure)}
           // Send again: the draft is intact, the same submit.
           actions={
-            <Button type="submit" form={FORM_ID} variant="tonal" size="sm">
+            <Button type="submit" form={FORM_ID} variant="filled" size="sm">
               {messages.failure.retry}
             </Button>
           }

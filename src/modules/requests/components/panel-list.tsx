@@ -70,7 +70,7 @@ export function RequestsListBody({
             <>
               <Button
                 type="button"
-                variant="tonal"
+                variant="filled"
                 size="sm"
                 onClick={list.reload}
               >

@@ -160,6 +160,11 @@ export default function RequestsPanel({
         <Button type="button" variant="tonal" onClick={onClose}>
           {messages.close}
         </Button>
+        {(list.counts?.all ?? 0) > 0 ? (
+          <Button type="button" variant="tonal" onClick={onNewRequest}>
+            {messages.launcher}
+          </Button>
+        ) : null}
       </DialogFooter>
     </>
   );

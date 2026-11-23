@@ -53,44 +53,64 @@ export function RequestList({
               .filter(Boolean)
               .join(", ")}
             onClick={() => onOpen(request)}
-            className="block w-full cursor-pointer rounded-lg text-left"
+            className="flex w-full cursor-pointer items-center gap-1 rounded-lg pe-3 text-left"
           >
-            <ListRow
-              unread={request.unread > 0}
-              title={
-                <span className="block whitespace-normal break-words @md:truncate @md:whitespace-nowrap">
-                  {request.title}
-                </span>
-              }
-              meta={
-                <span className="block whitespace-normal @md:truncate @md:whitespace-nowrap">
-                  <span className="mb-1 block @md:hidden">
+            <div className="min-w-0 flex-1">
+              <ListRow
+                unread={request.unread > 0}
+                title={
+                  <span className="block whitespace-normal break-words @md:truncate @md:whitespace-nowrap">
+                    {request.title}
+                  </span>
+                }
+                meta={
+                  <span className="block whitespace-normal @md:truncate @md:whitespace-nowrap">
+                    <span className="mb-1 block @md:hidden">
+                      {stateBadge(request.publicState)}
+                    </span>
+                    {[
+                      date.format(new Date(request.createdAt)),
+                      request.type
+                        ? messages.choices.type[
+                            request.type as keyof typeof messages.choices.type
+                          ]
+                        : null,
+                      request.impact
+                        ? messages.choices.impact[
+                            request.impact as keyof typeof messages.choices.impact
+                          ]
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    {request.unread > 0 ? (
+                      <Badge variant="soft" tone="info" className="ms-2">
+                        {text.newReplies(request.unread)}
+                      </Badge>
+                    ) : null}
+                  </span>
+                }
+                badge={
+                  <span className="hidden @md:inline-flex">
                     {stateBadge(request.publicState)}
                   </span>
-                  {[
-                    date.format(new Date(request.createdAt)),
-                    request.type
-                      ? messages.choices.type[
-                          request.type as keyof typeof messages.choices.type
-                        ]
-                      : null,
-                    request.impact
-                      ? messages.choices.impact[
-                          request.impact as keyof typeof messages.choices.impact
-                        ]
-                      : null,
-                    request.unread > 0 ? text.newReplies(request.unread) : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              }
-              badge={
-                <span className="hidden @md:inline-flex">
-                  {stateBadge(request.publicState)}
-                </span>
-              }
-            />
+                }
+              />
+            </div>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0 text-muted-foreground"
+            >
+              <path d="m9 6 6 6-6 6" />
+            </svg>
           </button>
         </li>
       ))}

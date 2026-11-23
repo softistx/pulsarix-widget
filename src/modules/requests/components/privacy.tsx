@@ -92,12 +92,18 @@ export function Privacy({
         disabled={savingEmails}
         onCheckedChange={(next) => void changeEmails(next === true)}
       />
+      <div className="grid gap-1 border-border border-t pt-4">
+        <p className="m-0 font-semibold text-sm">{text.privacy.dataTitle}</p>
+        <p className="m-0 text-muted-foreground text-sm">
+          {text.privacy.dataHint}
+        </p>
+      </div>
       <Button
         type="button"
         variant="tonal"
         color="error"
         size="sm"
-        className="mt-2 justify-self-start"
+        className="justify-self-start"
         onClick={() => setConfirming(true)}
       >
         {text.privacy.erase}

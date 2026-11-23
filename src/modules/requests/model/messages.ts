@@ -52,6 +52,8 @@ export interface RequestsMessages {
     emails: string;
     emailsHint: string;
     emailsFailed: string;
+    dataTitle: string;
+    dataHint: string;
     erase: string;
     eraseTitle: string;
     eraseBody: string;
@@ -134,6 +136,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       emails: "E-mails about my requests",
       emailsHint: "Get an e-mail when the team replies.",
       emailsFailed: "Your e-mail choice was not saved. Try again.",
+      dataTitle: "Privacy",
+      dataHint: "Erases every request you sent from this site.",
       erase: "Delete my data",
       eraseTitle: "Delete my data?",
       eraseBody:
@@ -219,6 +223,8 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
       emails: "E-mails sur mes demandes",
       emailsHint: "Recevoir un e-mail quand l'équipe répond.",
       emailsFailed: "Votre choix n'a pas été enregistré. Réessayez.",
+      dataTitle: "Confidentialité",
+      dataHint: "Efface toutes les demandes envoyées depuis ce site.",
       erase: "Supprimer mes données",
       eraseTitle: "Supprimer mes données ?",
       eraseBody:

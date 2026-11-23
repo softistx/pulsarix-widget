@@ -25,7 +25,10 @@ export function ThreadHeader({
   const state = detail?.publicState;
   return (
     <DialogHeader>
-      <DialogTitle className="max-sm:line-clamp-1 max-sm:text-lg">
+      <DialogTitle
+        title={detail?.title ?? title}
+        className="max-sm:line-clamp-1 max-sm:text-lg"
+      >
         {detail?.title ?? title}
       </DialogTitle>
       <DialogDescription className="flex flex-wrap items-center gap-2">
