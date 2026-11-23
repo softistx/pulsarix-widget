@@ -39,7 +39,7 @@ function ChoiceChips({
         <ChipGroupField
           label={messages.fields[name]}
           deselectable
-          columns={3}
+          overflow="wrap"
           value={field.value || null}
           onValueChange={(value) => field.onChange(value ?? "")}
           options={Object.entries(labels).map(([value, label]) => ({

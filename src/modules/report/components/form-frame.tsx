@@ -53,8 +53,8 @@ export function FormFooter({
       <Button
         type="submit"
         form={FORM_ID}
-        loading={submitting}
-        disabled={blocked}
+        aria-busy={submitting}
+        disabled={blocked || submitting}
       >
         {submitting ? messages.submitting : messages.submit}
       </Button>
