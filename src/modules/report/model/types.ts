@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Locale, MetadataEntry } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { WidgetProject } from "../api";
@@ -27,9 +26,7 @@ export interface ReportFlowProps {
   onSubmitted: (detail: SubmitDetail) => void;
   onError: (detail: { code: string }) => void;
   onClose: () => void;
-  /** Told when the confirmation shows (no screenshot pane, so the dialog is not split). */
-  onDone?: (done: boolean) => void;
-  /** Told when the screenshot editor opens or closes (the dialog widens its pane). */
+  /** Told when the screenshot editor opens or closes (the dialog widens for it). */
   onEditing?: (editing: boolean) => void;
   /** Overridable for specs; the API's own minimum otherwise. */
   minFillMs?: number;
@@ -37,8 +34,6 @@ export interface ReportFlowProps {
   maskText?: boolean;
   /** `data-attachments="false"` turns the screenshot and file controls off. */
   attachments?: boolean;
-  /** Told whether the controls show (the key's own switch is known once its config is read). */
-  onControls?: (shown: boolean) => void;
   /** Wait before an upload's one retry; specs shorten it. */
   retryDelayMs?: number;
   /** Starting values of the form, used when there is no kept draft. */
@@ -54,9 +49,7 @@ export interface ReportFlowProps {
   draft?: { current: ReportValues | null };
   /** The host's identity token: the report is the reporter's own and shows in My requests. */
   identity?: string | null;
-  /** Rendered in the dialog's header, under the description (the identified reporter's tabs). */
-  headerExtra?: ReactNode;
-  /** The key's project, when the owner of the dialog already read it (a tab switch remounts this). */
+  /** The key's project, when the owner of the dialog already read it (a switch of view remounts this). */
   project?: WidgetProject | null;
   onProject?: (project: WidgetProject | null) => void;
 }

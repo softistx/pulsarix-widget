@@ -16,7 +16,7 @@ test.skipIf(!existsSync(join(dist, "manifest.json")))(
     expect(existsSync(join(dist, manifest.widget))).toBe(true);
     // Every lazy chunk the manifest lists is on disk, hashed.
     for (const chunk of manifest.chunks) {
-      expect(chunk).toMatch(/^[\w-]+\.[a-z0-9]+\.js$/);
+      expect(chunk).toMatch(/^[\w.-]+\.[a-z0-9]+\.js$/);
       expect(existsSync(join(dist, chunk))).toBe(true);
     }
   },

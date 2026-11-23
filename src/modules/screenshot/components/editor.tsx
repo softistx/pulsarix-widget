@@ -33,10 +33,8 @@ export default function Editor({
     return release;
   }, []);
   return (
-    <div
-      ref={mark}
-      className="h-full min-h-0 max-md:-mx-8 max-md:w-[calc(100%+64px)] md:w-full"
-    >
+    // Temporary, until material#5620 (a scroll cue on the editor tool row at 360 px).
+    <div ref={mark} className="min-h-0 w-full">
       {styled ? (
         <ImageMarkupEditor
           src={source}
@@ -44,11 +42,12 @@ export default function Editor({
           maxExportSize={MAX_EXPORT_SIDE}
           defaultExportOptions={{ format: "image/png", scale: 1 }}
           crop
+          toolbar="floating"
           redactModes={["solid"]}
           saveLabel={saveLabel}
           onSave={({ file }) => onSave(file)}
           onCancel={onCancel}
-          className="h-[780px] w-full md:h-full md:min-h-0"
+          className="h-[min(720px,calc(100dvh-170px))] w-full max-sm:h-[calc(100dvh-140px)]"
         />
       ) : null}
     </div>

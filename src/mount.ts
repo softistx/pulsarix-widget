@@ -27,7 +27,7 @@ export interface MountOptions {
   inheritTheme?: boolean;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
-  /** The floating button: `"auto"` (icon below 640 px, pill above), `"pill"`, `"icon"`, or `false`. */
+  /** The floating button: `"auto"`, `"pill"` and `"icon"` all give the round FAB (kept for compatibility), or `false` for none. */
   launcher?: boolean | LauncherMode;
   /** Launcher distance from the bottom and its side (16 px default): pixels, or a CSS length. */
   offset?: LauncherOffset;
@@ -68,8 +68,8 @@ export interface WidgetHandle {
   setTheme(theme: ThemeMode): void;
   /**
    * Switches the language. The widget's strings change at once; `@softistx/material`'s built-in labels
-   * follow when the form is idle (typed fields, type, impact and tab kept, attachments dropped), never
-   * during a send, on the confirmation or on the requests tab.
+   * follow when the form is idle (typed fields, type and impact kept, attachments dropped), never
+   * during a send, on the confirmation or on the requests view.
    */
   setLocale(locale: Locale): void;
   /** Replaces the metadata sent with the next report (`null` clears it). */

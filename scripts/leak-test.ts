@@ -170,8 +170,11 @@ try {
     `button font not forced by the host (${inner.fontStyle} ${inner.fontSize})`,
   );
   check(
-    inner.letterSpacing === "normal" && inner.transform === "none",
-    "text-transform and letter-spacing are not inherited",
+    // The FAB carries material's own tracking (a fraction of a pixel): what must not show is the host's.
+    (inner.letterSpacing === "normal" ||
+      Number.parseFloat(inner.letterSpacing) < 0.5) &&
+      inner.transform === "none",
+    `text-transform and letter-spacing are not inherited (${inner.letterSpacing}, ${inner.transform}, host ${inner.hostLetter} ${inner.hostTransform})`,
   );
   check(
     inner.hostScheme === "light",

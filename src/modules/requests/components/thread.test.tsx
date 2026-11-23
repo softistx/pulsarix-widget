@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { App } from "../../../app";
 import { MESSAGES } from "../../../core/messages";
+import { openRequests, TestHost } from "../../../test-host";
 
 const originalFetch = globalThis.fetch;
 const originalXhr = globalThis.XMLHttpRequest;
@@ -198,10 +198,8 @@ const props = () => ({
 async function openThread(row: Record<string, unknown> = base) {
   detail = { ...base, ...row };
   list = [detail];
-  const view = render(<App {...props()} />);
-  await userEvent.click(
-    await screen.findByRole("tab", { name: /My requests/ }),
-  );
+  const view = render(<TestHost {...props()} />);
+  await openRequests();
   await userEvent.click(
     await screen.findByRole("button", { name: /Open request/ }),
   );
@@ -354,11 +352,49 @@ describe("request thread", () => {
     expect(screen.getByPlaceholderText("Write a reply...")).toBeTruthy();
   });
 
+  test("the team's reply is rendered as markdown, what the reporter typed stays plain text", async () => {
+    await openThread({
+      description: "My **bold** text https://example.com/x",
+      thread: [
+        message(
+          "m1",
+          "team",
+          "See **this** and [the guide](https://example.com/g) <b>x</b>",
+        ),
+      ],
+    });
+    const log = await screen.findByRole("log");
+    // The renderer is a lazy chunk: plain text first, then the markup.
+    await waitFor(() =>
+      expect(log.querySelector("strong")?.textContent).toBe("this"),
+    );
+    expect(log.querySelector("a")?.textContent).toBe("the guide");
+    // Raw HTML is never drawn.
+    expect(log.querySelector("b")).toBeNull();
+    // The reporter's own words: a text node, no markup and no auto-link.
+    expect(log.textContent).toContain("My **bold** text https://example.com/x");
+    expect(log.querySelectorAll("strong")).toHaveLength(1);
+    expect(log.querySelectorAll("a")).toHaveLength(1);
+  });
+
   test("a read-only thread keeps its messages and says why the composer is off", async () => {
     await openThread({ canReply: false, publicState: "declined" });
     await screen.findByText("Under Account, then Billing.");
     screen.getByText("A declined request is read-only.");
     expect(screen.queryByPlaceholderText("Write a reply...")).toBeNull();
+  });
+
+  test("a read-only thread is as tall as its messages, an open one has a fixed height", async () => {
+    await openThread({ canReply: false, publicState: "declined" });
+    await screen.findByText("Under Account, then Billing.");
+    const readOnly = screen.getByRole("log").closest("[class*='h-auto']");
+    expect(readOnly).not.toBeNull();
+    cleanup();
+    await openThread();
+    await screen.findByText("Under Account, then Billing.");
+    expect(
+      screen.getByRole("log").closest("[class*='h-[min(460px,58dvh)]']"),
+    ).not.toBeNull();
   });
 
   test("while the thread loads, a busy status with a skeleton stands in", async () => {
@@ -374,10 +410,8 @@ describe("request thread", () => {
         await held;
       return real(url, init);
     }) as unknown as typeof fetch;
-    render(<App {...props()} />);
-    await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
-    );
+    render(<TestHost {...props()} />);
+    await openRequests();
     await userEvent.click(
       await screen.findByRole("button", { name: /Open request/ }),
     );
@@ -449,10 +483,8 @@ describe("request thread", () => {
 
   test("no stream runs while only the list is open", async () => {
     list = [base];
-    render(<App {...props()} />);
-    await userEvent.click(
-      await screen.findByRole("tab", { name: /My requests/ }),
-    );
+    render(<TestHost {...props()} />);
+    await openRequests();
     await screen.findByRole("button", { name: /Open request/ });
     expect(streams).toHaveLength(0);
   });

@@ -21,3 +21,37 @@
   line-height: 1.5;
   color: var(--foreground);
 }
+/* Material's upload bar asks for `accent-primary`, a class the widget's CSS does not emit: the
+   browser's own green showed. */
+progress {
+  accent-color: var(--primary);
+  appearance: none;
+  border: 0;
+  background: var(--muted);
+}
+progress::-webkit-progress-bar {
+  background: var(--muted);
+}
+progress::-webkit-progress-value {
+  background: var(--primary);
+  border-radius: inherit;
+}
+progress::-moz-progress-bar {
+  background: var(--primary);
+  border-radius: inherit;
+}
+
+/* Dark mode: material's error fill (about 4.5:1 under its white text) is darkened so the unread
+   counts clear 4.5:1 with margin. Temporary, until material#5617 (a darker dark error badge). */
+:host([data-resolved-theme="dark"]) .nxgt-fab > [data-slot="fab-count"],
+:host([data-resolved-theme="dark"])
+  .nxgt-fab-menu-item
+  > [data-slot="fab-menu-item-badge"] {
+  background: oklch(50% 0.17 27);
+  color: #fff;
+}
+/* A switch label keeps one colour, checked or not, light or dark (material tints it with
+   `text-primary-text` only when checked). */
+[data-slot="switch-field"] label {
+  color: var(--foreground);
+}

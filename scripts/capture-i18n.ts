@@ -4,7 +4,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright-core";
-import { filesInput, png } from "./files-test";
+import { chooseFiles, png } from "./files-test";
 import { serveFixture } from "./serve-fixture";
 
 const out = process.argv[2] ?? "captures-i18n";
@@ -45,9 +45,11 @@ try {
           await page.getByRole("button", { name: launcher }).click();
           await page.getByRole("dialog").waitFor();
           await page.waitForTimeout(400);
-          await filesInput(page).setInputFiles([
-            png("checkout-error.png", 48_000),
-          ]);
+          await chooseFiles(
+            page,
+            [png("checkout-error.png", 48_000)],
+            locale === "fr" ? "Annuler" : "Cancel",
+          );
           await page.getByRole("button", { name: remove }).first().waitFor();
           await page
             .locator("pulsarix-widget [data-testid=attachments]")

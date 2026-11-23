@@ -77,7 +77,7 @@ One widget per page: use the script tag or `mount()`, not both.
 ## 3. Identify your signed-in users
 
 Without an identity the widget is the anonymous report form. With one, reports are filed under the
-reporter, who also gets a "My requests" tab (threads, replies, unread counts, "Delete my data").
+reporter, who also gets a "My requests" view (threads, replies, unread counts, "Delete my data").
 
 Your server signs a short-lived token for the signed-in user with the key's identity secret; the browser
 only carries the token. The helper does the signing:
@@ -234,6 +234,10 @@ Content-Security-Policy:
 - Nothing else is needed for images or capture: thumbnails and the screenshot editor draw on canvases,
   so there is no `img-src blob:`. Screen capture needs `display-capture` in your `Permissions-Policy`
   (uploading an image works without it).
+- Lazy chunks come from the same pulsarix host, so no extra `script-src` entry: the screenshot editor
+  (fetched on the first capture) and the markdown renderer of the team's replies (`chat-markdown-*.js`,
+  about 740 KB, 221 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
+  every file of the widget's folder beside the entry, with the bundle's cache headers.
 - The widget's styles are adopted into its shadow root: no `style-src 'unsafe-inline'`. The requests
   thread injects one `<style>` element; under a strict `style-src` give your page a nonce, which the
   widget reads from a `nonce` attribute on a `style` or `script` element or from this tag:
@@ -254,7 +258,7 @@ Script-tag attributes and `init` / `mount` options (all optional except the key)
 | `data-theme` / `theme`                              | `light`, `dark` or `auto` (default)                                |
 | `data-position` / `position`                        | `bottom-right` (default) or `bottom-left`                          |
 | `data-accent-color` / `accentColor`                 | a hex seed for the theme                                           |
-| `data-launcher` / `launcher`                        | `auto` (default), `pill`, `icon`, or `false` for none (section 11) |
+| `data-launcher` / `launcher`                        | `false` for none; any other value gives the round FAB (section 11) |
 | `data-offset-bottom`, `data-offset-side` / `offset` | launcher distance from the bottom and its side (section 11)        |
 | `data-attachments="false"`                          | no screenshot and no file controls                                 |
 | `data-mask-text="true"`                             | "Mask the text on the page" starts on                              |
@@ -264,7 +268,9 @@ Script-tag attributes and `init` / `mount` options (all optional except the key)
 | `data-metadata` / `metadata`                        | a JSON object of strings stored with each report                   |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
-values of 512, 2 KB in all; the rest is dropped.
+values of 512, 2 KB in all; the rest is dropped. The keys `capture-N-page` are reserved: the widget
+writes one per screenshot (the page it was taken on, origin and path), drops a host entry of that shape,
+and drops the host's last entries first when the whole would pass these limits.
 
 ```html
 <script src="https://<pulsarix-host>/widget/v1/loader.js" async
@@ -448,9 +454,9 @@ Rules:
   64 characters, values of 512, 2 KB in all). A report already sent is not changed.
 - `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` (the close
   button, the file list, ...) are read once by its i18n context, so they change when the form is next idle:
-  - On an idle form, the typed fields, the chosen type and impact and the selected tab are kept; files and a
+  - On an idle form, the typed fields, the chosen type and impact are kept; files and a
     screenshot already attached are dropped.
-  - While a report is being sent, on the confirmation screen, or on the "My requests" tab, nothing is rebuilt:
+  - While a report is being sent, on the confirmation screen, or in the "My requests" view, nothing is rebuilt:
     those built-in labels switch when the reporter returns to the form (or the dialog closes), and no
     attachment is lost.
   - `setTheme` and `setMetadata` drop nothing.
@@ -465,15 +471,14 @@ attribute and a `mount()` option.
 
 ### Look: `launcher`
 
-| Value              | Result                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `"auto"` (default) | The icon below 640 px of viewport width, the text pill from 640 px up. Live: it follows a resize or a rotation. |
-| `"pill"`           | Always the text pill (the 0.3 look).                                                                            |
-| `"icon"`           | Always a 48 px round button with a speech-bubble icon.                                                          |
-| `false`            | No launcher; open the dialog with `open()`.                                                                     |
+The launcher is one round floating action button (FAB) with the pulsarix mark, at every width. The
+`launcher` option no longer changes its look: `"auto"`, `"pill"` and `"icon"` all give the FAB (they
+are still read so existing embeds keep working), and `false` removes it (open the dialog with `open()`).
 
-The icon button keeps the localized label as its accessible name (and as its `title`, so a
-pointer hover shows it), carries the unread count in that name, and shows a visible focus ring.
+Without a token the FAB opens the report form directly. With a token it opens a small menu anchored
+to it with two items, "Report a problem" and "My requests" (with its unread badge); each opens one
+view, never tabs. The FAB keeps the localized label as its accessible name and carries the unread
+count in it ("Report a problem, 3"), with a visible focus ring.
 
 ```html
 <script src="https://<pulsarix-host>/widget/v1/loader.js" async

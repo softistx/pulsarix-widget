@@ -40,7 +40,7 @@ try {
       );
       await page.getByRole("button", { name: /Report a problem/ }).click();
       await page.getByRole("dialog").waitFor();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
       await page.getByText("Loading your requests...").waitFor({
         state: "attached",
       });

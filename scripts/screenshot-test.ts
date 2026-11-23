@@ -1,11 +1,13 @@
 /**
  * The screenshot slice's acceptance (W2b), run in Chromium with fake display media:
- *   - "Add a screenshot" hides the widget host while the frame is grabbed, restores it, and
+ *   - "Capture this page" (under "Add") hides the widget host while the frame is grabbed, restores it, and
  *     leaves no media track live and no object URL behind;
  *   - the editor (a lazy chunk) annotates; the exported pixels under a "Redact" box are one
  *     uniform colour, and the export is at most 2560 px on its longest side;
- *   - "Upload an image" works, refuses what it cannot take, and is the only choice on a phone;
- *   - a refused capture falls back to the upload; retake and remove work.
+ *   - "Upload a file" (beside "Capture this page", under one "Add" control) works, refuses what it cannot take
+ *     and is the only choice on a phone;
+ *   - a refused capture falls back to the upload; a thumbnail's remove button drops the image;
+ *   - an identified reporter reaches the same form through the FAB's menu, with no tabs.
  * A browser test: local only, never in CI (see "Browser tests" in the owner's rules).
  */
 import {
@@ -15,6 +17,12 @@ import {
   type Page,
 } from "playwright-core";
 import { serveFixture } from "./serve-fixture";
+
+/** Opens the "Add" disclosure of the attachments control when it is closed. */
+async function openAdd(page: Page) {
+  const add = page.getByRole("button", { name: "Add", exact: true });
+  if ((await add.getAttribute("aria-expanded")) !== "true") await add.click();
+}
 
 const failures: string[] = [];
 const check = (ok: boolean, message: string) => {
@@ -42,6 +50,11 @@ const SPY = `
       return stream;
     };
   }
+  window.__spy.blobs = [];
+  const toBlob = HTMLCanvasElement.prototype.toBlob;
+  HTMLCanvasElement.prototype.toBlob = function (cb, type, quality) {
+    return toBlob.call(this, (b) => { if (b) window.__spy.blobs.push(b); cb(b); }, type, quality);
+  };
   const create = URL.createObjectURL.bind(URL);
   const revoke = URL.revokeObjectURL.bind(URL);
   URL.createObjectURL = (o) => { window.__spy.urls.created++; return create(o); };
@@ -64,7 +77,7 @@ async function open(
     height?: number;
     userAgent?: string;
     init?: string;
-    /** The fixture page; `/` by default, `/identified` for the tabbed layout. */
+    /** The fixture page; `/` by default, `/identified` for an identified reporter (FAB menu). */
     path?: string;
   },
   base: string,
@@ -84,7 +97,9 @@ async function open(
       .querySelector("pulsarix-widget")
       ?.shadowRoot?.querySelector("button"),
   );
-  await page.getByRole("button", { name: "Report a problem" }).click();
+  await page.getByRole("button", { name: /^Report a problem/ }).click();
+  if (options.path === "/identified")
+    await page.getByRole("menuitem", { name: "Report a problem" }).click();
   await page.getByRole("dialog").waitFor();
   await page.waitForTimeout(400);
   return { page, context, errors };
@@ -121,7 +136,9 @@ async function pngBytes(page: Page, width: number, height: number) {
 const tool = (page: Page, name: string) =>
   page.locator(`pulsarix-widget [aria-label="${name}"]`);
 const stage = (page: Page) => page.locator("pulsarix-widget canvas").first();
-const preview = (page: Page) => page.getByTestId("screenshot-preview");
+/** The last image the page encoded (the kept export), as a count of the thumbnails shown. */
+const thumbs = (page: Page) =>
+  page.locator("pulsarix-widget [data-slot='attachment']");
 
 /** Draws on the editor's stage between two fractions of the image, with the mouse. */
 async function drag(page: Page, from: [number, number], to: [number, number]) {
@@ -143,19 +160,23 @@ async function drag(page: Page, from: [number, number], to: [number, number]) {
   await page.mouse.up();
 }
 
-/** The kept image, read back from the preview canvas: size and the colours inside a region. */
+/** The last encoded image (the kept export): its size and the colours inside a region. */
 function regionOf(
   page: Page,
   fractions: [number, number, number, number],
   inset: number,
 ) {
   return page.evaluate(
-    ({ fractions, inset }) => {
-      const host = document.querySelector("pulsarix-widget");
-      const canvas = host?.shadowRoot?.querySelector(
-        '[data-testid="screenshot-preview"]',
-      ) as HTMLCanvasElement;
+    async ({ fractions, inset }) => {
+      const blobs = (window as unknown as { __spy: { blobs: Blob[] } }).__spy
+        .blobs;
+      const blob = blobs[blobs.length - 1] as Blob;
+      const bitmap = await createImageBitmap(blob);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      ctx.drawImage(bitmap, 0, 0);
       const [fx0, fy0, fx1, fy1] = fractions as [
         number,
         number,
@@ -223,7 +244,8 @@ try {
         }
       ).__kept = true;
     });
-    await page.getByRole("button", { name: "Add a screenshot" }).click();
+    await openAdd(page);
+    await page.getByRole("button", { name: "Capture this page" }).click();
     await tool(page, "Redact").waitFor();
     await page.waitForTimeout(500);
     const during = await spy(page);
@@ -252,21 +274,15 @@ try {
         restored.kept === true,
       "the host is restored (same element, no inline style left)",
     );
-    check(
-      (await page.getByRole("textbox", { name: /Title/ }).inputValue()) ===
-        "Checkout broken",
-      "the form kept its text (the host was hidden, not unmounted)",
-    );
 
     // A pen stroke, then a "Redact" box over the middle of the picture.
     await tool(page, "Pen").click();
     await drag(page, [0.1, 0.12], [0.35, 0.2]);
     await tool(page, "Redact").click();
-    // The panel always renders its Size control: wait for it so the count below is not vacuous.
-    const panel = page.locator("pulsarix-widget");
-    await panel
-      .getByText("Size", { exact: true })
-      .or(panel.getByLabel("Size", { exact: true }))
+    // The floating toolbar names the active tool: wait for it so the count below is not vacuous.
+    await page
+      .locator("pulsarix-widget")
+      .getByText("Redact", { exact: true })
       .first()
       .waitFor();
     check(
@@ -278,15 +294,7 @@ try {
     );
     await drag(page, [0.4, 0.3], [0.75, 0.85]);
     await page.getByRole("button", { name: "Attach" }).click();
-    await preview(page).waitFor();
-    await page.waitForFunction(() => {
-      const c = document
-        .querySelector("pulsarix-widget")
-        ?.shadowRoot?.querySelector(
-          '[data-testid="screenshot-preview"]',
-        ) as HTMLCanvasElement | null;
-      return !!c && c.width > 300;
-    });
+    await thumbs(page).first().waitFor();
     const hidden = await regionOf(page, [0.4, 0.3, 0.75, 0.85], 6);
     check(
       hidden.distinct === 1 && hidden.alpha === 255 && hidden.pixels > 10_000,
@@ -304,28 +312,53 @@ try {
     const after = await spy(page);
     check(after.live === 0, "no media track live after the editor saved");
     check(
-      after.urls.created === after.urls.revoked,
-      `no object URL left (${after.urls.created} created, ${after.urls.revoked} revoked)`,
+      (await page.getByRole("textbox", { name: /Title/ }).inputValue()) ===
+        "Checkout broken",
+      "the form kept its text (the host was hidden, not unmounted)",
     );
     check(
-      (await page.getByRole("button", { name: "Retake" }).count()) === 1 &&
-        (await page.getByRole("button", { name: "Remove" }).count()) === 1,
-      "Retake and Remove are offered",
+      (await thumbs(page).count()) === 1,
+      "the kept export is one thumbnail in the attachments list",
     );
-
-    // Retake: a second capture, then cancel keeps the first export.
-    await page.getByRole("button", { name: "Retake" }).click();
-    await page.getByRole("button", { name: "Cancel" }).waitFor();
+    check(
+      await page
+        .getByText("Captured on ", { exact: false })
+        .first()
+        .isVisible(),
+      "the attachment shows the page it was captured on",
+    );
+    // A second capture is a second attachment (no Retake: remove one, add another).
+    await openAdd(page);
+    await page.getByRole("button", { name: "Capture this page" }).click();
+    await tool(page, "Redact").waitFor();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await preview(page).waitFor();
+    await page.getByRole("dialog").waitFor();
     const again = await spy(page);
     check(
       again.calls.length === 2 && again.live === 0,
-      "retake takes a new capture and ends its tracks",
+      "a second capture ends its tracks, and cancelling keeps the first export",
     );
-    await page.getByRole("button", { name: "Remove" }).click();
-    await page.getByRole("button", { name: "Add a screenshot" }).waitFor();
-    check((await preview(page).count()) === 0, "Remove drops the export");
+    check(
+      (await thumbs(page).count()) === 2,
+      "cancelling the editor keeps the raw capture beside the first",
+    );
+    for (let left = await thumbs(page).count(); left > 0; left--)
+      await page
+        .locator("pulsarix-widget [data-testid='attachments']")
+        .getByRole("button", { name: /remove|delete/i })
+        .first()
+        .click();
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("[data-slot='attachment']"),
+    );
+    const done = await spy(page);
+    check(
+      done.urls.created === done.urls.revoked,
+      `no object URL left once the thumbnail is removed (${done.urls.created} created, ${done.urls.revoked} revoked)`,
+    );
     check(
       errors.length === 0,
       `no page errors${errors.length ? `: ${errors[0]}` : ""}`,
@@ -333,37 +366,35 @@ try {
     await context.close();
   }
 
-  // 2. Upload: a large image is brought down to 2560 px; a wrong type is refused.
+  // 2. Upload: a wrong type is refused, an image is a plain attachment.
   {
     const { page, context } = await open(browser, {}, base);
-    await page.getByTestId("screenshot-file").setInputFiles({
+    await page.getByTestId("attachments-input").setInputFiles({
       name: "notes.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("not an image"),
     });
     check(
-      await page.getByText("Choose a PNG, JPEG or WebP image.").isVisible(),
+      await page
+        .getByText("Not accepted: use a PNG, JPEG, WebP or PDF.")
+        .isVisible(),
       "an upload that is not an image is refused with a message",
     );
-    await page.getByTestId("screenshot-file").setInputFiles({
+    await page.getByTestId("attachments-input").setInputFiles({
       name: "wide.png",
       mimeType: "image/png",
       buffer: await pngBytes(page, 4000, 2000),
     });
-    await page.getByRole("button", { name: "Attach" }).click();
-    await preview(page).waitFor();
-    await page.waitForFunction(() => {
-      const c = document
-        .querySelector("pulsarix-widget")
-        ?.shadowRoot?.querySelector(
-          '[data-testid="screenshot-preview"]',
-        ) as HTMLCanvasElement | null;
-      return !!c && c.width > 300;
-    });
-    const size = await regionOf(page, [0, 0, 1, 1], 0);
+    // An uploaded image opens the editor right away; cancelling keeps it as chosen.
+    await tool(page, "Redact").waitFor();
+    check(true, "an uploaded image opens in the editor");
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await thumbs(page).first().waitFor();
+    const n = await thumbs(page).count();
+    check(n >= 1, `an uploaded image is kept as an attachment (${n} listed)`);
     check(
-      size.width === 2560 && size.height === 1280,
-      `a 4000x2000 upload is exported at 2560x1280 (${size.width}x${size.height})`,
+      (await page.getByRole("button", { name: /^Edit / }).count()) === 1,
+      "Edit reopens it",
     );
     check(
       (await spy(page)).calls.length === 0,
@@ -375,17 +406,28 @@ try {
   // 3. A refused capture falls back to the upload.
   {
     const { page, context } = await open(browser, { init: REFUSE }, base);
-    await page.getByRole("button", { name: "Add a screenshot" }).click();
+    await openAdd(page);
+    await page.getByRole("button", { name: "Capture this page" }).click();
     await page.getByText("The capture was refused.").waitFor();
     check(
-      await page.getByRole("button", { name: "Upload an image" }).isEnabled(),
+      await page
+        .getByRole("status")
+        .filter({ hasText: "The capture was refused." })
+        .getByRole("button", { name: "Upload a file" })
+        .isEnabled(),
+      "after a refusal the alert itself offers the upload",
+    );
+    check(
+      await openAdd(page).then(() =>
+        page.getByRole("button", { name: "Upload a file" }).first().isEnabled(),
+      ),
       "after a refusal the upload is still offered",
     );
     await context.close();
   }
 
-  // 4. The identified layout (New request and My requests tabs): the screenshot pane still
-  // sits beside the form, and tabs and the pane fit together at 1440 px and on a phone.
+  // 4. The identified reporter: the FAB opens a menu, "Report a problem" opens the same one form
+  // (no tabs), and "My requests" is its own view without the attachments control.
   for (const [width, height] of [
     [1440, 900],
     [360, 780],
@@ -396,23 +438,22 @@ try {
       base,
     );
     check(
-      (await page.getByRole("tab").count()) === 2,
-      `identified, ${width}px: the dialog has the two tabs`,
+      (await page.getByRole("tab").count()) === 0,
+      `identified, ${width}px: the dialog has no tabs`,
     );
     check(
-      await page.getByRole("button", { name: "Upload an image" }).isVisible(),
-      `identified, ${width}px: the screenshot pane is offered under the tabs`,
+      await page.getByRole("button", { name: "Add", exact: true }).isVisible(),
+      `identified, ${width}px: the attachments control is in the form`,
     );
     const box = await page.getByRole("dialog").boundingBox();
     check(
       !!box && box.width <= width && box.x >= 0,
       `identified, ${width}px: the dialog fits the window`,
     );
-    // The pane's button sits inside the dialog, under the tabs, not clipped out of it.
     const upload = await page
-      .getByRole("button", { name: "Upload an image" })
+      .getByRole("button", { name: "Add", exact: true })
       .boundingBox();
-    // (On a phone the pane is below the form and the body scrolls: only the wide layout is checked.)
+    // (On a phone the body scrolls: only the wide layout is checked.)
     check(
       width < 1000 ||
         (!!box &&
@@ -421,14 +462,17 @@ try {
           upload.y + upload.height <= box.y + box.height &&
           upload.x >= box.x &&
           upload.x + upload.width <= box.x + box.width),
-      `identified, ${width}px: the screenshot pane's button is inside the dialog`,
+      `identified, ${width}px: the attachments control is inside the dialog`,
     );
-    await page.getByRole("tab", { name: /My requests/ }).click();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "detached" });
+    await page.getByRole("button", { name: /^Report a problem/ }).click();
+    await page.getByRole("menuitem", { name: /My requests/ }).click();
     await page.getByText("The pay button does nothing").waitFor();
     check(
-      (await page.getByRole("button", { name: "Upload an image" }).count()) ===
+      (await page.getByRole("button", { name: "Add", exact: true }).count()) ===
         0,
-      `identified, ${width}px: My requests drops the screenshot pane`,
+      `identified, ${width}px: My requests drops the attachments control`,
     );
     await context.close();
   }
@@ -441,13 +485,14 @@ try {
       base,
     );
     check(
-      (await page.getByRole("button", { name: "Add a screenshot" }).count()) ===
-        0,
+      (await page
+        .getByRole("button", { name: "Capture this page" })
+        .count()) === 0,
       "no screen-capture button on a phone",
     );
     check(
-      await page.getByRole("button", { name: "Upload an image" }).isVisible(),
-      "Upload an image is offered on a phone",
+      await page.getByRole("button", { name: "Upload a file" }).isVisible(),
+      "Upload a file is offered on a phone",
     );
     await context.close();
   }

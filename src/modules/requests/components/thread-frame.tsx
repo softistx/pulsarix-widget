@@ -25,7 +25,12 @@ export function ThreadHeader({
   const state = detail?.publicState;
   return (
     <DialogHeader>
-      <DialogTitle>{detail?.title ?? title}</DialogTitle>
+      <DialogTitle
+        title={detail?.title ?? title}
+        className="max-sm:line-clamp-2 max-sm:text-lg"
+      >
+        {detail?.title ?? title}
+      </DialogTitle>
       <DialogDescription className="flex flex-wrap items-center gap-2">
         {state ? (
           <Badge variant="soft" tone={STATE_TONE[state]}>
@@ -64,12 +69,22 @@ export function ThreadFooter({
         {t.back}
       </Button>
       {detail && !declined && !resolved ? (
-        <Button type="button" loading={acting} onClick={onResolve}>
+        <Button
+          type="button"
+          variant="tonal"
+          loading={acting}
+          onClick={onResolve}
+        >
           {t.resolve}
         </Button>
       ) : null}
       {resolved && detail?.canReopen ? (
-        <Button type="button" loading={acting} onClick={onReopen}>
+        <Button
+          type="button"
+          variant="tonal"
+          loading={acting}
+          onClick={onReopen}
+        >
           {t.reopen}
         </Button>
       ) : null}

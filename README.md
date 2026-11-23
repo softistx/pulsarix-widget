@@ -50,7 +50,7 @@ Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data
 `data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`) or `data-launcher="auto|pill|icon"`
-(`auto` is the default: icon below 640 px, pill above), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
+(any value other than `false` gives the round FAB), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
 (no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
 own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
@@ -164,9 +164,9 @@ bundle has loaded is queued. An unsupported theme or locale is ignored.
 - `setMetadata` replaces the whole object (same limits as `metadata` at mount); a report already sent keeps
   the metadata it was sent with.
 - `setLocale` changes the widget's own strings at once. The built-in labels of `@softistx/material` follow
-  when the form is next idle: on an idle form the typed fields, the type, the impact and the tab are kept
+  when the form is next idle: on an idle form the typed fields, the type and the impact are kept
   and files or a screenshot already attached are dropped; while a report is being sent, on the confirmation
-  or on the "My requests" tab nothing is rebuilt (and nothing is lost), and those labels switch once the
+  or in the "My requests" view nothing is rebuilt (and nothing is lost), and those labels switch once the
   reporter is back on the form or the dialog closes.
 - A repeated call before the bundle loads replaces the earlier one: only the last of each setter runs.
 - With `inheritTheme`, an explicit `setTheme` wins over the host's mode until the `theme` attribute is
@@ -181,8 +181,9 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 
 ## The launcher
 
-`launcher: "auto"` (default) shows a 48 px round icon button below 640 px of viewport width and the text
-pill above, switching live. `"pill"` and `"icon"` force one, `false` removes it. To clear a sticky bar,
+The launcher is one round FAB with the pulsarix mark at every width; with an identity token it opens a
+menu with "Report a problem" and "My requests" (unread badge), and its accessible name carries the unread
+count. `"auto"`, `"pill"` and `"icon"` all give the FAB, `false` removes it (the `pill` and `icon` values are kept for compatibility and are no-ops; the text pill is gone). With the launcher removed or held hidden, an identified reporter has no way to the requests list: keep it visible for them. To clear a sticky bar,
 `offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
 `setLauncherVisible(false)` hides only the launcher, never an open dialog, and `holdLauncher()` hides it the same way while a host's own sticky bar is up (ref-counted, call the returned function to release); with the script tag it is
 `window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
@@ -220,11 +221,11 @@ never in a URL. A malformed token is ignored. A token given with `identify()` or
 is kept in the widget's memory and is not written to the page; a token in `data-identity` is an
 attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
 
-- Without a token the dialog is today's form, with no tabs.
-- With one, the dialog has two tabs, New request and My requests. My requests is one list with
+- Without a token the dialog is the one report form, and the e-mail field is asked.
+- With one, the FAB opens a menu with "Report a problem" and "My requests" (no e-mail field). My requests is its own view, with its own title, and one list with
   filter chips and their counts (Open by default, Resolved, Declined, All); requests with
   unread replies come first, and the list is read again each time the dialog opens.
-- The launcher and the My requests tab show the unread count.
+- The FAB (in its name) and the My requests menu item show the unread count.
 - Opening a request shows its thread: the original message, then the replies of the team (plain
   text, with their file names). The reporter can reply, with up to three files sent the same way as
   a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.
@@ -338,24 +339,31 @@ With the npm route, call `widget.identify(token)` on the handle `mount()` return
 ## Screenshots
 
 A report can carry one optional screenshot, never taken without a click (and a per-report
-choice). The right pane of the dialog offers:
+choice). The one "Attachments" control of the form offers:
 
-- **Add a screenshot**: the browser's screen capture (`getDisplayMedia`). The widget hides itself
+- **Capture this page** (under the one "Add" control): the browser's screen capture (`getDisplayMedia`). The widget hides itself
   (`visibility`, not unmount, so the form keeps its text) while the frame is grabbed, then shows
   itself again. Not offered on a phone, without the API, or under a Permissions-Policy that blocks
   `display-capture`.
-- **Upload an image**: always offered, and the only choice where capture is unavailable or was
-  refused. PNG, JPEG or WebP, 25 megapixels at most.
+- **Upload a file** (under "Add"): always offered, and the only choice where capture is unavailable or was
+  refused. PNG, JPEG, WebP or PDF. An uploaded image opens in the same editor as a capture (a PDF is
+  a plain attachment).
 - **Mask the text on the page** (off by default; `data-mask-text="true"`, or `maskText: true` in `init` / `mount`, turns it on when the dialog opens): covers the
   page's text with opaque boxes before the picture is taken. It needs the current tab to be shared;
   otherwise the widget says it cannot and nothing is captured. Mark anything that must stay visible
   with `data-capture-unmask`.
 
-The picture opens in an editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
+A capture or an uploaded image opens straight in the editor (a separate chunk, fetched when first needed) with a pen, a highlighter,
 an arrow, a box, text, a solid "Redact" box (redacted pixels are one opaque colour) and Crop, which trims the
 picture before it is kept. Only the flattened
-export (2560 px on its longest side at most) is kept; the raw capture is dropped, its object URLs
-revoked and no media track stays live. Retake and Remove are offered. A report is complete without
+export (2560 px on its longest side at most) is kept when you save; Cancel in the editor keeps the
+capture as it was taken. No media track stays live. The screenshot and the files share one list of removable thumbnails. Every image has an "Edit" button that reopens it (the
+kept image, not the raw capture). Each capture records the page it was taken on (origin and path, never
+the query or the fragment), shown under it ("Captured on ...") and in the editor. The report's
+`pageUrl` is the first capture's page, and each capture's page is also sent as a `metadata` entry
+(`capture-1-page`, `capture-2-page`, ... by position among the captures; those keys are reserved: a
+host entry of that shape is dropped, and when the whole passes the metadata limits the host's entries
+are dropped from the end first). A report is complete without
 any of this. No `blob:` image source is needed in your CSP (the editor draws on canvases), and a
 `Permissions-Policy` without `display-capture` turns the capture button off.
 
@@ -377,7 +385,7 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 ## Attached files
 
 Besides the screenshot, a reporter can attach up to 3 files (PNG, JPEG, WebP or PDF, 5 MB each,
-12 MB for the report, screenshot included) by dropping them on the zone or with Browse. The
+12 MB for the report, screenshot included) by dropping them on the dialog or with "Add" then "Upload a file". The
 checks mirror the API's, so a refused file is shown with its reason and never sent; the list shows
 each file's type icon, name, size, a thumbnail for images, a Remove button, and its progress while
 the report goes out.

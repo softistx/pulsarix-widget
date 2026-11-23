@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { App } from "../../../app";
+import type { App } from "../../../app";
 import { MESSAGES } from "../../../core/messages";
+import { openRequests, TestHost } from "../../../test-host";
 
 const originalFetch = globalThis.fetch;
 
@@ -98,16 +99,33 @@ const props = {
 };
 
 async function openList(extra: Partial<Parameters<typeof App>[0]> = {}) {
-  render(<App {...props} {...extra} open />);
-  await userEvent.click(
-    await screen.findByRole("tab", { name: /My requests/ }),
-  );
+  render(<TestHost {...props} {...extra} />);
+  await openRequests();
   await screen.findByText("Pay button broken");
+  // The e-mail choice and "Delete my data" live in the preferences view.
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Preferences" }),
+  );
 }
 
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
+});
+
+describe("the preferences view", () => {
+  test("the list holds no privacy control; the gear opens them and Back returns", async () => {
+    stub();
+    render(<TestHost {...props} />);
+    await openRequests();
+    await screen.findByText("Pay button broken");
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Delete my data" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Preferences" }));
+    expect(await screen.findByRole("switch")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(await screen.findByText("Pay button broken")).toBeTruthy();
+  });
 });
 
 describe("the e-mail choice", () => {
@@ -160,7 +178,7 @@ describe("Delete my data", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(api.ops.some((o) => o.id === "eraseMyData")).toBe(false);
-    expect(screen.getByText("Pay button broken")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Delete my data" })).toBeTruthy();
   });
 
   test("confirming erases, shows the count, empties the list and tells the host", async () => {
@@ -214,6 +232,8 @@ describe("Delete my data", () => {
     expect(screen.getByRole("alertdialog")).toBeTruthy();
     expect(erased).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(await screen.findByText("Pay button broken")).toBeTruthy();
+    expect(
+      await screen.findByRole("button", { name: "Delete my data" }),
+    ).toBeTruthy();
   });
 });

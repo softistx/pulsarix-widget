@@ -42,11 +42,19 @@ export interface RequestsMessages {
       files: string;
     };
   };
+  /** The preferences view, opened from the list's header. */
+  prefs: {
+    title: string;
+    open: string;
+  };
   /** The e-mail choice and "Delete my data" (W3c). */
   privacy: {
+    notificationsTitle: string;
     emails: string;
     emailsHint: string;
     emailsFailed: string;
+    dataTitle: string;
+    dataHint: string;
     erase: string;
     eraseTitle: string;
     eraseBody: string;
@@ -124,10 +132,14 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
           "A file was refused (PNG, JPEG, WebP or PDF, 5 MB each, 3 files).",
       },
     },
+    prefs: { title: "Preferences", open: "Preferences" },
     privacy: {
+      notificationsTitle: "Notifications",
       emails: "E-mails about my requests",
       emailsHint: "Get an e-mail when the team replies.",
       emailsFailed: "Your e-mail choice was not saved. Try again.",
+      dataTitle: "Privacy",
+      dataHint: "Erases every request you sent from this site.",
       erase: "Delete my data",
       eraseTitle: "Delete my data?",
       eraseBody:
@@ -208,10 +220,14 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
           "Un fichier a été refusé (PNG, JPEG, WebP ou PDF, 5 Mo chacun, 3 fichiers).",
       },
     },
+    prefs: { title: "Préférences", open: "Préférences" },
     privacy: {
+      notificationsTitle: "Notifications",
       emails: "E-mails sur mes demandes",
       emailsHint: "Recevoir un e-mail quand l'équipe répond.",
       emailsFailed: "Votre choix n'a pas été enregistré. Réessayez.",
+      dataTitle: "Confidentialité",
+      dataHint: "Efface toutes les demandes envoyées depuis ce site.",
       erase: "Supprimer mes données",
       eraseTitle: "Supprimer mes données ?",
       eraseBody:

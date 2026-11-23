@@ -1,6 +1,6 @@
 /**
  * Captures the privacy controls of My requests: 360 and 1440 px, light and dark.
- *   privacy  My requests with the e-mail switch and "Delete my data" (scrolled to the foot)
+ *   privacy  The preferences view with the e-mail switch and "Delete my data" (scrolled to the foot)
  *   confirm  the "Delete my data?" confirmation open
  */
 import { mkdirSync } from "node:fs";
@@ -37,8 +37,14 @@ try {
       const shoot = (name: string) =>
         page.screenshot({ path: `${out}/${name}-${width}-${scheme}.png` });
       await page.getByRole("button", { name: /Report a problem/ }).click();
-      await page.getByRole("dialog").waitFor();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
+      await page
+        .getByRole("button", { name: /Open request: /i })
+        .first()
+        .waitFor();
+      await page.waitForTimeout(300);
+      await shoot("list");
+      await page.getByRole("button", { name: "Preferences" }).click();
       const toggle = page.getByRole("switch", {
         name: /E-mails about my requests/,
       });

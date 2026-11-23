@@ -5,19 +5,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@softistx/material/embed";
-import type { ReactNode } from "react";
 import type { Messages } from "../../../core/messages";
-import { FORM_ID } from "./form-sections";
+import { FORM_ID } from "./fields";
 
-/** The project name, the title, the intro and the identified reporter's tabs. */
+/** The project name, the title and the intro. */
 export function FormHeader({
   messages,
   projectName,
-  headerExtra,
 }: {
   messages: Messages;
   projectName: string | null;
-  headerExtra?: ReactNode;
 }) {
   return (
     <DialogHeader>
@@ -30,10 +27,9 @@ export function FormHeader({
         </p>
       ) : null}
       <DialogTitle>{messages.title}</DialogTitle>
-      <DialogDescription>
+      <DialogDescription className="max-sm:sr-only">
         {projectName ? messages.introFor(projectName) : messages.intro}
       </DialogDescription>
-      {headerExtra}
     </DialogHeader>
   );
 }
@@ -52,15 +48,15 @@ export function FormFooter({
   return (
     <DialogFooter>
       <Button type="button" variant="tonal" onClick={onClose}>
-        {messages.close}
+        {messages.cancel}
       </Button>
       <Button
         type="submit"
         form={FORM_ID}
-        loading={submitting}
-        disabled={blocked}
+        aria-busy={submitting}
+        disabled={blocked || submitting}
       >
-        {messages.submit}
+        {submitting ? messages.submitting : messages.submit}
       </Button>
     </DialogFooter>
   );

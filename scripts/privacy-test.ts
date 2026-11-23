@@ -57,11 +57,13 @@ const events = (page: Page) =>
 async function openList(page: Page, path: string) {
   await page.goto(`${base}${path}`);
   await page.getByRole("button", { name: /Report a problem/ }).click();
-  await page.getByRole("tab", { name: /My requests/ }).click();
+  await page.getByRole("menuitem", { name: /My requests/ }).click();
   await page
     .getByRole("button", { name: /Open request: /i })
     .first()
     .waitFor();
+  // The e-mail choice and "Delete my data" are in the preferences view, behind the header's gear.
+  await page.getByRole("button", { name: "Preferences" }).click();
 }
 
 const browser = await chromium.launch();

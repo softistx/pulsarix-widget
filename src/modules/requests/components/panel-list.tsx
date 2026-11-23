@@ -11,7 +11,6 @@ import type { RequestCounts, RequestFilter, RequestSummary } from "../api";
 import type { useRequestList } from "../hooks/use-request-list";
 import { errorText } from "../model/error-text";
 import { REQUESTS_MESSAGES } from "../model/messages";
-import { Privacy } from "./privacy";
 import { RequestList } from "./request-list";
 
 const FILTERS: RequestFilter[] = ["OPEN", "RESOLVED", "DECLINED", "ALL"];
@@ -23,40 +22,33 @@ const COUNT_KEY: Record<RequestFilter, keyof RequestCounts> = {
 };
 
 /**
- * The panel's body: the filter chips with their counts, the load and error states, the list,
- * "more" and the privacy controls. The panel owns the list's state and passes it in.
+ * The panel's body: the filter chips with their counts, the load and error states, the list
+ * and "more". The panel owns the list's state and passes it in.
  */
 export function RequestsListBody({
   messages,
   locale,
-  apiBase,
-  projectKey,
-  identity,
   list,
   onOpen,
   onNewRequest,
-  onErase,
 }: {
   messages: Messages;
   locale: Locale;
-  apiBase: string | null;
-  projectKey: string | null;
-  identity: string;
   list: ReturnType<typeof useRequestList>;
   onOpen: (request: RequestSummary) => void;
   onNewRequest: () => void;
-  onErase?: (detail: { requests: number }) => void;
 }) {
   const text = REQUESTS_MESSAGES[locale];
   const { filter, counts, nodes, load } = list;
   const total = counts?.all ?? null;
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-      {total === 0 && load.status === "ready" ? null : (
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-1">
+      {(total === 0 && load.status === "ready") ||
+      load.status === "error" ? null : (
         <ChipGroupField
           label={text.filterLabel}
           hideLabel
-          overflow="scroll-phone"
+          overflow="wrap"
           value={filter}
           onValueChange={(value) =>
             value && list.setFilter(value as RequestFilter)
@@ -73,20 +65,27 @@ export function RequestsListBody({
           variant="error"
           title={text.errors.title}
           description={errorText(text, load.error)}
-          {...(load.error.kind === "identity"
-            ? {}
-            : {
-                actions: (
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    size="sm"
-                    onClick={list.reload}
-                  >
-                    {text.retry}
-                  </Button>
-                ),
-              })}
+          // No dead end: retry, and the way back to the report form (its draft is kept).
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="filled"
+                size="sm"
+                onClick={list.reload}
+              >
+                {text.retry}
+              </Button>
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={onNewRequest}
+              >
+                {messages.launcher}
+              </Button>
+            </>
+          }
         />
       ) : null}
       {list.erased !== null ? (
@@ -141,19 +140,6 @@ export function RequestsListBody({
         >
           {text.more}
         </Button>
-      ) : null}
-      {load.status === "ready" && (total ?? 0) > 0 ? (
-        <Privacy
-          locale={locale}
-          apiBase={apiBase}
-          projectKey={projectKey}
-          identity={identity}
-          emailsOn={list.emailsOn}
-          onErased={(requests) => {
-            list.empty(requests);
-            onErase?.({ requests });
-          }}
-        />
       ) : null}
     </div>
   );

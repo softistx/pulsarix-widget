@@ -1,19 +1,18 @@
-import { Alert, DialogAside, DialogBody } from "@softistx/material/embed";
+import {
+  Alert,
+  Button,
+  DialogBody,
+  DialogHeader,
+  DialogTitle,
+} from "@softistx/material/embed";
 import type { FormEventHandler, ReactNode, Ref } from "react";
 import type { Control } from "react-hook-form";
 import type { IntakeError } from "../../../core/api/api";
 import type { Messages } from "../../../core/messages";
-import { ScreenshotPane } from "../../screenshot/components/pane";
 import { failureText } from "../model/failure-text";
 import type { ReportValues } from "../model/validation";
+import { FORM_ID, ReportFields } from "./fields";
 import { FormFooter, FormHeader } from "./form-frame";
-import {
-  ContactSection,
-  DetailsSection,
-  FORM_ID,
-  FormSection,
-  ProblemSection,
-} from "./form-sections";
 
 /** A field a person never sees; a bot that fills every field trips the API's check. */
 function Honeypot({ inputRef }: { inputRef: Ref<HTMLInputElement> }) {
@@ -42,12 +41,18 @@ function FailureAlert({
   alertBox: Ref<HTMLDivElement>;
 }) {
   return (
-    <div role="alert" ref={alertBox} className="scroll-mb-24">
+    <div role="alert" ref={alertBox} className="scroll-mb-24 lg:col-span-2">
       {failure ? (
         <Alert
           variant="error"
           title={messages.failure.summary}
           description={failureText(messages, failure)}
+          // Send again: the draft is intact, the same submit.
+          actions={
+            <Button type="submit" form={FORM_ID} variant="filled" size="sm">
+              {messages.failure.retry}
+            </Button>
+          }
         />
       ) : null}
     </div>
@@ -65,19 +70,17 @@ export interface FormProps {
   failure: IntakeError | null;
   submitting: boolean;
   blocked: boolean;
-  /** The screenshot pane and the files section show (the key and the page allow them). */
-  controls: boolean;
-  filesSection: ReactNode;
-  screenshot: File | null;
-  onScreenshot: (image: File | null) => void;
-  maskText: boolean;
-  onEditing?: (editing: boolean) => void;
+  /** The reporter has no identity: the form asks for an e-mail. */
+  anonymous: boolean;
+  /** The attachments control; null when the key or the page turned attachments off. */
+  attachments: ReactNode;
+  /** The screenshot editor: it takes the dialog's place while it is open. */
+  editor: ReactNode;
   /** The integrator's privacy page, linked after the privacy line. */
   privacyUrl?: string | null;
-  /** In the header under the description: the identified reporter's tabs. */
-  headerExtra?: ReactNode;
 }
 
+/** The report: one form, from the title to the attachments, then Cancel and Send on one line. */
 export function Form({
   messages,
   projectName,
@@ -89,46 +92,45 @@ export function Form({
   failure,
   submitting,
   blocked,
-  controls,
-  filesSection,
-  screenshot,
-  onScreenshot,
-  maskText,
-  onEditing,
+  anonymous,
+  attachments,
+  editor,
   privacyUrl,
-  headerExtra,
 }: FormProps) {
+  if (editor)
+    return (
+      <>
+        <DialogHeader>
+          <DialogTitle>{messages.screenshot.editorLabel}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>{editor}</DialogBody>
+      </>
+    );
   return (
     <>
-      <FormHeader
-        messages={messages}
-        projectName={projectName}
-        headerExtra={headerExtra}
-      />
-      <DialogBody role="region" aria-label={messages.title}>
+      <FormHeader messages={messages} projectName={projectName} />
+      <DialogBody
+        role="region"
+        aria-label={messages.title}
+        className="scroll-pt-4"
+      >
         <form
           id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
-          className="grid gap-6"
+          className="grid items-start gap-5 max-sm:pb-20 lg:grid-cols-2"
         >
-          <ProblemSection messages={messages} control={control} />
-          <hr className="border-border border-t" />
-          <DetailsSection messages={messages} control={control} />
-          <hr className="border-border border-t" />
-          {controls ? (
-            <>
-              <FormSection id="files" title={messages.sections.files}>
-                {filesSection}
-              </FormSection>
-              <hr className="border-border border-t" />
-            </>
-          ) : null}
-          <ContactSection
+          <ReportFields
             messages={messages}
             control={control}
+            anonymous={anonymous}
             privacyUrl={privacyUrl}
           />
+          {attachments ? (
+            <div className="border-border border-t pt-5 lg:col-span-2">
+              {attachments}
+            </div>
+          ) : null}
           <Honeypot inputRef={honeypot} />
           <FailureAlert
             messages={messages}
@@ -137,17 +139,6 @@ export function Form({
           />
         </form>
       </DialogBody>
-      {controls ? (
-        <DialogAside aria-label={messages.aside.title}>
-          <ScreenshotPane
-            messages={messages}
-            image={screenshot}
-            onImage={onScreenshot}
-            maskTextDefault={maskText}
-            onEditingChange={onEditing}
-          />
-        </DialogAside>
-      ) : null}
       <FormFooter
         messages={messages}
         onClose={onClose}

@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { App } from "../../app";
 import type { AppProps } from "../../app-props";
 import { MESSAGES } from "../messages";
+import { Launcher } from "./launcher";
 
 afterEach(cleanup);
 
@@ -31,7 +32,10 @@ const launcherBox = () =>
 describe("the launcher", () => {
   test("is visible while the dialog is closed", async () => {
     renderApp(false);
-    expect((await screen.findByText(MESSAGES.en.launcher)) !== null).toBe(true);
+    expect(
+      (await screen.findByRole("button", { name: MESSAGES.en.launcher })) !==
+        null,
+    ).toBe(true);
     expect(launcherBox().hidden).toBe(false);
   });
 
@@ -141,93 +145,24 @@ describe("focus", () => {
   });
 });
 
-/** A controllable `matchMedia`: `setWidth` flips the query and tells the listeners. */
-function fakeViewport(initial: number) {
-  const realMatchMedia = window.matchMedia;
-  const listeners = new Set<() => void>();
-  let width = initial;
-  window.matchMedia = ((query: string) => {
-    const max = Number(/max-width:\s*(\d+)px/.exec(query)?.[1] ?? Number.NaN);
-    return {
-      get matches() {
-        return width <= max;
-      },
-      media: query,
-      addEventListener: (_: string, fn: () => void) => listeners.add(fn),
-      removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
-    } as unknown as MediaQueryList;
-  }) as typeof window.matchMedia;
-  return {
-    setWidth(next: number) {
-      width = next;
-      act(() => {
-        for (const fn of listeners) fn();
-      });
-    },
-    restore() {
-      window.matchMedia = realMatchMedia;
-    },
-  };
-}
-
 describe("the launcher's look", () => {
-  const viewports: Array<ReturnType<typeof fakeViewport>> = [];
-  afterEach(() => {
-    for (const v of viewports.splice(0)) v.restore();
-  });
-  const at = (width: number) => {
-    const v = fakeViewport(width);
-    viewports.push(v);
-    return v;
-  };
-
-  test("auto is the pill on a wide viewport and the icon on a narrow one", async () => {
-    at(1440);
+  test("is one round FAB at every width, named by the localized label", () => {
     renderApp(false);
-    await screen.findByText(MESSAGES.en.launcher);
-    expect(launcherBox().dataset.launcher).toBe("pill");
-    cleanup();
-    at(360);
-    renderApp(false);
-    expect(launcherBox().dataset.launcher).toBe("icon");
-  });
-
-  test("auto switches live when the viewport crosses 640 px", async () => {
-    const viewport = at(1440);
-    renderApp(false);
-    await screen.findByText(MESSAGES.en.launcher);
-    expect(launcherBox().dataset.launcher).toBe("pill");
-    viewport.setWidth(639);
-    expect(launcherBox().dataset.launcher).toBe("icon");
-    viewport.setWidth(640);
-    expect(launcherBox().dataset.launcher).toBe("pill");
-  });
-
-  test("the icon is a 48 px button named by the localized label, with a title", () => {
-    at(360);
-    renderApp(false);
+    expect(launcherBox().dataset.launcher).toBe("fab");
     const button = screen.getByRole("button", { name: MESSAGES.en.launcher });
     expect(button.textContent).toBe("");
-    expect(button.getAttribute("title")).toBe(MESSAGES.en.launcher);
-    expect(button.className).toContain("size-[48px]");
-    expect(button.className).toContain("focus-visible:ring");
-    expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
-      "true",
-    );
+    expect(button.querySelector("svg")).not.toBeNull();
   });
 
-  test("launcher=pill and launcher=icon ignore the viewport", () => {
-    at(360);
-    const pill = renderApp(false, { launcherMode: "pill" });
-    expect(launcherBox().dataset.launcher).toBe("pill");
-    pill.view.unmount();
-    at(1440);
-    renderApp(false, { launcherMode: "icon" });
-    expect(launcherBox().dataset.launcher).toBe("icon");
+  test("every launcher mode renders the FAB", () => {
+    for (const launcherMode of ["auto", "pill", "icon"] as const) {
+      const { view } = renderApp(false, { launcherMode } as Partial<AppProps>);
+      expect(launcherBox().dataset.launcher).toBe("fab");
+      view.unmount();
+    }
   });
 
-  test("the French label names the icon", () => {
-    at(360);
+  test("the French label names the FAB", () => {
     render(
       <App
         messages={MESSAGES.fr}
@@ -276,5 +211,57 @@ describe("the launcher's visibility", () => {
     renderApp(true, { launcherVisible: false });
     expect((await screen.findByRole("dialog")) !== null).toBe(true);
     expect(launcherBox().hidden).toBe(true);
+  });
+});
+
+describe("the launcher for an identified reporter", () => {
+  test("opens a menu with the two views", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ data: { widgetConfig: null } }), {
+        status: 200,
+      })) as unknown as typeof fetch;
+    const user = userEvent.setup();
+    renderApp(false, { identity: "tok" });
+    await user.click(
+      screen.getByRole("button", { name: MESSAGES.en.launcher }),
+    );
+    expect(
+      (await screen.findByRole("menuitem", { name: MESSAGES.en.title })) !==
+        null,
+    ).toBe(true);
+    expect(
+      screen.getByRole("menuitem", { name: MESSAGES.en.myRequests }) !== null,
+    ).toBe(true);
+    globalThis.fetch = realFetch;
+  });
+});
+
+describe("the unread count in the FAB's name", () => {
+  const launcher = (identified: boolean, locale: "en" | "fr") => (
+    <Launcher
+      messages={MESSAGES[locale]}
+      position="bottom-right"
+      open={false}
+      unread={2}
+      identified={identified}
+      fabRef={createRef<HTMLButtonElement>()}
+      onReport={() => {}}
+      onRequests={() => {}}
+    />
+  );
+
+  test("is in the FAB's accessible name, anonymous or identified, in both languages", () => {
+    for (const identified of [false, true]) {
+      for (const locale of ["en", "fr"] as const) {
+        const { unmount } = render(launcher(identified, locale));
+        expect(
+          screen.getByRole("button", {
+            name: `${MESSAGES[locale].launcher}, 2`,
+          }),
+        ).toBeTruthy();
+        unmount();
+      }
+    }
   });
 });

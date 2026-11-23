@@ -6,7 +6,7 @@ import { fetchWidgetConfig, type WidgetProject } from "../api";
  * The key's own config (`attachmentsEnabled`, the project's name): unknown counts as off, so
  * the controls never flash. They show once the config says so; an API that does not send it,
  * or a failed config read, leaves them off (v1 behaviour, see `fetchWidgetConfig`).
- * `project` is what the owner of the dialog already read (a tab switch remounts the flow).
+ * `project` is what the owner of the dialog already read (a switch of view remounts the flow).
  */
 export function useProject({
   apiBase,
@@ -15,7 +15,6 @@ export function useProject({
   project,
   attachments,
   onProject,
-  onControls,
 }: {
   apiBase: string | null;
   projectKey: string | null;
@@ -23,7 +22,6 @@ export function useProject({
   project?: WidgetProject | null;
   attachments: boolean;
   onProject?: (project: WidgetProject | null) => void;
-  onControls?: (shown: boolean) => void;
 }): { projectName: string | null; controls: boolean } {
   const [own, setOwn] = useState<{
     read: boolean;
@@ -33,7 +31,6 @@ export function useProject({
     config: project ?? null,
   });
   const controls = attachments && (own.config?.attachments ?? false);
-  useEffect(() => onControls?.(controls), [controls, onControls]);
   useEffect(() => {
     if (!projectKey || !apiBase || own.read) return;
     const controller = new AbortController();

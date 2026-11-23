@@ -66,7 +66,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`${base}/strict-identified`);
   await page.getByRole("button", { name: /Report a problem/ }).click();
-  await page.getByRole("tab", { name: /My requests/ }).click();
+  await page.getByRole("menuitem", { name: /My requests/ }).click();
   check(
     (await live()).open === 0,
     "no stream runs while only the list is open",
@@ -76,7 +76,7 @@ try {
   await page
     .getByRole("button", { name: /Open request: How do I change/ })
     .click();
-  await page.getByText("It is under Account, then Billing").waitFor();
+  await page.getByRole("link", { name: "billing guide" }).waitFor();
   check(
     await until(async () => (await live()).open === 1),
     "the live stream opens with the thread",
@@ -111,7 +111,7 @@ try {
       .catch(() => false),
     "the composer shows the attached file",
   );
-  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await page.getByText("Thanks, found it").waitFor();
   const putsNow = async () =>
     (await (await fetch(`${base}/__puts`)).json()) as {

@@ -1,33 +1,30 @@
 export interface Messages {
   launcher: string;
   /** The launcher's accessible addition while replies wait: "3 unread replies". */
-  unreadReplies: (count: number) => string;
   title: string;
   intro: string;
   /** The intro once the project's name is known. */
   introFor: (project: string) => string;
   close: string;
-  sections: {
-    problem: string;
-    details: string;
-    files: string;
-    contact: string;
-  };
-  /** The two tabs of an identified reporter. */
-  tabs: { label: string; newRequest: string; myRequests: string };
-  aside: { title: string; empty: string };
+  /** The title of the identified reporter's own view. */
+  myRequests: string;
+  /** The report dialog's Cancel. */
+  cancel: string;
   screenshot: {
+    /** The one attachments button, which offers the capture and the upload. */
+    attach: string;
     add: string;
     upload: string;
-    retake: string;
-    remove: string;
     maskText: string;
     maskTextHint: string;
     capturing: string;
+    noticeTitle: string;
     editorLabel: string;
-    previewAlt: string;
-    saved: string;
-    hint: string;
+    /** The button that reopens an attachment in the editor. */
+    edit: string;
+    editCapture: (n: number) => string;
+    /** The page a capture was taken on (origin and path). */
+    capturedOn: (url: string) => string;
     save: string;
     loadingEditor: string;
     errors: {
@@ -35,16 +32,12 @@ export interface Messages {
       unavailable: string;
       maskUnavailable: string;
       failed: string;
-      type: string;
-      tooLarge: string;
-      unreadable: string;
     };
   };
   files: {
+    label: string;
     hint: string;
     dropTitle: string;
-    zoneTitle: string;
-    browse: string;
     screenshot: string;
     count: string;
     total: string;
@@ -90,6 +83,7 @@ export interface Messages {
   };
   failure: {
     summary: string;
+    retry: string;
     config: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;

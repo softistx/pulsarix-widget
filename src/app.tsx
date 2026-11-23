@@ -9,7 +9,6 @@ import {
 } from "@softistx/material/embed";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { AppProps } from "./app-props";
-import { DialogTabs } from "./core/shell/dialog-tabs";
 import { Launcher } from "./core/shell/launcher";
 import { themeNameFor } from "./core/theme/theme";
 import type { WidgetProject } from "./modules/report/api";
@@ -38,7 +37,6 @@ export function App({
   dark,
   open,
   launcher,
-  launcherMode = "auto",
   launcherVisible = true,
   position,
   maskText = false,
@@ -56,19 +54,14 @@ export function App({
   minFillMs,
   retryDelayMs,
 }: AppProps) {
-  // The confirmation has no screenshot pane: the dialog drops its split layout then.
-  const [done, setDone] = useState(false);
-  // Without the screenshot pane and files (the page or the key turned them off) it is one column too.
-  const [controls, setControls] = useState(attachments);
-  // While the screenshot editor is open the pane widens: the editor needs more than a preview.
+  // While the screenshot editor is open the dialog widens: the editor needs more than a form.
   const [editing, setEditing] = useState(false);
-  // The key's config survives a tab switch (the form remounts), not a close.
+  // The key's config survives a change of view (the form remounts), not a close.
   const [project, setProject] = useState<WidgetProject | null>(null);
   const identified = !!identity && !!projectKey && !!apiBase;
-  const [tab, setTab] = useState<"new" | "requests">("new");
-  const showing = identified ? tab : "new";
-  // The list is one column, like the confirmation.
-  const stacked = done || !controls || showing === "requests";
+  // "My requests" is its own view, with its own title; a dialog opens on the report.
+  const [view, setView] = useState<"report" | "requests">("report");
+  const showing = identified ? view : "report";
   const [unread, setUnread] = useUnread({
     apiBase,
     projectKey,
@@ -86,32 +79,20 @@ export function App({
   useEffect(() => {
     if (open && identified) void loadRequests();
   }, [open, identified]);
-  // A dialog opens on the form; the list is one tab away.
+  // A dialog opens on the form.
   useEffect(() => {
     if (!open) {
-      setTab("new");
+      setView("report");
       setProject(null);
     }
   }, [open]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
-  // itself: it cannot hand focus back to the launcher, so the launcher is kept here.
-  const opener = useRef<HTMLElement | null>(null);
+  // itself: it cannot hand focus back to the launcher, so the FAB is kept here.
+  const fab = useRef<HTMLButtonElement | null>(null);
   // The typed text outlives the dialog (its content unmounts on close): a close by accident,
   // a click outside or Escape, keeps it for the next opening. A sent report clears it.
   const draft = useRef<ReportValues | null>(null);
-  const tabs = (
-    <DialogTabs
-      messages={messages}
-      unread={unread}
-      value={showing}
-      onValueChange={(next) => {
-        // The form unmounts with its screenshot: the editor is closed with it.
-        setEditing(false);
-        setTab(next);
-      }}
-    />
-  );
   const body = (
     <>
       {showing === "requests" && identity ? (
@@ -119,8 +100,7 @@ export function App({
           fallback={
             <>
               <DialogHeader>
-                <DialogTitle>{messages.title}</DialogTitle>
-                {tabs}
+                <DialogTitle>{messages.myRequests}</DialogTitle>
               </DialogHeader>
               <DialogBody>{null}</DialogBody>
             </>
@@ -132,7 +112,6 @@ export function App({
             apiBase={apiBase}
             projectKey={projectKey}
             identity={identity}
-            headerExtra={tabs}
             onUnread={setUnread}
             onReply={onReply}
             onError={onError}
@@ -140,7 +119,7 @@ export function App({
             onClose={() => onOpenChange(false)}
             onNewRequest={() => {
               setEditing(false);
-              setTab("new");
+              setView("report");
             }}
           />
         </Suspense>
@@ -155,7 +134,6 @@ export function App({
           minFillMs={minFillMs}
           retryDelayMs={retryDelayMs}
           maskText={maskText}
-          onDone={setDone}
           onEditing={setEditing}
           attachments={attachments}
           prefill={prefill}
@@ -163,10 +141,8 @@ export function App({
           privacyUrl={privacyUrl}
           draft={draft}
           identity={identity}
-          headerExtra={identified ? tabs : undefined}
           project={project}
           onProject={setProject}
-          onControls={setControls}
           onClose={() => onOpenChange(false)}
         />
       )}
@@ -193,32 +169,40 @@ export function App({
               <Launcher
                 messages={messages}
                 position={position}
-                mode={launcherMode}
                 visible={launcherVisible}
                 open={open}
                 unread={unread}
-                onOpen={(button) => {
-                  opener.current = button;
+                identified={identified}
+                fabRef={fab}
+                onReport={() => {
+                  setEditing(false);
+                  setView("report");
+                  onOpenChange(true);
+                }}
+                onRequests={() => {
+                  setEditing(false);
+                  setView("requests");
                   onOpenChange(true);
                 }}
               />
             ) : null}
+            {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
+                a phone): the task views open in a centred Dialog meanwhile. */}
             <Dialog open={open} onOpenChange={onOpenChange}>
               <DialogContent
-                layout={stacked ? "stack" : "split"}
-                size={stacked ? "md" : undefined}
-                // About 896 px from 1280 px up (px, not rem: the host owns the root font size).
+                layout="stack"
+                // The report grows into a two-column grid on wide screens; the thread and the
+                // list stay narrow. The editor needs room (px, not rem: the host owns the
+                // root font size) and takes the whole screen on a phone.
+                size={showing === "report" && !editing ? "lg" : "md"}
+                mobilePresentation={editing ? "fullscreen" : undefined}
                 className={
-                  stacked
-                    ? undefined
-                    : editing
-                      ? "max-w-[1280px] lg:[--dialog-aside:560px]! xl:[--dialog-aside:760px]!"
-                      : "max-w-[896px]"
+                  editing ? "outline-none max-w-[1200px]" : "outline-none"
                 }
                 onCloseAutoFocus={(event) => {
                   // A hidden or missing opener (launcher off or hidden) cannot take focus:
                   // let Radix's default run.
-                  const target = opener.current;
+                  const target = fab.current;
                   if (!target?.isConnected || target.closest("[hidden]"))
                     return;
                   event.preventDefault();

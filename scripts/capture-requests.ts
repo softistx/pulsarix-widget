@@ -1,11 +1,12 @@
 /**
  * Captures "My requests" in the host fixture: 360 and 1440 px, light and dark.
- *   badge     the launcher with its unread badge (identified)
- *   form      the New request tab (identified), with the type and impact chips
+ *   fab       the FAB, unread count in its name (identified)
+ *   menu      the anchored menu: Report a problem, My requests (badge)
+ *   form      the report form (identified), with the type and impact chips
  *   list      My requests with six requests (Open, then All)
  *   empty     My requests of a reporter with no request
  *   expired   My requests when the identity token is refused (401)
- *   anonymous the form with no identity: today's form, no tabs
+ *   anonymous the form with no identity: the FAB opens the form directly
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright-core";
@@ -47,20 +48,34 @@ try {
 
       // Identified: the launcher badge, the form, the list.
       let page = await visit("/identified");
-      await page.getByText("3 unread replies").waitFor({ state: "attached" });
-      await shoot(page, "badge");
+      await page.getByRole("button", { name: /Report a problem, 3/ }).waitFor();
+      await shoot(page, "fab");
       await page.getByRole("button", { name: /Report a problem/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).waitFor();
+      await page.waitForTimeout(400);
+      await shoot(page, "menu");
+      await page.getByRole("menuitem", { name: /Report a problem/ }).click();
       await page.getByRole("dialog").waitFor();
       // The screenshot pane lazy-loads: wait for it, or the capture shows its loading state.
       await page
-        .getByRole("button", { name: "Upload an image" })
+        .getByRole("button", { name: "Add", exact: true })
         .waitFor({ state: "visible" });
       await page.waitForTimeout(500);
       await shoot(page, "form");
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.keyboard.press("Escape");
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await page.getByRole("button", { name: /Report a problem/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
       await page.getByText("The pay button does nothing").waitFor();
       await page.waitForTimeout(400);
       await shoot(page, "list");
+      // A row under the pointer: the hover tint must span the whole row, chevron included.
+      await page
+        .getByRole("button", { name: /Open request: /i })
+        .first()
+        .hover();
+      await page.waitForTimeout(300);
+      await shoot(page, "list-hover");
       await page.getByRole("radio", { name: /^All/ }).click();
       await page.getByText("Add a dark mode to the store").waitFor();
       await page.waitForTimeout(300);
@@ -72,7 +87,7 @@ try {
       // No request yet.
       page = await visit("/identified-empty");
       await page.getByRole("button", { name: /Report a problem/ }).click();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
       await page.getByText("No requests yet").waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "empty");
@@ -81,13 +96,13 @@ try {
       // A refused token: the list says so, and offers no retry.
       page = await visit("/identified-expired");
       await page.getByRole("button", { name: /Report a problem/ }).click();
-      await page.getByRole("tab", { name: /My requests/ }).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).click();
       await page.getByText("Your identity could not be confirmed").waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "expired");
       await page.close();
 
-      // No token: today's form, no tabs.
+      // No token: the FAB opens the form directly.
       page = await visit("/");
       await page.getByRole("button", { name: "Report a problem" }).click();
       await page.getByRole("dialog").waitFor();

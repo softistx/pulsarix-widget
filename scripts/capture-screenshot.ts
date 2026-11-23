@@ -8,6 +8,12 @@ import { mkdirSync } from "node:fs";
 import { chromium, type Page } from "playwright-core";
 import { serveFixture } from "./serve-fixture";
 
+/** Opens the "Add" disclosure of the attachments control when it is closed. */
+async function openAdd(page: Page) {
+  const add = page.getByRole("button", { name: "Add", exact: true });
+  if ((await add.getAttribute("aria-expanded")) !== "true") await add.click();
+}
+
 const out = process.argv[2] ?? "captures-screenshot";
 mkdirSync(out, { recursive: true });
 const server = serveFixture(0);
@@ -40,7 +46,7 @@ async function drag(page: Page, from: [number, number], to: [number, number]) {
 
 const notice = (page: Page) =>
   page
-    .getByTestId("screenshot-pane")
+    .getByTestId("attachments")
     .locator('[role="status"]:not(:empty)')
     .waitFor();
 
@@ -75,9 +81,10 @@ try {
         return { page, context };
       };
       const shot = async (page: Page, name: string) => {
-        await page
-          .getByTestId("screenshot-pane")
-          .evaluate((el) => el.scrollIntoView({ block: "center" }));
+        // The attachments control is not on screen while the editor is open.
+        const pane = page.getByTestId("attachments");
+        if (await pane.count())
+          await pane.evaluate((el) => el.scrollIntoView({ block: "center" }));
         await page.waitForTimeout(300);
         await page.screenshot({
           path: `${out}/${name}-${width}-${scheme}.png`,
@@ -86,16 +93,19 @@ try {
       try {
         const a = await open();
         await shot(a.page, "pane-empty");
+        await openAdd(a.page);
+        await shot(a.page, "add-menu");
         await a.page.getByRole("switch").check();
         await shot(a.page, "pane-mask-text");
-        await a.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await a.page.getByRole("button", { name: "Capture this page" }).click();
         await notice(a.page);
         await a.page.waitForTimeout(600);
         await shot(a.page, "pane-mask-text-result");
         await a.context.close();
 
         const b = await open();
-        await b.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await openAdd(b.page);
+        await b.page.getByRole("button", { name: "Capture this page" }).click();
         await tool(b.page, "Redact").waitFor();
         await b.page.waitForTimeout(600);
         await shot(b.page, "editor");
@@ -132,13 +142,20 @@ try {
           path: `${out}/editor-annotated-scrolled-${width}-${scheme}.png`,
         });
         await b.page.getByRole("button", { name: "Attach" }).click();
-        await b.page.getByTestId("screenshot-preview").waitFor();
+        await b.page
+          .locator("pulsarix-widget [data-slot='attachment']")
+          .first()
+          .waitFor();
+        await b.page
+          .locator("pulsarix-widget [data-testid=attachments]")
+          .evaluate((el) => el.scrollIntoView({ block: "center" }));
         await b.page.waitForTimeout(500);
         await shot(b.page, "pane-kept");
         await b.context.close();
 
         const c = await open(REFUSE);
-        await c.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await openAdd(c.page);
+        await c.page.getByRole("button", { name: "Capture this page" }).click();
         await notice(c.page);
         await c.page.waitForTimeout(400);
         await shot(c.page, "pane-upload-fallback");

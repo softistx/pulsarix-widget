@@ -37,6 +37,15 @@ An embeddable widget is not a BFF: it keeps the invariants above and takes the U
 (`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
 follow yet, the rule is the target and names its slice (tracking issue #134).
 
+- **UX (owner, 2026-11-22, #172)**: the launcher is one round icon FAB at every width (the `launcher`
+  values `auto|pill|icon` are still parsed and all give the FAB); an identified reporter's FAB opens a
+  menu (report, My requests with its unread badge), each item one view, never tabs; the report is one
+  unsplit form with one attachments control. A capture and an uploaded image both open
+  straight in the editor (Cancel keeps the raw file), every image has an "Edit" button, and each capture
+  stores the page it was taken on (`pageUrl`, shown as "Captured on ...", sent as the report's `pageUrl`
+  for the first and as `capture-N-page` metadata for each). The editor is wrapped by
+  `modules/screenshot/components/editor-host.tsx`: it is the seam where material's `ImageEditor` (and
+  `ChatThread` / `ChatComposer` for the thread, material#5563) replace the in-house wiring. Test helper: `src/test-host.tsx` (a root file, so it may import `App`; tests only).
 - **Layout** (alignment W5, #134): the entry files `index.ts`, `loader.ts`, `element.tsx` and
   `config.ts` stay at the root of `src/` (they are the shipped `.d.ts`), with `app.tsx` and
   `app-props.ts`, the composition root that mounts the modules. The rest is

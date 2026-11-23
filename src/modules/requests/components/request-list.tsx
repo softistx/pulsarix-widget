@@ -79,15 +79,35 @@ export function RequestList({
                           request.impact as keyof typeof messages.choices.impact
                         ]
                       : null,
-                    request.unread > 0 ? text.newReplies(request.unread) : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
+                  {request.unread > 0 ? (
+                    <Badge variant="soft" tone="info" className="ms-2">
+                      {text.newReplies(request.unread)}
+                    </Badge>
+                  ) : null}
                 </span>
               }
               badge={
-                <span className="hidden @md:inline-flex">
-                  {stateBadge(request.publicState)}
+                <span className="inline-flex items-center gap-2">
+                  <span className="hidden @md:inline-flex">
+                    {stateBadge(request.publicState)}
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0 text-muted-foreground"
+                  >
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
                 </span>
               }
             />

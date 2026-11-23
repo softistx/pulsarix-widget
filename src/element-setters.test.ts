@@ -304,32 +304,42 @@ describe("run-time setters", () => {
     expect(h.element.isOpen).toBe(true);
   });
 
-  test("the requests tab stays selected through setLocale", async () => {
-    const h = await openWithDraft({
+  test("the requests view stays open through setLocale", async () => {
+    handle = mount({
+      apiBase: "https://pulsarix.test",
       projectKey: "pk_live_abc",
       identity: "a.b",
     });
-    const tab = (name: string) =>
-      [...shadowOf(h).querySelectorAll('[role="tab"]')].find((el) =>
-        el.textContent?.includes(name),
-      ) as HTMLElement;
+    const h = handle as WidgetHandle;
     const user = userEvent.setup();
-    await user.click(tab(MESSAGES.en.tabs.myRequests));
+    await waitFor(() =>
+      expect(shadowOf(h).querySelector("button[aria-label]")).not.toBeNull(),
+    );
+    await user.click(
+      shadowOf(h).querySelector("button[aria-label]") as HTMLElement,
+    );
+    await waitFor(() =>
+      expect(shadowOf(h).querySelector('[role="menuitem"]')).not.toBeNull(),
+    );
+    const toRequests = [
+      ...shadowOf(h).querySelectorAll('[role="menuitem"]'),
+    ].find((el) =>
+      el.textContent?.includes(MESSAGES.en.myRequests),
+    ) as HTMLElement;
+    await user.click(toRequests);
     await waitFor(() =>
       expect(
-        tab(MESSAGES.en.tabs.myRequests).getAttribute("aria-selected"),
-      ).toBe("true"),
+        shadowOf(h).querySelector('[role="dialog"]')?.textContent,
+      ).toContain(MESSAGES.en.myRequests),
     );
     await new Promise((resolve) => setTimeout(resolve, 300));
     const dialog = shadowOf(h).querySelector('[role="dialog"]');
     h.setLocale("fr");
     await waitFor(() =>
-      expect(shadowOf(h).textContent).toContain(MESSAGES.fr.tabs.myRequests),
+      expect(shadowOf(h).textContent).toContain(MESSAGES.fr.myRequests),
     );
     expect(dialog?.isConnected).toBe(true);
-    expect(tab(MESSAGES.fr.tabs.myRequests).getAttribute("aria-selected")).toBe(
-      "true",
-    );
+    expect(dialog?.textContent).not.toContain(MESSAGES.fr.intro);
   });
 
   test("a theme attribute written after setTheme gives the mode back to the host", () => {

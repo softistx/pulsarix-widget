@@ -1,5 +1,5 @@
 import { Button, ConfirmDialog, SwitchField } from "@softistx/material/embed";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "../../../config";
 import { IntakeError } from "../../../core/api/api";
 import { eraseMyData, setRequestEmails } from "../api";
@@ -18,7 +18,7 @@ export interface PrivacyProps {
 }
 
 /**
- * The reporter's privacy choices under the list: whether replies are also sent by e-mail
+ * The reporter's privacy choices, in the preferences view: whether replies are also sent by e-mail
  * (optimistic, put back on a failure) and "Delete my data" behind a confirmation.
  */
 export function Privacy({
@@ -30,6 +30,8 @@ export function Privacy({
   onErased,
 }: PrivacyProps) {
   const text = REQUESTS_MESSAGES[locale];
+  const notificationsId = useId();
+  const dataId = useId();
   const [emailsOn, setEmailsOn] = useState(known);
   const [emailsError, setEmailsError] = useState(false);
   const saving = useRef(false);
@@ -80,27 +82,44 @@ export function Privacy({
   }
 
   return (
-    <div className="grid min-w-0 gap-3 border-border border-t pt-4">
-      <SwitchField
-        variant="plain"
-        label={text.privacy.emails}
-        helperText={
-          emailsError ? text.privacy.emailsFailed : text.privacy.emailsHint
-        }
-        error={emailsError}
-        checked={emailsOn}
-        disabled={savingEmails}
-        onCheckedChange={(next) => void changeEmails(next === true)}
-      />
-      <Button
-        type="button"
-        variant="outlined"
-        color="error"
-        className="justify-self-start"
-        onClick={() => setConfirming(true)}
+    <div className="grid min-w-0 gap-6">
+      <section className="grid gap-3" aria-labelledby={notificationsId}>
+        <p id={notificationsId} className="m-0 font-semibold text-sm">
+          {text.privacy.notificationsTitle}
+        </p>
+        <SwitchField
+          label={text.privacy.emails}
+          helperText={
+            emailsError ? text.privacy.emailsFailed : text.privacy.emailsHint
+          }
+          error={emailsError}
+          checked={emailsOn}
+          disabled={savingEmails}
+          onCheckedChange={(next) => void changeEmails(next === true)}
+        />
+      </section>
+      <section
+        className="grid gap-3 border-border border-t pt-6"
+        aria-labelledby={dataId}
       >
-        {text.privacy.erase}
-      </Button>
+        <div className="grid gap-1">
+          <p id={dataId} className="m-0 font-semibold text-sm">
+            {text.privacy.dataTitle}
+          </p>
+          <p className="m-0 text-muted-foreground text-sm">
+            {text.privacy.dataHint}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="tonal"
+          color="error"
+          className="justify-self-start"
+          onClick={() => setConfirming(true)}
+        >
+          {text.privacy.erase}
+        </Button>
+      </section>
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
