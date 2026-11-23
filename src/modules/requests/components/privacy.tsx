@@ -95,8 +95,9 @@ export function Privacy({
       <Button
         type="button"
         variant="tonal"
+        color="error"
         size="sm"
-        className="justify-self-start"
+        className="mt-2 justify-self-start"
         onClick={() => setConfirming(true)}
       >
         {text.privacy.erase}

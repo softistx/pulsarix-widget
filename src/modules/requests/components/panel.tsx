@@ -125,8 +125,9 @@ export default function RequestsPanel({
         }}
       />
     );
-  const hasRequests =
-    list.load.status === "ready" && (list.counts?.all ?? 0) > 0;
+  // The gear stays in every state (empty, failed): the e-mail setting and "Delete my data"
+  // must stay reachable whenever the widget can talk to the API.
+  const hasRequests = Boolean(apiBase && projectKey);
   return (
     <>
       <DialogHeader>
