@@ -279,11 +279,10 @@ try {
     await tool(page, "Pen").click();
     await drag(page, [0.1, 0.12], [0.35, 0.2]);
     await tool(page, "Redact").click();
-    // The panel always renders its Size control: wait for it so the count below is not vacuous.
-    const panel = page.locator("pulsarix-widget");
-    await panel
-      .getByText("Size", { exact: true })
-      .or(panel.getByLabel("Size", { exact: true }))
+    // The floating toolbar names the active tool: wait for it so the count below is not vacuous.
+    await page
+      .locator("pulsarix-widget")
+      .getByText("Redact", { exact: true })
       .first()
       .waitFor();
     check(
