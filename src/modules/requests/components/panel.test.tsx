@@ -150,7 +150,10 @@ describe("My requests", () => {
     await openRequests();
     await screen.findByText("No open requests.");
     expect(screen.queryByText("No requests yet")).toBeNull();
-    expect(screen.queryByRole("button", { name: /New request/ })).toBeNull();
+    // Only the footer's action: the first-use state's own call to action is not shown.
+    expect(
+      screen.queryAllByRole("button", { name: /New request/ }).length,
+    ).toBe(1);
   });
 
   test("while the list loads, a busy status with a skeleton stands in", async () => {
