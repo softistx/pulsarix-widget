@@ -8,6 +8,12 @@ import { mkdirSync } from "node:fs";
 import { chromium, type Page } from "playwright-core";
 import { serveFixture } from "./serve-fixture";
 
+/** Opens the "Add" disclosure of the attachments control when it is closed. */
+async function openAdd(page: Page) {
+  const add = page.getByRole("button", { name: "Add", exact: true });
+  if ((await add.getAttribute("aria-expanded")) !== "true") await add.click();
+}
+
 const out = process.argv[2] ?? "captures-screenshot";
 mkdirSync(out, { recursive: true });
 const server = serveFixture(0);
@@ -89,14 +95,16 @@ try {
         await shot(a.page, "pane-empty");
         await a.page.getByRole("switch").check();
         await shot(a.page, "pane-mask-text");
-        await a.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await openAdd(a.page);
+        await a.page.getByRole("button", { name: "Capture this page" }).click();
         await notice(a.page);
         await a.page.waitForTimeout(600);
         await shot(a.page, "pane-mask-text-result");
         await a.context.close();
 
         const b = await open();
-        await b.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await openAdd(b.page);
+        await b.page.getByRole("button", { name: "Capture this page" }).click();
         await tool(b.page, "Redact").waitFor();
         await b.page.waitForTimeout(600);
         await shot(b.page, "editor");
@@ -145,7 +153,8 @@ try {
         await b.context.close();
 
         const c = await open(REFUSE);
-        await c.page.getByRole("button", { name: "Add a screenshot" }).click();
+        await openAdd(c.page);
+        await c.page.getByRole("button", { name: "Capture this page" }).click();
         await notice(c.page);
         await c.page.waitForTimeout(400);
         await shot(c.page, "pane-upload-fallback");

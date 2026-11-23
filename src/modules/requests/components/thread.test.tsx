@@ -384,6 +384,19 @@ describe("request thread", () => {
     expect(screen.queryByPlaceholderText("Write a reply...")).toBeNull();
   });
 
+  test("a read-only thread is as tall as its messages, an open one has a fixed height", async () => {
+    await openThread({ canReply: false, publicState: "declined" });
+    await screen.findByText("Under Account, then Billing.");
+    const readOnly = screen.getByRole("log").closest("[class*='h-auto']");
+    expect(readOnly).not.toBeNull();
+    cleanup();
+    await openThread();
+    await screen.findByText("Under Account, then Billing.");
+    expect(
+      screen.getByRole("log").closest("[class*='h-[min(460px,58dvh)]']"),
+    ).not.toBeNull();
+  });
+
   test("while the thread loads, a busy status with a skeleton stands in", async () => {
     const real = globalThis.fetch;
     let release: () => void = () => {};

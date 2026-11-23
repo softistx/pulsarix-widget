@@ -178,12 +178,23 @@ describe("My requests", () => {
     expect(screen.queryByText("Loading your requests...")).toBeNull();
   });
 
-  test("a bad identity shows an alert without a retry", async () => {
+  test("a bad identity shows an alert with Retry and a way back to the report", async () => {
     answer([], {}, 401);
     render(<TestHost {...props("a.b")} />);
     await openRequests();
     await screen.findByText(/Your session expired/);
-    expect(screen.queryByRole("button", { name: /Try again/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Try again/ })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Report a problem" }),
+    ).toBeTruthy();
+  });
+
+  test("the dialog has one Close, on the error too", async () => {
+    answer([], {}, 401);
+    render(<TestHost {...props("a.b")} />);
+    await openRequests();
+    await screen.findByText(/Your session expired/);
+    expect(screen.getAllByRole("button", { name: /^Close$/ })).toHaveLength(1);
   });
 
   test("a refused identity tells the page", async () => {

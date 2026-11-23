@@ -11,8 +11,9 @@ export const FR: Messages = {
   myRequests: "Mes demandes",
   cancel: "Annuler",
   screenshot: {
-    add: "Ajouter une capture",
-    upload: "Téléverser une image",
+    attach: "Ajouter",
+    add: "Capturer la page",
+    upload: "Téléverser un fichier",
     maskText: "Masquer le texte de la page",
     maskTextHint:
       "Couvre chaque caractère de la page de rectangles noirs avant la capture.",

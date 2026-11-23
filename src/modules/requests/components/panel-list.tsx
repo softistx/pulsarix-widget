@@ -51,34 +51,32 @@ export function RequestsListBody({
   const { filter, counts, nodes, load } = list;
   const total = counts?.all ?? null;
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-3">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pb-8">
       {(total === 0 && load.status === "ready") ||
       load.status === "error" ? null : (
-        <div className="max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)]">
-          <ChipGroupField
-            label={text.filterLabel}
-            hideLabel
-            overflow="scroll-phone"
-            value={filter}
-            onValueChange={(value) =>
-              value && list.setFilter(value as RequestFilter)
-            }
-            options={FILTERS.map((value) => ({
-              value,
-              label: text.filters[value],
-              ...(counts ? { count: counts[COUNT_KEY[value]] } : {}),
-            }))}
-          />
-        </div>
+        <ChipGroupField
+          label={text.filterLabel}
+          hideLabel
+          overflow="wrap"
+          value={filter}
+          onValueChange={(value) =>
+            value && list.setFilter(value as RequestFilter)
+          }
+          options={FILTERS.map((value) => ({
+            value,
+            label: text.filters[value],
+            ...(counts ? { count: counts[COUNT_KEY[value]] } : {}),
+          }))}
+        />
       )}
       {load.status === "error" ? (
         <Alert
           variant="error"
           title={text.errors.title}
           description={errorText(text, load.error)}
-          // An identity error has no retry: the footer's Close is the way out, once.
+          // No dead end: retry, and the way back to the report form (its draft is kept).
           actions={
-            load.error.kind === "identity" ? undefined : (
+            <>
               <Button
                 type="button"
                 variant="tonal"
@@ -87,7 +85,15 @@ export function RequestsListBody({
               >
                 {text.retry}
               </Button>
-            )
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={onNewRequest}
+              >
+                {messages.launcher}
+              </Button>
+            </>
           }
         />
       ) : null}

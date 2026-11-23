@@ -11,6 +11,8 @@ export interface Messages {
   /** The report dialog's Cancel. */
   cancel: string;
   screenshot: {
+    /** The one attachments button, which offers the capture and the upload. */
+    attach: string;
     add: string;
     upload: string;
     maskText: string;

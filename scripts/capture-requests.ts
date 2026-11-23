@@ -58,7 +58,7 @@ try {
       await page.getByRole("dialog").waitFor();
       // The screenshot pane lazy-loads: wait for it, or the capture shows its loading state.
       await page
-        .getByRole("button", { name: "Upload an image" })
+        .getByRole("button", { name: "Add", exact: true })
         .waitFor({ state: "visible" });
       await page.waitForTimeout(500);
       await shoot(page, "form");

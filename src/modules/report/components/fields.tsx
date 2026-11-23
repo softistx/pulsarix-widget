@@ -107,22 +107,24 @@ export function ReportFields({
           autoComplete="email"
         />
       ) : null}
-      <p className="-mt-2 text-muted-foreground text-sm">
-        {messages.privacy}
-        {privacyUrl ? (
-          <>
-            {" "}
-            <a
-              href={privacyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-text underline"
-            >
-              {messages.privacyLink}
-            </a>
-          </>
-        ) : null}
-      </p>
+      {anonymous ? (
+        <p className="-mt-2 text-muted-foreground text-sm">
+          {messages.privacy}
+          {privacyUrl ? (
+            <>
+              {" "}
+              <a
+                href={privacyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-text underline"
+              >
+                {messages.privacyLink}
+              </a>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </>
   );
 }

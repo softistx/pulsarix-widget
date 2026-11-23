@@ -186,6 +186,8 @@ export function App({
                 }}
               />
             ) : null}
+            {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
+                a phone): the task views open in a centred Dialog meanwhile. */}
             <Dialog open={open} onOpenChange={onOpenChange}>
               <DialogContent
                 layout="stack"

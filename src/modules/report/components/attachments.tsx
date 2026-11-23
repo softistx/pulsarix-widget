@@ -10,7 +10,7 @@ import {
   filterFiles,
 } from "@softistx/material/files/drop";
 import { I18nProvider } from "@softistx/material/i18n";
-import { type Ref, useId, useRef } from "react";
+import { type Ref, useId, useRef, useState } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
@@ -55,8 +55,8 @@ export interface AttachmentsControlProps {
 }
 
 /**
- * The report's attachments, one control: "Add a screenshot" (the page, annotated in the editor)
- * and "Upload an image" side by side, both feeding one list of removable thumbnails. Files can
+ * The report's attachments, one control: "Add" offers "Capture this page" (annotated in the
+ * editor) and "Upload a file", both feeding one list of removable thumbnails. Files can
  * also be dropped on it (`@softistx/material/files/drop`; the i18n provider gives the overlay
  * the widget's locale, `initialLanguage` keeps it from reading the host's `localStorage`).
  */
@@ -79,6 +79,8 @@ export function AttachmentsControl({
 }: AttachmentsControlProps) {
   const t = messages.screenshot;
   const label = useId();
+  const menuId = useId();
+  const [menuOpen, setMenuOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   return (
     // biome-ignore lint/a11y/useSemanticElements: a fieldset cannot take programmatic focus after the editor closes without browser-specific layout quirks
@@ -108,26 +110,65 @@ export function AttachmentsControl({
           onDrop={onDrop}
           className="grid gap-3"
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2">
             {canCapture ? (
+              // Temporary, until a Menu ships in @softistx/material/embed (to be filed): one "Add"
+              // button discloses its two choices, "Capture this page" and "Upload a file".
+              <>
+                <Button
+                  type="button"
+                  variant="tonal"
+                  className="justify-self-start"
+                  aria-expanded={menuOpen}
+                  aria-controls={menuId}
+                  disabled={locked || busy}
+                  onClick={() => setMenuOpen((open) => !open)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setMenuOpen(false);
+                  }}
+                >
+                  {t.attach}
+                </Button>
+                <div
+                  id={menuId}
+                  hidden={!menuOpen}
+                  className="grid grid-cols-2 gap-2 max-sm:grid-cols-1"
+                >
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    disabled={locked || busy}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onCapture();
+                    }}
+                  >
+                    {t.add}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    disabled={locked || busy}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      input.current?.click();
+                    }}
+                  >
+                    {t.upload}
+                  </Button>
+                </div>
+              </>
+            ) : (
               <Button
                 type="button"
                 variant="tonal"
-                loading={busy}
-                disabled={locked}
-                onClick={onCapture}
+                className="justify-self-start"
+                disabled={locked || busy}
+                onClick={() => input.current?.click()}
               >
-                {t.add}
+                {t.upload}
               </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="tonal"
-              disabled={locked || busy}
-              onClick={() => input.current?.click()}
-            >
-              {t.upload}
-            </Button>
+            )}
             <input
               ref={input}
               type="file"
@@ -165,6 +206,8 @@ export function AttachmentsControl({
             items={items}
             onRemove={locked ? undefined : onRemove}
           />
+          {/* Temporary, until material#5573 (per-row actions and a caption in AttachmentList):
+              the caption and the Edit button sit under the list meanwhile. */}
           {items
             .filter((i) => i.pageUrl !== undefined || canEdit(i))
             .map((item) => (

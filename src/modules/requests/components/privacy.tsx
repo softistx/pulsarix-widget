@@ -94,8 +94,8 @@ export function Privacy({
       />
       <Button
         type="button"
-        variant="outlined"
-        color="error"
+        variant="tonal"
+        size="sm"
         className="justify-self-start"
         onClick={() => setConfirming(true)}
       >

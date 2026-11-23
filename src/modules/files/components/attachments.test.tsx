@@ -420,6 +420,9 @@ describe("the controls can be off", () => {
     expect(input()).toBeNull();
     expect(screen.queryByText(en.files.label)).toBeNull();
     expect(
+      screen.queryByRole("button", { name: en.screenshot.attach }),
+    ).toBeNull();
+    expect(
       screen.queryByRole("button", { name: en.screenshot.upload }),
     ).toBeNull();
     await fillAndSend(user);
@@ -431,6 +434,9 @@ describe("the controls can be off", () => {
     configAttachments = false;
     setup();
     await waitFor(() => expect(screen.queryByText(en.files.label)).toBeNull());
+    expect(
+      screen.queryByRole("button", { name: en.screenshot.attach }),
+    ).toBeNull();
     expect(
       screen.queryByRole("button", { name: en.screenshot.upload }),
     ).toBeNull();
