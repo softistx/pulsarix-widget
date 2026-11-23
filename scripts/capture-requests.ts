@@ -69,6 +69,13 @@ try {
       await page.getByText("The pay button does nothing").waitFor();
       await page.waitForTimeout(400);
       await shoot(page, "list");
+      // A row under the pointer: the hover tint must span the whole row, chevron included.
+      await page
+        .getByRole("button", { name: /Open request: /i })
+        .first()
+        .hover();
+      await page.waitForTimeout(300);
+      await shoot(page, "list-hover");
       await page.getByRole("radio", { name: /^All/ }).click();
       await page.getByText("Add a dark mode to the store").waitFor();
       await page.waitForTimeout(300);

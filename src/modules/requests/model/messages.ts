@@ -49,6 +49,7 @@ export interface RequestsMessages {
   };
   /** The e-mail choice and "Delete my data" (W3c). */
   privacy: {
+    notificationsTitle: string;
     emails: string;
     emailsHint: string;
     emailsFailed: string;
@@ -133,6 +134,7 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
     },
     prefs: { title: "Preferences", open: "Preferences" },
     privacy: {
+      notificationsTitle: "Notifications",
       emails: "E-mails about my requests",
       emailsHint: "Get an e-mail when the team replies.",
       emailsFailed: "Your e-mail choice was not saved. Try again.",
@@ -220,6 +222,7 @@ export const REQUESTS_MESSAGES: Record<Locale, RequestsMessages> = {
     },
     prefs: { title: "Préférences", open: "Préférences" },
     privacy: {
+      notificationsTitle: "Notifications",
       emails: "E-mails sur mes demandes",
       emailsHint: "Recevoir un e-mail quand l'équipe répond.",
       emailsFailed: "Votre choix n'a pas été enregistré. Réessayez.",
