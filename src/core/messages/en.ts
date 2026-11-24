@@ -64,12 +64,25 @@ export const EN: Messages = {
     descriptionHint: "What you did and saw",
     email: "Your e-mail (optional)",
     emailHint: "To get a link to your report",
+    contact: "Contact",
     type: "Type (optional)",
     impact: "Severity for you (optional)",
   },
   choices: {
     type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
     impact: { blocking: "Blocking", annoying: "Annoying", minor: "Minor" },
+  },
+  choiceHints: {
+    type: {
+      bug: "Something does not work",
+      question: "I need help or an answer",
+      suggestion: "An idea to improve it",
+    },
+    impact: {
+      blocking: "I cannot go on",
+      annoying: "It gets in my way",
+      minor: "A small blemish",
+    },
   },
   privacy:
     "Your e-mail, if given, the address of this page and your browser are sent with the report.",

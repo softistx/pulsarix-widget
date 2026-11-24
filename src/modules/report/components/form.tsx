@@ -1,8 +1,10 @@
 import {
   Alert,
+  Button,
   DialogBody,
   DialogHeader,
   DialogTitle,
+  FormGrid,
 } from "@softistx/material/embed";
 import type { FormEventHandler, ReactNode, Ref } from "react";
 import type { Control } from "react-hook-form";
@@ -10,7 +12,7 @@ import type { IntakeError } from "../../../core/api/api";
 import type { Messages } from "../../../core/messages";
 import { failureText } from "../model/failure-text";
 import type { ReportValues } from "../model/validation";
-import { FORM_ID, PrivacyNote, ReportFields } from "./fields";
+import { ContactFields, FORM_ID, ReportFields } from "./fields";
 import { FormFooter, FormHeader } from "./form-frame";
 
 /** A field a person never sees; a bot that fills every field trips the API's check. */
@@ -46,6 +48,12 @@ function FailureAlert({
           variant="error"
           title={messages.failure.summary}
           description={failureText(messages, failure)}
+          // Send again: the draft is intact, the same submit.
+          actions={
+            <Button type="submit" form={FORM_ID} variant="filled" size="sm">
+              {messages.failure.retry}
+            </Button>
+          }
         />
       ) : null}
     </div>
@@ -113,15 +121,17 @@ export function Form({
           noValidate
           className="grid gap-6"
         >
-          <ReportFields
-            messages={messages}
-            control={control}
-            anonymous={anonymous}
-          />
-          {attachments}
-          {anonymous ? (
-            <PrivacyNote messages={messages} privacyUrl={privacyUrl} />
-          ) : null}
+          <FormGrid className="gap-y-6">
+            <ReportFields messages={messages} control={control} />
+            {attachments}
+            {anonymous ? (
+              <ContactFields
+                messages={messages}
+                control={control}
+                privacyUrl={privacyUrl}
+              />
+            ) : null}
+          </FormGrid>
           <Honeypot inputRef={honeypot} />
           <FailureAlert
             messages={messages}

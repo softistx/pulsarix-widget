@@ -10,14 +10,14 @@ import {
   filterFiles,
 } from "@softistx/material/files/drop";
 import { I18nProvider } from "@softistx/material/i18n";
-import { type Ref, useEffect, useId, useRef } from "react";
+import { type Ref, useEffect, useRef } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
 import { ACCEPTED_TYPES, MAX_FILE_BYTES } from "../../files/model/rules";
 import { PaneStatus } from "../../screenshot/components/editor-host";
 import { EditRows } from "./edit-rows";
-import { FormGroup } from "./fields";
+import { Section } from "./fields";
 
 export interface AttachmentsControlProps {
   messages: Messages;
@@ -68,8 +68,6 @@ export function AttachmentsControl({
   onEdit,
 }: AttachmentsControlProps) {
   const t = messages.screenshot;
-  const captureTitle = useId();
-  const filesTitle = useId();
   const input = useRef<HTMLInputElement>(null);
   const captures = items.filter((i) => i.pageUrl !== undefined);
   const uploads = items.filter((i) => i.pageUrl === undefined);
@@ -87,7 +85,7 @@ export function AttachmentsControl({
     const reason = items.find((i) => i.refusal)?.refusal;
     if (!reason) return;
     const row = [...(uploadList.current?.querySelectorAll("*") ?? [])].find(
-      (el) => el.children.length === 0 && el.textContent === reason,
+      (el) => el.textContent === reason,
     );
     row?.scrollIntoView?.({ block: "nearest" });
   }, [items]);
@@ -96,24 +94,15 @@ export function AttachmentsControl({
       ref={region}
       tabIndex={-1}
       data-testid="attachments"
-      className="grid gap-6 outline-none"
+      className="col-span-full grid gap-6 outline-none"
     >
       {canCapture || captures.length > 0 ? (
-        <FormGroup
+        <Section
           title={t.sectionTitle}
-          hint={t.sectionHint}
-          titleId={captureTitle}
+          description={t.sectionHint}
           data-testid="capture-section"
         >
           <div className="grid justify-items-start gap-3">
-            <SwitchField
-              variant="plain"
-              checked={maskText}
-              disabled={busy || locked}
-              onCheckedChange={(checked) => onMaskText(checked === true)}
-              label={t.maskText}
-              helperText={t.maskTextHint}
-            />
             <Button
               type="button"
               variant="tonal"
@@ -122,9 +111,21 @@ export function AttachmentsControl({
             >
               {t.add}
             </Button>
+            <SwitchField
+              variant="plain"
+              checked={maskText}
+              disabled={busy || locked}
+              onCheckedChange={(checked) => onMaskText(checked === true)}
+              label={t.maskText}
+              helperText={t.maskTextHint}
+            />
           </div>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
-          <AttachmentList items={captures} onRemove={remove} />
+          <AttachmentList
+            items={captures}
+            onRemove={remove}
+            thumbnailSize={56}
+          />
           <EditRows
             messages={messages}
             items={captures}
@@ -132,12 +133,11 @@ export function AttachmentsControl({
             disabled={locked || busy}
             onEdit={onEdit}
           />
-        </FormGroup>
+        </Section>
       ) : null}
-      <FormGroup
+      <Section
         title={messages.files.label}
-        hint={messages.files.sectionHint}
-        titleId={filesTitle}
+        description={messages.files.sectionHint}
         role="group"
       >
         <I18nProvider
@@ -183,7 +183,11 @@ export function AttachmentsControl({
               <PaneStatus messages={messages} busy={busy} notice={notice} />
             ) : null}
             <div ref={uploadList} className="grid gap-3">
-              <AttachmentList items={uploads} onRemove={remove} />
+              <AttachmentList
+                items={uploads}
+                onRemove={remove}
+                thumbnailSize={56}
+              />
             </div>
             <EditRows
               messages={messages}
@@ -200,7 +204,7 @@ export function AttachmentsControl({
             ) : null}
           </DropOverlay>
         </I18nProvider>
-      </FormGroup>
+      </Section>
     </div>
   );
 }

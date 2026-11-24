@@ -1,11 +1,13 @@
 import {
-  ChipGroupField,
+  ChoiceCardGroupFormField,
   EmailFormField,
+  FormCell,
+  FormSection,
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
-import type { ComponentProps, ReactNode } from "react";
-import { type Control, Controller } from "react-hook-form";
+import type { ReactNode } from "react";
+import type { Control } from "react-hook-form";
 import type { Messages } from "../../../core/messages";
 import {
   DESCRIPTION_MAX,
@@ -13,6 +15,7 @@ import {
   type ReportValues,
   TITLE_MAX,
 } from "../model/validation";
+import { CHOICE_ICONS } from "./choice-icons";
 
 export const FORM_ID = "pulsarix-report-form";
 
@@ -21,89 +24,65 @@ interface FieldsProps {
   control: Control<ReportValues>;
 }
 
-// The severity reads at a glance: blocking is an error, annoying a warning, minor neutral.
-const TONES: Record<string, "error" | "warning" | undefined> = {
-  blocking: "error",
-  annoying: "warning",
-};
-
-/** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
-function ChoiceChips({
+/** Single-choice and optional: one card per row, pressing the chosen one clears it. */
+function ChoiceCards({
   name,
   messages,
   control,
 }: FieldsProps & { name: "type" | "impact" }) {
   const labels: Record<string, string> = messages.choices[name];
+  const hints: Record<string, string> = messages.choiceHints[name];
   return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <ChipGroupField
-          label={messages.fields[name]}
-          deselectable
-          value={field.value || null}
-          onValueChange={(value) => field.onChange(value ?? "")}
-          options={Object.entries(labels).map(([value, label]) => ({
-            value,
-            label,
-            tone: TONES[value],
-          }))}
-        />
-      )}
-    />
+    <FormCell>
+      <ChoiceCardGroupFormField
+        control={control}
+        name={name}
+        label={messages.fields[name]}
+        deselectable
+        columns={1}
+        options={Object.entries(labels).map(([value, title]) => ({
+          value,
+          title,
+          description: hints[value],
+          icon: CHOICE_ICONS[value],
+        }))}
+      />
+    </FormCell>
   );
 }
 
-/** A titled group of the form; the rule above it separates it from the group before. */
-export function FormGroup({
+/** A titled section of the form; the rule above it separates it from the section before. */
+export function Section({
   title,
-  hint,
-  titleId,
-  flush,
+  description,
   children,
   ...rest
 }: {
   title?: string;
-  hint?: string;
-  titleId?: string;
-  /** The first group of the form: no rule above it. */
-  flush?: boolean;
+  description?: ReactNode;
   children: ReactNode;
-} & Omit<ComponentProps<"section">, "title" | "children">) {
+  "data-testid"?: string;
+  role?: string;
+}) {
   return (
-    <section
+    <FormSection
       {...rest}
-      aria-labelledby={title ? titleId : undefined}
-      className={`grid gap-4 ${flush ? "" : "border-border border-t pt-6"}`}
+      variant="heading"
+      titleAs="h3"
+      title={title ?? ""}
+      description={description}
+      separated={!!title}
     >
-      {title ? (
-        <div className="grid gap-0.5">
-          <h3 id={titleId} className="font-semibold text-foreground text-sm">
-            {title}
-          </h3>
-          {hint ? (
-            <p className="text-muted-foreground text-sm">{hint}</p>
-          ) : null}
-        </div>
-      ) : null}
       {children}
-    </section>
+    </FormSection>
   );
 }
 
 /** The whole report, in the order it is told: title, description, type, impact, then the e-mail. */
-export function ReportFields({
-  messages,
-  control,
-  anonymous,
-}: FieldsProps & {
-  /** No identity: the reporter may leave an e-mail to get the link to follow the report. */
-  anonymous: boolean;
-}) {
+export function ReportFields({ messages, control }: FieldsProps) {
   return (
-    <>
-      <FormGroup flush>
+    <FormSection title="" aria-label={messages.title} separated={false}>
+      <FormCell span="full">
         <TextFormField
           control={control}
           name="title"
@@ -113,6 +92,8 @@ export function ReportFields({
           autoComplete="off"
           required
         />
+      </FormCell>
+      <FormCell span="full">
         <TextareaFormField
           control={control}
           name="description"
@@ -123,23 +104,36 @@ export function ReportFields({
           maxLength={DESCRIPTION_MAX}
           required
         />
-        {anonymous ? (
-          <EmailFormField
-            control={control}
-            name="email"
-            inputMode="email"
-            label={messages.fields.email}
-            helperText={messages.fields.emailHint}
-            maxLength={EMAIL_MAX}
-            autoComplete="email"
-          />
-        ) : null}
-      </FormGroup>
-      <FormGroup>
-        <ChoiceChips name="type" messages={messages} control={control} />
-        <ChoiceChips name="impact" messages={messages} control={control} />
-      </FormGroup>
-    </>
+      </FormCell>
+      <ChoiceCards name="type" messages={messages} control={control} />
+      <ChoiceCards name="impact" messages={messages} control={control} />
+    </FormSection>
+  );
+}
+
+/** The last section of an anonymous report: the optional e-mail, with its privacy line. */
+export function ContactFields({
+  messages,
+  control,
+  privacyUrl,
+}: FieldsProps & { privacyUrl?: string | null }) {
+  return (
+    <Section
+      title={messages.fields.contact}
+      description={<PrivacyNote messages={messages} privacyUrl={privacyUrl} />}
+    >
+      <FormCell span="full">
+        <EmailFormField
+          control={control}
+          name="email"
+          inputMode="email"
+          label={messages.fields.email}
+          helperText={messages.fields.emailHint}
+          maxLength={EMAIL_MAX}
+          autoComplete="email"
+        />
+      </FormCell>
+    </Section>
   );
 }
 
@@ -152,7 +146,7 @@ export function PrivacyNote({
   privacyUrl?: string | null;
 }) {
   return (
-    <p className="border-border border-t pt-6 text-muted-foreground text-sm">
+    <>
       {messages.privacy}
       {privacyUrl ? (
         <>
@@ -167,6 +161,6 @@ export function PrivacyNote({
           </a>
         </>
       ) : null}
-    </p>
+    </>
   );
 }

@@ -193,6 +193,43 @@ describe("the report form", () => {
     expect(calls[0]?.body.variables.input.email).toBe("ada@example.com");
   });
 
+  test("type and gravité are cards with a one-line description, sent when chosen", async () => {
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    const bug = screen.getByRole("radio", { name: /Bug/ });
+    expect(bug.textContent).toContain(m.choiceHints.type.bug);
+    expect(
+      screen.getByRole("radio", { name: /Blocking/ }).textContent,
+    ).toContain(m.choiceHints.impact.blocking);
+    await user.click(bug);
+    await user.click(screen.getByRole("radio", { name: /Annoying/ }));
+    await send(user);
+    await screen.findByText(m.done.body, {
+      selector: "[data-slot=dialog-description], *",
+    });
+    expect(calls[0]?.body.variables.input).toMatchObject({
+      type: "bug",
+      impact: "annoying",
+    });
+  });
+
+  test("the failure alert offers to send again, and the confirmation narrows the dialog", async () => {
+    handler = () => refusal(503, "intake.errors.unavailable", {}, "busy");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText("busy");
+    const dialog = screen.getByRole("dialog");
+    const wide = dialog.outerHTML.slice(0, dialog.outerHTML.indexOf(">"));
+    handler = () => ok(false);
+    await user.click(screen.getByRole("button", { name: m.failure.retry }));
+    await screen.findByText(m.done.body, {
+      selector: "[data-slot=dialog-description], *",
+    });
+    const narrow = screen.getByRole("dialog").outerHTML;
+    expect(narrow.slice(0, narrow.indexOf(">"))).not.toBe(wide);
+  });
+
   test("empty required fields and a bad e-mail show their errors and send nothing", async () => {
     const { user, onError } = setup();
     await fill(user, { email: "not-an-email" });

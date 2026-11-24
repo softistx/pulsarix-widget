@@ -1,5 +1,11 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, mock, test } from "bun:test";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { createRef } from "react";
 import { MESSAGES } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
@@ -64,9 +70,7 @@ describe("the two sections", () => {
       { id: "a", file: png("one.png"), pageUrl: "https://a.test/x" },
       { id: "b", file: png("photo.png") },
     ]);
-    const shot = screen
-      .getByText(MESSAGES.en.screenshot.sectionTitle)
-      .closest("section");
+    const shot = screen.getByTestId("capture-section");
     const files = screen.getByRole("group", { name: MESSAGES.en.files.label });
     expect(shot?.textContent).toContain("Captured on https://a.test/x");
     expect(shot?.textContent).not.toContain("photo.png");
@@ -80,5 +84,47 @@ describe("the two sections", () => {
     expect(
       screen.getByRole("group", { name: MESSAGES.en.files.label }),
     ).toBeTruthy();
+  });
+});
+
+describe("a refused file", () => {
+  test("is brought into view after a refused drop", async () => {
+    const scroll = mock(() => {});
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const refused = { file: png("big.png"), refusal: "Too big" };
+      const view = (items: Entry[]) => (
+        <AttachmentsControl
+          messages={MESSAGES.en}
+          locale="en"
+          region={createRef<HTMLDivElement>()}
+          items={items}
+          locked={false}
+          overTotal={false}
+          canCapture={false}
+          busy={false}
+          notice={null}
+          maskText={false}
+          onMaskText={() => {}}
+          onCapture={() => {}}
+          onDrop={() => {}}
+          onRemove={() => {}}
+          onEdit={() => {}}
+        />
+      );
+      const { rerender } = render(view([]));
+      const input = screen.getByTestId("attachments-input") as HTMLInputElement;
+      const bad = new File([new Uint8Array(1)], "x.exe", { type: "x/y" });
+      Object.defineProperty(input, "files", {
+        value: [bad],
+        configurable: true,
+      });
+      fireEvent.change(input);
+      rerender(view([{ id: "r", ...refused }]));
+      await waitFor(() => expect(scroll).toHaveBeenCalled());
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 });

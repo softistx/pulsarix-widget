@@ -65,11 +65,18 @@ export interface Messages {
     descriptionHint: string;
     email: string;
     emailHint: string;
+    /** The title of the last section, which holds the e-mail. */
+    contact: string;
     type: string;
     impact: string;
   };
   /** The optional chips of the form (`type`, `impact`). */
   choices: {
+    type: { bug: string; question: string; suggestion: string };
+    impact: { blocking: string; annoying: string; minor: string };
+  };
+  /** The one-line description under each choice card. */
+  choiceHints: {
     type: { bug: string; question: string; suggestion: string };
     impact: { blocking: string; annoying: string; minor: string };
   };

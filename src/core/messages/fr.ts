@@ -64,12 +64,25 @@ export const FR: Messages = {
     descriptionHint: "Ce que vous avez fait et vu",
     email: "Votre e-mail (facultatif)",
     emailHint: "Ajoutez-le pour recevoir un lien de suivi",
+    contact: "Contact",
     type: "Type (facultatif)",
     impact: "Gravité pour vous (facultatif)",
   },
   choices: {
     type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
     impact: { blocking: "Bloquant", annoying: "Gênant", minor: "Mineur" },
+  },
+  choiceHints: {
+    type: {
+      bug: "Quelque chose ne marche pas",
+      question: "J'ai besoin d'aide ou d'une réponse",
+      suggestion: "Une idée pour l'améliorer",
+    },
+    impact: {
+      blocking: "Je ne peux pas continuer",
+      annoying: "Cela me gêne",
+      minor: "Un petit défaut",
+    },
   },
   privacy:
     "Votre e-mail, s'il est donné, l'adresse de cette page et votre navigateur sont envoyés avec le signalement.",
