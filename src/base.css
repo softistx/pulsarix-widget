@@ -9,8 +9,6 @@
   height: 0;
   color-scheme: light;
   font-size: 16px;
-  /* Duotone icons: the sheet's own secondary-layer opacity (.4) applies, never a host page's. */
-  --fa-secondary-opacity: initial;
   /* Above a host page's own layers, below nothing the widget controls. */
   z-index: 2147483000;
 }

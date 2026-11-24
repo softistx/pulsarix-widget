@@ -15,6 +15,23 @@ export const DEFAULT_SPRITES_DIR = join(
   "workspace/dev/pulsarix/pulsarix-ui/public/assets/icons/sprites",
 );
 
+/**
+ * InlineIconSprites only keeps plain presentation attributes (no `style`, no value with a `(`), so
+ * the sheet's `style="fill:var(--fa-secondary-color,currentColor);opacity:var(--fa-secondary-opacity,.4)"`
+ * would be dropped and both layers would paint at full opacity. Each layer's style becomes the plain
+ * `opacity` attribute holding its fallback (.4 for the secondary layer); the fill is inherited from
+ * the svg's `fill-current`.
+ */
+export function flatten(symbol: string): string {
+  return symbol.replace(/\sstyle="([^"]*)"/g, (_, style: string) => {
+    const opacity =
+      /opacity:var\(--fa-(?:primary|secondary)-opacity,\s*([\d.]+)\)/.exec(
+        style,
+      )?.[1];
+    return opacity && Number(opacity) !== 1 ? ` opacity="${opacity}"` : "";
+  });
+}
+
 /** The reduced sheet, or the names missing from the source. */
 export function cutSprite(
   source: string,
@@ -27,7 +44,7 @@ export function cutSprite(
   }
   const missing = names.filter((name) => !symbols.has(name));
   if (missing.length > 0) return { missing };
-  const body = names.map((name) => symbols.get(name)).join("\n");
+  const body = names.map((name) => flatten(symbols.get(name) ?? "")).join("\n");
   return {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">\n${body}\n</svg>\n`,
   };
