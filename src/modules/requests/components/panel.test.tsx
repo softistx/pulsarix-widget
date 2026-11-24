@@ -83,7 +83,6 @@ const props = (identity: string | null) => ({
   apiBase: "https://pulsarix.test",
   dark: false,
   launcher: true,
-  position: "bottom-right" as const,
   identity,
   onOpenChange: () => {},
   onSubmitted: () => {},
@@ -113,7 +112,7 @@ describe("My requests", () => {
     render(<App {...props("a.b")} open={false} />);
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: /Report a problem, 2/ }),
+        screen.getByRole("button", { name: /Feedback and requests, 2/ }),
       ).toBeTruthy(),
     );
     expect(calls[0]?.identity).toBe("a.b");
@@ -238,7 +237,7 @@ describe("My requests", () => {
     answer([row("r1", "Billing question", 2)]);
     render(<TestHost {...props("a.b")} />);
     await userEvent.click(
-      await screen.findByRole("button", { name: /Report a problem, 2/ }),
+      await screen.findByRole("button", { name: /Feedback and requests, 2/ }),
     );
     const item = await screen.findByRole("menuitem", { name: /My requests/ });
     expect(item.textContent).toMatch(/2/);

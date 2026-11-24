@@ -10,12 +10,10 @@ interface InitOptions {
   projectKey: string;
   locale?: string;
   theme?: string;
-  position?: string;
   accentColor?: string;
   inheritTheme?: boolean;
   apiBase?: string;
-  launcher?: boolean | string;
-  offset?: { bottom?: number | string; side?: number | string };
+  launcher?: boolean | string | { side?: string; offset?: number | string };
   maskText?: boolean;
   attachments?: boolean;
   privacyUrl?: string;
@@ -143,15 +141,15 @@ if (data?.projectKey) {
     projectKey: data.projectKey,
     locale: data.locale,
     theme: data.theme,
-    position: data.position,
     accentColor: data.accentColor,
     inheritTheme: data.inheritTheme === "false" ? false : undefined,
     apiBase: data.apiBase,
-    launcher: data.launcher === "false" ? false : data.launcher,
-    offset:
-      data.offsetBottom || data.offsetSide
-        ? { bottom: data.offsetBottom, side: data.offsetSide }
-        : undefined,
+    launcher:
+      data.launcher === "false"
+        ? false
+        : data.launcherSide || data.launcherOffset
+          ? { side: data.launcherSide, offset: data.launcherOffset }
+          : data.launcher,
     maskText: data.maskText === "true" ? true : undefined,
     attachments: data.attachments === "false" ? false : undefined,
     privacyUrl: data.privacyUrl,

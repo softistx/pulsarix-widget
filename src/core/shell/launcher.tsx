@@ -1,22 +1,28 @@
-import { Fab, FabMenu } from "@softistx/material/embed";
-import { type CSSProperties, type RefObject, useRef, useState } from "react";
-import type { Position } from "../../config";
+import { CountBadge } from "@softistx/material/embed";
+import { type RefObject, useId, useState } from "react";
+import {
+  DEFAULT_PLACEMENT,
+  type LauncherPlacement,
+  type LauncherSide,
+} from "../../config";
 import type { Messages } from "../messages";
+import { LauncherMenu } from "./launcher-menu";
+import { useLauncherMove } from "./use-launcher-move";
 
 /**
  * The pulsarix mark, a pulse line, as an inline SVG in `currentColor`: it takes the theme's primary
- * through the FAB. The button's accessible name is the label, so the mark is decorative.
+ * foreground through the tab. The button's accessible name is the label, so the mark is decorative.
  */
 function PulseMark() {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      width="32"
-      height="32"
+      width="24"
+      height="24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.8"
+      strokeWidth="2.6"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -25,161 +31,141 @@ function PulseMark() {
   );
 }
 
-/** A plus: material turns the open FAB's icon by 45 degrees, so a plus becomes the close cross. */
-function PlusIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="28"
-      height="28"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-/** A report icon, for the first entry of the menu. */
-function ReportIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3 2.5 20h19L12 3Z" />
-      <path d="M12 10v4.5M12 17.5h.01" />
-    </svg>
-  );
-}
-
-/** A list icon, for "My requests". */
-function RequestsIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
-    </svg>
-  );
-}
-
 /**
- * The floating launcher: one round FAB at every width, wearing the pulsarix mark and the unread count
- * (in its accessible name too). A reporter with no identity has one task, so the FAB opens the report
- * form; an identified one has two, so it opens a menu anchored to the FAB: "Report a problem" and
- * "My requests" (with its unread badge). Escape and a click outside close the menu, and focus goes back
- * to the FAB.
+ * Temporary, until @softistx/material#5672 (a docked launcher component): hand-made from a button,
+ * CountBadge and DropdownMenu meanwhile.
  *
- * It is hidden, not unmounted, while the dialog is open (on a phone the dialog covers the screen), and
- * the button stays so that focus can return to it on close. `visible={false}` (the host's
- * `setLauncherVisible`) hides it the same way, never the dialog.
+ * The launcher: a 44 px icon button docked flush to the viewport edge (an edge tab), with corners on the
+ * content side only, wearing the pulsarix mark and the unread count. Its label is a tooltip only
+ * (hover or keyboard focus, hidden while dragging and on touch screens); its accessible name carries
+ * the count ("Report a problem, 2 unread requests").
  *
- * Its distances come from `--pulsarix-launcher-bottom` and `--pulsarix-launcher-side` (16 px by
- * default), set on the host element by the `offset` option or by the host's own CSS; the bottom one is
- * raised by the device's safe area.
+ * The host chooses the starting edge and height (`placement`). The reporter moves it along the edge by
+ * dragging, or with Alt+ArrowUp / Alt+ArrowDown (each move announced in a live region); the fraction
+ * is clamped inside the viewport, kept when it resizes, and saved in `localStorage` per host origin.
+ * A drag never opens anything: only a click, Enter or Space does.
+ *
+ * A reporter with no identity has one task, so the tab opens the report form; an identified one has
+ * two, so it opens a small menu beside the tab: "Report a problem" and "My requests" (with its unread
+ * badge). Escape and a click outside close the menu, and focus goes back to the tab.
+ *
+ * It is hidden, not unmounted, while the dialog is open, so focus can return to it on close.
+ * `visible={false}` (the host's `setLauncherVisible`) hides it the same way, never the dialog.
  */
 export function Launcher({
   messages,
-  position,
+  placement = DEFAULT_PLACEMENT,
   visible = true,
   open,
   unread,
   identified,
   fabRef,
+  dockId,
   onReport,
   onRequests,
 }: {
   messages: Messages;
-  position: Position;
+  placement?: LauncherPlacement;
   visible?: boolean;
   open: boolean;
   unread: number;
   /** Whether the reporter is identified: only then is there a second entry, "My requests". */
   identified: boolean;
-  /** The FAB, which the app keeps to hand focus back on close. */
+  /** The tab, which the app keeps to hand focus back on close. */
   fabRef: RefObject<HTMLButtonElement | null>;
+  /** The id of the dialog the tab opens (`aria-controls` for a reporter with one task). */
+  dockId?: string;
   onReport: () => void;
   onRequests: () => void;
 }) {
-  // A choice opens the dialog, which takes focus: the menu must not pull it back onto the (hidden) FAB.
-  const chose = useRef(false);
+  const side: LauncherSide = placement.side;
+  const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
+  const move = useLauncherMove({
+    messages,
+    placement,
+    onDragStart: () => setMenuOpen(false),
+  });
+
+  const onClick = () => {
+    if (move.consumeDragClick()) return;
+    if (identified) setMenuOpen((value) => !value);
+    else onReport();
+  };
+
+  // An identified reporter's tab opens a menu, so its name says so.
+  const label = identified ? messages.launcherMenu : messages.launcher;
+  const name =
+    unread > 0 ? `${label}, ${messages.launcherUnread(unread)}` : label;
+  const hintId = `${menuId}-hint`;
+  const keyHintId = `${menuId}-keyhint`;
+
+  const button = (
+    <button
+      ref={fabRef}
+      type="button"
+      className="pulsarix-tab-button"
+      aria-label={name}
+      aria-describedby={`${hintId} ${keyHintId}`}
+      aria-expanded={identified ? menuOpen : open}
+      aria-controls={identified ? undefined : dockId}
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      {...move.handlers}
+      onClick={onClick}
+    >
+      {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
+      <CountBadge
+        count={identified && menuOpen ? 0 : unread}
+        placement={side === "right" ? "top-start" : "top-end"}
+        announce={false}
+        animated
+      >
+        <span className="pulsarix-tab-face">
+          <PulseMark />
+        </span>
+      </CountBadge>
+      {/* Temporary, until @softistx/material#5670 (Tooltip in /embed): a CSS-only tooltip meanwhile. */}
+      <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
+        <strong>{label}</strong>
+        <small data-hint="drag">{messages.launcherHint}</small>
+        <small data-hint="key">{messages.launcherKeyHint}</small>
+      </span>
+    </button>
+  );
+
   return (
     <div
       hidden={open || !visible}
-      data-launcher="fab"
-      style={{ "--nxgt-fab-radius": "9999px" } as CSSProperties}
-      className={`fixed z-40 bottom-[calc(var(--pulsarix-launcher-bottom,16px)+env(safe-area-inset-bottom,0px))] ${
-        position === "bottom-left"
-          ? "left-(--pulsarix-launcher-side,16px)"
-          : "right-(--pulsarix-launcher-side,16px)"
-      }`}
+      data-launcher="tab"
+      data-side={side}
+      data-dragging={move.dragging || undefined}
+      className="pulsarix-tab"
+      style={{ top: move.top }}
     >
       {identified ? (
-        <FabMenu
-          ref={fabRef}
-          label={messages.launcher}
-          variant="filled"
+        <LauncherMenu
+          messages={messages}
+          side={side}
+          label={label}
+          unread={unread}
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          count={menuOpen ? 0 : unread}
-          icon={menuOpen ? <PlusIcon /> : <PulseMark />}
-          onCloseAutoFocus={(event) => {
-            if (!chose.current) return;
-            chose.current = false;
-            event.preventDefault();
-          }}
-          items={[
-            {
-              id: "report",
-              icon: <ReportIcon />,
-              label: messages.title,
-              onSelect: () => {
-                chose.current = true;
-                onReport();
-              },
-            },
-            {
-              id: "requests",
-              icon: <RequestsIcon />,
-              label: messages.myRequests,
-              badge: unread,
-              onSelect: () => {
-                chose.current = true;
-                onRequests();
-              },
-            },
-          ]}
+          trigger={button}
+          onReport={onReport}
+          onRequests={onRequests}
         />
       ) : (
-        <Fab
-          ref={fabRef}
-          label={messages.launcher}
-          variant="filled"
-          count={unread}
-          icon={<PulseMark />}
-          onClick={onReport}
-        />
+        button
       )}
+      <span id={hintId} className="pulsarix-sr">
+        {messages.launcherHint}
+      </span>
+      <span id={keyHintId} className="pulsarix-sr">
+        {messages.launcherKeyHintSpoken}
+      </span>
+      <span role="status" aria-live="polite" className="pulsarix-sr">
+        {move.announcement}
+      </span>
     </div>
   );
 }

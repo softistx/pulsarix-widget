@@ -91,7 +91,6 @@ const props = {
   apiBase: "https://pulsarix.test",
   dark: false,
   launcher: true,
-  position: "bottom-right" as const,
   identity: "a.b",
   onOpenChange: () => {},
   onSubmitted: () => {},

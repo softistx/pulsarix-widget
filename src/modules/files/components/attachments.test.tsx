@@ -164,7 +164,6 @@ function setup(options: { locale?: Locale; attachments?: boolean } = {}) {
       dark={false}
       open
       launcher={false}
-      position="bottom-right"
       attachments={options.attachments}
       onOpenChange={() => {}}
       onSubmitted={onSubmitted}

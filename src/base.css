@@ -41,17 +41,170 @@ progress::-moz-progress-bar {
   border-radius: inherit;
 }
 
-/* Dark mode: material's error fill (about 4.5:1 under its white text) is darkened so the unread
-   counts clear 4.5:1 with margin. Temporary, until @softistx/material#5617 (a darker dark error badge). */
-:host([data-resolved-theme="dark"]) .nxgt-fab > [data-slot="fab-count"],
-:host([data-resolved-theme="dark"])
-  .nxgt-fab-menu-item
-  > [data-slot="fab-menu-item-badge"] {
-  background: oklch(50% 0.17 27);
-  color: #fff;
-}
 /* A switch label keeps one colour, checked or not, light or dark (material tints it with
    `text-primary-text` only when checked). */
 [data-slot="switch-field"] label {
   color: var(--foreground);
+}
+
+/* The launcher: an edge tab docked flush to the viewport edge (px only, never rem). At rest it
+   peeks 6 px less; it slides fully in on hover, focus, drag and while its menu is open. */
+.pulsarix-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pulsarix-tab {
+  --dir: 1;
+  position: fixed;
+  z-index: 40;
+  /* 44 px stay on screen at rest after the 6 px peek translate: the tap target stays 44 px. */
+  width: 50px;
+  height: 44px;
+}
+.pulsarix-tab[hidden] {
+  display: none;
+}
+.pulsarix-tab[data-side="right"] {
+  right: 0;
+}
+.pulsarix-tab[data-side="left"] {
+  left: 0;
+  --dir: -1;
+}
+.pulsarix-tab-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow:
+    0 0 0 1px var(--background),
+    0 4px 14px rgb(0 0 0 / 0.25);
+  transform: translateX(calc(var(--dir) * 6px));
+  transition: transform 0.18s ease;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* The 6 px that slide off screen are padding: the mark stays centred in the 44 px that show. */
+.pulsarix-tab[data-side="right"] .pulsarix-tab-button {
+  border-radius: 12px 0 0 12px;
+  padding-right: 6px;
+}
+.pulsarix-tab[data-side="left"] .pulsarix-tab-button {
+  border-radius: 0 12px 12px 0;
+  padding-left: 6px;
+}
+.pulsarix-tab-button:hover,
+.pulsarix-tab-button:focus-visible,
+.pulsarix-tab-button[aria-expanded="true"],
+.pulsarix-tab[data-dragging] .pulsarix-tab-button {
+  transform: translateX(0);
+}
+/* A two-tone ring, visible on a light or a dark host: the page colour inside, the text colour out. */
+.pulsarix-tab-button:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 5px var(--foreground),
+    0 4px 14px rgb(0 0 0 / 0.25);
+}
+.pulsarix-tab[data-dragging] .pulsarix-tab-button {
+  cursor: grabbing;
+  transition: none;
+}
+/* The face: the 44 px that show at rest, so the count bubble anchors to the tab, not to the mark. */
+.pulsarix-tab-face {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+/* Temporary, until @softistx/material#5669: the count bubble's ring is not drawn in a shadow root. */
+[data-slot="count-badge"] > span[aria-hidden="true"] {
+  box-shadow: 0 0 0 2px var(--background);
+}
+/* The label is a tooltip only: on the content side, after a short delay.
+   Temporary, until @softistx/material#5670 (Tooltip in /embed). */
+.pulsarix-tab-tip {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--inverse-surface);
+  color: var(--inverse-foreground);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: start;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s 0.25s;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+/* In dark, the tooltip wears material's tooltip tokens, fully opaque. */
+:host([data-resolved-theme="dark"]) .pulsarix-tab-tip {
+  background: var(--tooltip);
+  color: var(--tooltip-foreground);
+}
+.pulsarix-tab-tip small {
+  font-size: 12px;
+  opacity: 0.75;
+}
+/* Hovering shows the drag hint, keyboard focus the keyboard one. */
+.pulsarix-tab-tip small[data-hint="key"],
+.pulsarix-tab-button:focus-visible .pulsarix-tab-tip small[data-hint="drag"] {
+  display: none;
+}
+.pulsarix-tab-button:focus-visible .pulsarix-tab-tip small[data-hint="key"] {
+  display: block;
+}
+.pulsarix-tab[data-side="right"] .pulsarix-tab-tip {
+  right: calc(100% + 10px);
+}
+.pulsarix-tab[data-side="left"] .pulsarix-tab-tip {
+  left: calc(100% + 10px);
+}
+.pulsarix-tab-button:hover .pulsarix-tab-tip,
+.pulsarix-tab-button:focus-visible .pulsarix-tab-tip {
+  opacity: 1;
+}
+.pulsarix-tab[data-dragging] .pulsarix-tab-tip,
+.pulsarix-tab-button[aria-expanded="true"] .pulsarix-tab-tip {
+  opacity: 0;
+  transition: none;
+}
+@media (hover: none) {
+  .pulsarix-tab-tip {
+    display: none;
+  }
+}
+/* Temporary, until @softistx/material#5673: a menu row's keyboard focus has no visible ring (tint 1.07-1.14:1). */
+.pulsarix-tab-item:focus-visible {
+  outline: 2px solid var(--primary-indicator, var(--primary));
+  outline-offset: -2px;
+}
+.pulsarix-tab-item {
+  min-height: 44px;
+}
+.pulsarix-tab-item > span:first-of-type {
+  flex: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulsarix-tab-button,
+  .pulsarix-tab-tip {
+    transition: none;
+  }
 }

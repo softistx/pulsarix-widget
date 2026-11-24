@@ -113,7 +113,6 @@ function setup(
       identity={options.identity ?? null}
       open
       launcher={false}
-      position="bottom-right"
       onOpenChange={onOpenChange}
       onSubmitted={onSubmitted}
       onError={onError}

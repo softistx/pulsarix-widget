@@ -3,6 +3,13 @@ import type { Messages } from "./types";
 /** The French words of the widget. */
 export const FR: Messages = {
   launcher: "Signaler un problème",
+  launcherMenu: "Retours et demandes",
+  launcherUnread: (n) =>
+    `${n} ${n === 1 ? "demande non lue" : "demandes non lues"}`,
+  launcherHint: "Glisser pour déplacer",
+  launcherKeyHint: "Alt+↑/↓ pour déplacer",
+  launcherKeyHintSpoken: "Alt plus flèche haut ou bas pour déplacer",
+  launcherMoved: (percent) => `Position : ${percent} %`,
   title: "Signaler un problème",
   intro: "Dites-nous ce qui ne va pas, nous allons regarder.",
   introFor: (project) =>

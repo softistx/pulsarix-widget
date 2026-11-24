@@ -37,8 +37,11 @@ An embeddable widget is not a BFF: it keeps the invariants above and takes the U
 (`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
 follow yet, the rule is the target and names its slice (tracking issue #134).
 
-- **UX (owner, 2026-11-22, #172)**: the launcher is one round icon FAB at every width (the `launcher`
-  values `auto|pill|icon` are still parsed and all give the FAB); an identified reporter's FAB opens a
+- **UX (owner, 2026-11-22, #172)**: the launcher is an edge tab (owner, 2026-11-23, #179), a 44 px icon button
+  docked flush to the viewport edge with a tooltip label, `launcher: { side, offset }` set by the host and
+  movable by the reporter (drag, Alt+ArrowUp/Down, saved per host origin in `localStorage`; a drag never
+  opens the dialog; breaking in 0.7: `position`, `offset` and `--pulsarix-launcher-*` are gone, see the README
+  migration). The `launcher` values `auto|pill|icon` are still parsed and give the tab; an identified reporter's tab opens a
   menu (report, My requests with its unread badge), each item one view, never tabs; the report is one
   unsplit form (no tabs, no steps) with titled groups: a "Screenshot" / "Capture d'écran" section (its mask
   switch, the capture button and its pictures) and a separate "Pièces jointes" / "Attachments" section (a drop zone and the

@@ -21,6 +21,8 @@ import { useUnread } from "./modules/requests/hooks/use-unread";
 const loadRequests = () => import("./modules/requests/components/panel");
 const RequestsPanel = lazy(loadRequests);
 
+const DOCK_ID = "pulsarix-dock";
+
 export type { AppProps } from "./app-props";
 
 /**
@@ -39,7 +41,7 @@ export function App({
   open,
   launcher,
   launcherVisible = true,
-  position,
+  placement,
   maskText = false,
   attachments = true,
   prefill,
@@ -173,7 +175,8 @@ export function App({
               {launcher ? (
                 <Launcher
                   messages={messages}
-                  position={position}
+                  placement={placement}
+                  dockId={DOCK_ID}
                   visible={launcherVisible}
                   open={open}
                   unread={unread}
@@ -192,13 +195,25 @@ export function App({
                 />
               ) : null}
               {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
-                a phone): the task views open in a centred Dialog meanwhile. */}
+                  a phone): the task views open in a centred Dialog meanwhile. */}
               <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent
+                  id={DOCK_ID}
                   layout="stack"
-                  // The editor needs room and takes the whole screen on a phone.
-                  size={editing ? "xl" : done ? "sm" : "lg"}
-                  mobilePresentation={editing ? "fullscreen" : undefined}
+                  // The report is "lg" (its two-column grid); the requests list and thread stay compact
+                  // ("md"), the confirmation "sm". The editor needs room (px, not rem: the host owns
+                  // the root font size) and takes the whole screen on a phone; every other view is a
+                  // bottom sheet there.
+                  size={
+                    editing
+                      ? "xl"
+                      : done
+                        ? "sm"
+                        : showing === "report"
+                          ? "lg"
+                          : "md"
+                  }
+                  mobilePresentation={editing ? "fullscreen" : "bottom-sheet"}
                   className="outline-none"
                   onCloseAutoFocus={(event) => {
                     // A hidden or missing opener (launcher off or hidden) cannot take focus:

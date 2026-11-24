@@ -1,8 +1,8 @@
 export type {
   LauncherMode,
-  LauncherOffset,
+  LauncherPlacement,
+  LauncherSide,
   Locale,
-  Position,
   ThemeMode,
   WidgetConfig,
 } from "./config";

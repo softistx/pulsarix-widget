@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   apiBaseOf,
   isHexColor,
-  lengthOf,
   metadataOf,
+  offsetOf,
   privacyUrlOf,
   readConfig,
 } from "./config";
@@ -11,14 +11,13 @@ import {
 const read = (attrs: Record<string, string>) =>
   readConfig((name) => attrs[name] ?? null);
 
-test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
+test("defaults: en, auto, right edge at 0.5, no accent (lavande)", () => {
   expect(read({})).toEqual({
     projectKey: null,
     locale: "en",
     theme: "auto",
-    position: "bottom-right",
     launcherMode: "auto",
-    offset: { bottom: null, side: null },
+    launcher: { side: "right", offset: 0.5 },
     accentColor: null,
     inheritTheme: true,
     apiBase: null,
@@ -43,14 +42,15 @@ test("valid attributes are taken", () => {
       "project-key": "pk_live_x",
       locale: "fr",
       theme: "dark",
-      position: "bottom-left",
+      "launcher-side": "left",
+      "launcher-offset": "0.25",
       "accent-color": "#0b7a75",
     }),
   ).toMatchObject({
     projectKey: "pk_live_x",
     locale: "fr",
     theme: "dark",
-    position: "bottom-left",
+    launcher: { side: "left", offset: 0.25 },
     accentColor: "#0b7a75",
     apiBase: null,
     maskText: false,
@@ -62,12 +62,13 @@ test("unknown values fall back, nothing throws", () => {
   const config = read({
     locale: "de",
     theme: "sepia",
-    position: "top",
+    "launcher-side": "top",
+    "launcher-offset": "high",
     "accent-color": "red; } body { display:none",
   });
   expect(config.locale).toBe("en");
   expect(config.theme).toBe("auto");
-  expect(config.position).toBe("bottom-right");
+  expect(config.launcher).toEqual({ side: "right", offset: 0.5 });
   expect(config.accentColor).toBeNull();
 });
 
@@ -194,28 +195,20 @@ describe("the launcher attributes", () => {
     expect(read({ launcher: "huge" }).launcherMode).toBe("auto");
   });
 
-  test("offsets are CSS lengths, bare numbers are pixels, junk is dropped", () => {
-    expect(
-      read({ "offset-bottom": "88", "offset-side": "1.5rem" }).offset,
-    ).toEqual({ bottom: "88px", side: "1.5rem" });
-    expect(lengthOf("calc(var(--bar) + 8px)")).toBe("calc(var(--bar) + 8px)");
-    expect(lengthOf(24)).toBe("24px");
-    expect(lengthOf(-4)).toBeNull();
-    expect(lengthOf("4px; color: red")).toBeNull();
-    expect(lengthOf("url(x)")).toBeNull();
-    expect(lengthOf("")).toBeNull();
+  test("the launcher offset is a fraction from 0 to 1, junk is the default 0.5", () => {
+    expect(read({ "launcher-offset": "0.8" }).launcher.offset).toBe(0.8);
+    expect(read({ "launcher-offset": "2" }).launcher.offset).toBe(1);
+    expect(read({ "launcher-offset": "-1" }).launcher.offset).toBe(0);
+    expect(read({ "launcher-offset": "0" }).launcher.offset).toBe(0);
+    expect(offsetOf("bogus")).toBe(0.5);
+    expect(offsetOf("")).toBe(0.5);
+    expect(offsetOf(null)).toBe(0.5);
+    expect(offsetOf(0.3)).toBe(0.3);
   });
 
-  test("a malformed or negative length is dropped", () => {
-    expect(lengthOf("5foo")).toBeNull();
-    expect(lengthOf("1 2")).toBeNull();
-    expect(lengthOf("calc(")).toBeNull();
-    expect(lengthOf("calc(1px + 2px))")).toBeNull();
-    expect(lengthOf("-4px")).toBeNull();
-    expect(lengthOf("-4")).toBeNull();
-    expect(lengthOf("max(1px, 2px)")).toBe("max(1px, 2px)");
-    expect(lengthOf("env(safe-area-inset-bottom, 0px)")).toBe(
-      "env(safe-area-inset-bottom, 0px)",
-    );
+  test("the launcher side is right or left, anything else is right", () => {
+    expect(read({ "launcher-side": "left" }).launcher.side).toBe("left");
+    expect(read({ "launcher-side": "top" }).launcher.side).toBe("right");
+    expect(read({}).launcher.side).toBe("right");
   });
 });

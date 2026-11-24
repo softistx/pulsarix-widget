@@ -176,7 +176,6 @@ function Host({ onSubmitted }: { onSubmitted: (detail: unknown) => void }) {
       dark={false}
       open={open}
       launcher={false}
-      position="bottom-right"
       onOpenChange={setOpen}
       onSubmitted={onSubmitted}
       onError={() => {}}

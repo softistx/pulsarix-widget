@@ -1,6 +1,17 @@
 export interface Messages {
   launcher: string;
-  /** The launcher's accessible addition while replies wait: "3 unread replies". */
+  /** The launcher's name and tooltip title for an identified reporter, whose tab opens a menu. */
+  launcherMenu: string;
+  /** The launcher's accessible name with its unread count: "Report a problem, 2 unread requests". */
+  launcherUnread: (count: number) => string;
+  /** The tooltip's second line, and the launcher's description for assistive technology. */
+  launcherHint: string;
+  /** The keyboard way to move the launcher, shown in the tooltip on keyboard focus and read as a description. */
+  launcherKeyHint: string;
+  /** The same hint spelled out for assistive technology (no symbols): the launcher's second description. */
+  launcherKeyHintSpoken: string;
+  /** Announced after the reporter moves the launcher: "Position: 45 %". */
+  launcherMoved: (percent: number) => string;
   title: string;
   intro: string;
   /** The intro once the project's name is known. */

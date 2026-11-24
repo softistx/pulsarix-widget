@@ -1,4 +1,9 @@
-import type { LauncherMode, Locale, MetadataEntry, Position } from "./config";
+import type {
+  LauncherMode,
+  LauncherPlacement,
+  Locale,
+  MetadataEntry,
+} from "./config";
 import type { Messages } from "./core/messages";
 import type { SubmitDetail } from "./modules/report/components/report-flow";
 
@@ -14,11 +19,12 @@ export interface AppProps {
   dark: boolean;
   open: boolean;
   launcher: boolean;
-  /** Read for compatibility: every value (`auto`, `pill`, `icon`) is the round FAB. */
+  /** Read for compatibility: every value (`auto`, `pill`, `icon`) is the edge tab. */
   launcherMode?: LauncherMode;
   /** `setLauncherVisible(false)` hides the launcher only, never an open dialog. */
   launcherVisible?: boolean;
-  position: Position;
+  /** The launcher's starting edge and height (default: right, 0.5). */
+  placement?: LauncherPlacement;
   /** The screenshot's mask-text option starts on. */
   maskText?: boolean;
   /** `data-attachments="false"` hides the screenshot pane and the files. */
@@ -29,7 +35,7 @@ export interface AppProps {
   metadata?: MetadataEntry[];
   /** The integrator's privacy page, linked in the privacy line. */
   privacyUrl?: string | null;
-  /** The host's signed identity token; with it the FAB opens a menu: report a problem, or My requests (one view each, no tabs). */
+  /** The host's signed identity token; with it the edge tab opens a menu: report a problem, or My requests (one view each, no tabs). */
   identity?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;

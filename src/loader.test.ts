@@ -185,7 +185,7 @@ test("destroy() clears the queued setLauncherVisible calls", async () => {
   expect(opened).toEqual([]);
 });
 
-test("data-launcher and data-offset-* on the script tag reach mount", async () => {
+test("data-launcher, data-launcher-side and data-launcher-offset on the script tag reach mount", async () => {
   const options: unknown[] = [];
   g.__WIDGET_FILE__ = STUB;
   g.__stubMounts = 0;
@@ -195,9 +195,8 @@ test("data-launcher and data-offset-* on the script tag reach mount", async () =
   const script = document.createElement("script");
   Object.assign(script.dataset, {
     projectKey: "pk_live_abc",
-    launcher: "icon",
-    offsetBottom: "88",
-    offsetSide: "1.5rem",
+    launcherSide: "left",
+    launcherOffset: "0.25",
   });
   Object.defineProperty(document, "currentScript", {
     configurable: true,
@@ -214,8 +213,7 @@ test("data-launcher and data-offset-* on the script tag reach mount", async () =
   expect(options).toHaveLength(1);
   expect(options[0]).toMatchObject({
     projectKey: "pk_live_abc",
-    launcher: "icon",
-    offset: { bottom: "88", side: "1.5rem" },
+    launcher: { side: "left", offset: "0.25" },
   });
 });
 

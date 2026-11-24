@@ -5,11 +5,14 @@ interface Window {
       projectKey: string;
       locale?: string;
       theme?: string;
-      position?: string;
       accentColor?: string;
       apiBase?: string;
-      launcher?: boolean | "auto" | "pill" | "icon";
-      offset?: { bottom?: number | string; side?: number | string };
+      launcher?:
+        | boolean
+        | "auto"
+        | "pill"
+        | "icon"
+        | { side?: "right" | "left"; offset?: number };
       maskText?: boolean;
       attachments?: boolean;
       privacyUrl?: string;
