@@ -32,6 +32,8 @@ export function ReportFlow({
   onError,
   onClose,
   onEditing,
+  onDone,
+  onRequests,
   minFillMs = MIN_FILL_MS,
   maskText = false,
   attachments = true,
@@ -79,6 +81,16 @@ export function ReportFlow({
   useEffect(() => {
     if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
   }, [failure]);
+  // A rate limit holds Send off for the wait the alert names, then lets the person send again.
+  // `minutes` may be absent from the API's refusal: wait one minute then, never zero.
+  useEffect(() => {
+    if (failure?.kind !== "rate-limited") return;
+    const timer = setTimeout(
+      () => setFailure(null),
+      Math.max(1, failure.minutes ?? 1) * 60_000,
+    );
+    return () => clearTimeout(timer);
+  }, [failure]);
   const { control, handleSubmit, formState } = useReportForm({
     messages,
     draft,
@@ -88,6 +100,10 @@ export function ReportFlow({
   useEffect(() => {
     if (sent) done.current?.focus();
   }, [sent]);
+  useEffect(() => {
+    onDone?.(!!sent);
+    return () => onDone?.(false);
+  }, [sent, onDone]);
 
   const submit = handleSubmit((values) =>
     runSubmit(values, {
@@ -122,6 +138,7 @@ export function ReportFlow({
         uploads={sent.uploads}
         doneRef={done}
         onClose={onClose}
+        onRequests={onRequests}
       />
     );
   }
@@ -138,7 +155,10 @@ export function ReportFlow({
       failure={failure}
       submitting={formState.isSubmitting}
       blocked={
-        failure?.kind === "rejected" || failure?.kind === "config" || overTotal
+        failure?.kind === "rejected" ||
+        failure?.kind === "config" ||
+        failure?.kind === "rate-limited" ||
+        overTotal
       }
       anonymous={!identity}
       attachments={

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+  act,
   cleanup,
   render,
   screen,
@@ -52,6 +53,12 @@ beforeEach(() => {
   projectName = "Acme Store";
   handler = () => ok(false);
   globalThis.fetch = mock(async (url: string, init: RequestInit) => {
+    // The icon sheet (InlineIconSprites): not an API call, answered empty.
+    if (String(url).endsWith("/icons/duotone.svg")) {
+      return new Response("<svg></svg>", {
+        headers: { "content-type": "image/svg+xml" },
+      });
+    }
     const call = {
       url,
       body: JSON.parse(String(init.body)) as Body,
@@ -83,6 +90,7 @@ function setup(
     projectKey?: string | null;
     apiBase?: string | null;
     minFillMs?: number;
+    identity?: string | null;
   } = {},
 ) {
   const locale = options.locale ?? "en";
@@ -102,6 +110,7 @@ function setup(
           : options.apiBase
       }
       dark={false}
+      identity={options.identity ?? null}
       open
       launcher={false}
       position="bottom-right"
@@ -191,6 +200,102 @@ describe("the report form", () => {
     await send(user);
     await screen.findByText(m.done.tracking);
     expect(calls[0]?.body.variables.input.email).toBe("ada@example.com");
+  });
+
+  test("type and gravité are cards with a one-line description, sent when chosen", async () => {
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    const bug = screen.getByRole("radio", { name: /Bug/ });
+    expect(bug.textContent).toContain(m.choiceHints.type.bug);
+    expect(
+      screen.getByRole("radio", { name: /Blocking/ }).textContent,
+    ).toContain(m.choiceHints.impact.blocking);
+    await user.click(bug);
+    await user.click(screen.getByRole("radio", { name: /Annoying/ }));
+    await send(user);
+    await screen.findByText(m.done.body, {
+      selector: "[data-slot=dialog-description], *",
+    });
+    expect(calls[0]?.body.variables.input).toMatchObject({
+      type: "bug",
+      impact: "annoying",
+    });
+  });
+
+  test("Send is the retry: no second button, the same draft goes out again, and the confirmation narrows the dialog", async () => {
+    handler = () => refusal(503, "intake.errors.unavailable", {}, "busy");
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText("busy");
+    expect(
+      screen.queryByRole("button", { name: /again|retry|réessayer/i }),
+    ).toBeNull();
+    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("lg");
+    handler = () => ok(false);
+    await send(user);
+    await screen.findByText(m.done.body, {
+      selector: "[data-slot=dialog-description], *",
+    });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.body.variables.input).toMatchObject({
+      title: "Crash",
+      description: "On save",
+    });
+    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("sm");
+  });
+
+  test("the confirmation offers My requests to an identified reporter, and it opens that view", async () => {
+    const { user } = setup({ identity: "tok" });
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    await user.click(screen.getByRole("button", { name: m.myRequests }));
+    expect(
+      await screen.findByRole("dialog", { name: m.myRequests }),
+    ).toBeTruthy();
+  });
+
+  test("the confirmation of an anonymous reporter has no My requests button", async () => {
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    expect(screen.queryByRole("button", { name: m.myRequests })).toBeNull();
+    expect(screen.getByRole("button", { name: m.close })).toBeTruthy();
+  });
+
+  test("a rate limit keeps Send disabled and names the wait in minutes", async () => {
+    handler = () =>
+      refusal(
+        429,
+        "intake.errors.too-many-requests",
+        { minutes: 4 },
+        "Wait 4 minutes.",
+      );
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText("Wait 4 minutes.");
+    expect(
+      (screen.getByRole("button", { name: m.submit }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  test("the sections run in order, each under its title: details, files, then contact (the e-mail last)", async () => {
+    setup();
+    await screen.findByRole("textbox", { name: /Title/ });
+    // No page capture in this environment: the screenshot section is not offered.
+    const titles = [m.fields.details, m.files.label, m.fields.contact];
+    const headings = await waitFor(() => {
+      const found = screen
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent);
+      expect(found).toEqual(titles);
+      return found;
+    });
+    expect(headings).toHaveLength(3);
   });
 
   test("empty required fields and a bad e-mail show their errors and send nothing", async () => {
@@ -330,6 +435,40 @@ describe("the report form", () => {
     await screen.findByText(m.failure.rateLimited(3));
   });
 
+  test("Send is blocked during a rate limit and re-enabled when its wait is over", async () => {
+    handler = () =>
+      json(429, { errors: [{ extensions: { code: "http-429" } }] });
+    const realSetTimeout = globalThis.setTimeout;
+    const waits: Array<() => void> = [];
+    globalThis.setTimeout = ((fn: () => void, ms?: number) => {
+      // The wait: no minutes from the API falls back to one minute.
+      if (ms === 60_000) {
+        waits.push(fn);
+        return 0;
+      }
+      return realSetTimeout(fn, ms);
+    }) as unknown as typeof setTimeout;
+    try {
+      const { user } = setup();
+      await fill(user, { title: "Crash", description: "On save" });
+      await send(user);
+      await screen.findByText(m.failure.rateLimited(1));
+      const button = screen.getByRole("button", { name: m.submit });
+      expect(button.hasAttribute("disabled")).toBe(true);
+      expect(waits).toHaveLength(1);
+      await act(async () => waits[0]?.());
+      await waitFor(() =>
+        expect(
+          screen
+            .getByRole("button", { name: m.submit })
+            .hasAttribute("disabled"),
+        ).toBe(false),
+      );
+    } finally {
+      globalThis.setTimeout = realSetTimeout;
+    }
+  });
+
   test("a network failure is told as such, with the text kept", async () => {
     globalThis.fetch = mock(async () => {
       throw new TypeError("Failed to fetch");
@@ -422,8 +561,9 @@ describe("the report form", () => {
 
   test("the request is the persisted JSON operation, without credentials", async () => {
     const seen: RequestInit[] = [];
-    globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
-      seen.push(init);
+    globalThis.fetch = mock(async (url: string, init: RequestInit) => {
+      // The icon sheet is not a report request.
+      if (!String(url).endsWith("/icons/duotone.svg")) seen.push(init);
       return ok(false);
     }) as unknown as typeof fetch;
     const { user } = setup();
@@ -483,9 +623,10 @@ describe("the split dialog", () => {
     const dialog = await screen.findByRole("dialog");
     await screen.findByRole("group", { name: m.files.label });
     expect(dialog.getAttribute("data-layout")).not.toBe("split");
-    // One form holds the fields and the attachments; no titled group, no side pane.
+    // One form holds the fields and the attachments in titled groups: no tabs, no steps, no side pane.
     const form = dialog.querySelector("form") as HTMLFormElement;
-    expect(form.querySelectorAll("section, hr, h3")).toHaveLength(0);
+    expect(form.querySelectorAll("[role=tablist], [role=tab]")).toHaveLength(0);
+    expect(form.querySelector("[data-testid=files-section]")).not.toBeNull();
     expect(
       within(form).getByRole("group", { name: m.files.label }),
     ).toBeTruthy();

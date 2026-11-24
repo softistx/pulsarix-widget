@@ -225,6 +225,20 @@ export function serveFixture(port = 0) {
           },
         });
       }
+      // The reduced icon sheet the host serves at /widget/v1/icons/ (built into dist/icons).
+      if (url.pathname.startsWith("/widget/v1/icons/")) {
+        const file = Bun.file(
+          join(root, "dist/icons", url.pathname.split("/").pop() ?? ""),
+        );
+        return (await file.exists())
+          ? new Response(file, {
+              headers: {
+                "content-type": "image/svg+xml",
+                "access-control-allow-origin": "*",
+              },
+            })
+          : new Response("not found", { status: 404 });
+      }
       if (url.pathname.startsWith("/dist/")) {
         const file = Bun.file(join(root, url.pathname));
         if (await file.exists()) return new Response(file);

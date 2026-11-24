@@ -1,10 +1,13 @@
 import {
-  ChipGroupField,
+  ChoiceCardGroupFormField,
   EmailFormField,
+  FormCell,
+  FormSection,
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
-import { type Control, Controller } from "react-hook-form";
+import type { ReactNode, Ref } from "react";
+import type { Control } from "react-hook-form";
 import type { Messages } from "../../../core/messages";
 import {
   DESCRIPTION_MAX,
@@ -12,6 +15,7 @@ import {
   type ReportValues,
   TITLE_MAX,
 } from "../model/validation";
+import { CHOICE_ICONS } from "./choice-icons";
 
 export const FORM_ID = "pulsarix-report-form";
 
@@ -20,52 +24,70 @@ interface FieldsProps {
   control: Control<ReportValues>;
 }
 
-/** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
-function ChoiceChips({
+/** Single-choice and optional: one card per row, pressing the chosen one clears it. */
+function ChoiceCards({
   name,
-  labels,
   messages,
   control,
-}: FieldsProps & {
-  name: "type" | "impact";
-  /** The chip labels by value, in display order. */
-  labels: Record<string, string>;
+}: FieldsProps & { name: "type" | "impact" }) {
+  const labels: Record<string, string> = messages.choices[name];
+  const hints: Record<string, string> = messages.choiceHints[name];
+  return (
+    <FormCell>
+      <ChoiceCardGroupFormField
+        control={control}
+        name={name}
+        label={messages.fields[name]}
+        deselectable
+        columns={1}
+        options={Object.entries(labels).map(([value, title]) => ({
+          value,
+          title,
+          description: hints[value],
+          icon: CHOICE_ICONS[value],
+        }))}
+      />
+    </FormCell>
+  );
+}
+
+/** A titled section of the form; the rule above it separates it from the section before. */
+export function Section({
+  title,
+  description,
+  children,
+  ...rest
+}: {
+  title?: string;
+  description?: ReactNode;
+  children: ReactNode;
+  "data-testid"?: string;
+  role?: string;
+  tabIndex?: number;
+  body?: "grid" | "stack";
+  columns?: 1 | 2 | 3;
+  className?: string;
+  ref?: Ref<HTMLDivElement>;
 }) {
   return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <ChipGroupField
-          label={messages.fields[name]}
-          deselectable
-          overflow="wrap"
-          value={field.value || null}
-          onValueChange={(value) => field.onChange(value ?? "")}
-          options={Object.entries(labels).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-        />
-      )}
-    />
+    <FormSection
+      {...rest}
+      variant="heading"
+      titleAs="h3"
+      title={title ?? ""}
+      description={description}
+      separated={!!title}
+    >
+      {children}
+    </FormSection>
   );
 }
 
 /** The whole report, in the order it is told: title, description, type, impact, then the e-mail. */
-export function ReportFields({
-  messages,
-  control,
-  anonymous,
-  privacyUrl,
-}: FieldsProps & {
-  /** No identity: the reporter may leave an e-mail to get the link to follow the report. */
-  anonymous: boolean;
-  privacyUrl?: string | null;
-}) {
+export function ReportFields({ messages, control }: FieldsProps) {
   return (
-    <>
-      <div className="lg:col-span-2">
+    <Section title={messages.fields.details} columns={2}>
+      <FormCell span="full">
         <TextFormField
           control={control}
           name="title"
@@ -75,8 +97,8 @@ export function ReportFields({
           autoComplete="off"
           required
         />
-      </div>
-      <div className="lg:col-span-2">
+      </FormCell>
+      <FormCell span="full">
         <TextareaFormField
           control={control}
           name="description"
@@ -87,49 +109,63 @@ export function ReportFields({
           maxLength={DESCRIPTION_MAX}
           required
         />
-      </div>
-      <ChoiceChips
-        name="type"
-        labels={messages.choices.type}
-        messages={messages}
-        control={control}
-      />
-      <ChoiceChips
-        name="impact"
-        labels={messages.choices.impact}
-        messages={messages}
-        control={control}
-      />
-      {anonymous ? (
-        <div>
-          <EmailFormField
-            control={control}
-            name="email"
-            inputMode="email"
-            label={messages.fields.email}
-            helperText={messages.fields.emailHint}
-            maxLength={EMAIL_MAX}
-            autoComplete="email"
-          />
-        </div>
-      ) : null}
-      {anonymous ? (
-        <p className="-mt-2 text-muted-foreground text-sm lg:mt-0 lg:pt-7">
-          {messages.privacy}
-          {privacyUrl ? (
-            <>
-              {" "}
-              <a
-                href={privacyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-text underline"
-              >
-                {messages.privacyLink}
-              </a>
-            </>
-          ) : null}
-        </p>
+      </FormCell>
+      <ChoiceCards name="type" messages={messages} control={control} />
+      <ChoiceCards name="impact" messages={messages} control={control} />
+    </Section>
+  );
+}
+
+/** The last section of an anonymous report: the optional e-mail, with its privacy line. */
+export function ContactFields({
+  messages,
+  control,
+  privacyUrl,
+}: FieldsProps & { privacyUrl?: string | null }) {
+  return (
+    <Section
+      title={messages.fields.contact}
+      description={<PrivacyNote messages={messages} privacyUrl={privacyUrl} />}
+      columns={2}
+    >
+      <FormCell>
+        <EmailFormField
+          control={control}
+          name="email"
+          inputMode="email"
+          label={messages.fields.email}
+          helperText={messages.fields.emailHint}
+          maxLength={EMAIL_MAX}
+          autoComplete="email"
+        />
+      </FormCell>
+    </Section>
+  );
+}
+
+/** What is sent with a report, and the link to the integrator's privacy page. */
+export function PrivacyNote({
+  messages,
+  privacyUrl,
+}: {
+  messages: Messages;
+  privacyUrl?: string | null;
+}) {
+  return (
+    <>
+      {messages.privacy}
+      {privacyUrl ? (
+        <>
+          {" "}
+          <a
+            href={privacyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-text underline"
+          >
+            {messages.privacyLink}
+          </a>
+        </>
       ) : null}
     </>
   );

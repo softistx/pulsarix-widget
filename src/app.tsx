@@ -9,6 +9,7 @@ import {
 } from "@softistx/material/embed";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { AppProps } from "./app-props";
+import { IconSheets } from "./core/icon-sheets";
 import { Launcher } from "./core/shell/launcher";
 import { themeNameFor } from "./core/theme/theme";
 import type { WidgetProject } from "./modules/report/api";
@@ -56,6 +57,7 @@ export function App({
 }: AppProps) {
   // While the screenshot editor is open the dialog widens: the editor needs more than a form.
   const [editing, setEditing] = useState(false);
+  const [done, setDone] = useState(false);
   // The key's config survives a change of view (the form remounts), not a close.
   const [project, setProject] = useState<WidgetProject | null>(null);
   const identified = !!identity && !!projectKey && !!apiBase;
@@ -135,6 +137,8 @@ export function App({
           retryDelayMs={retryDelayMs}
           maskText={maskText}
           onEditing={setEditing}
+          onDone={setDone}
+          onRequests={identified ? () => setView("requests") : undefined}
           attachments={attachments}
           prefill={prefill}
           metadata={metadata}
@@ -159,61 +163,59 @@ export function App({
       {root ? (
         // `/embed` carries its own i18n context (the `AttachmentList` labels); `initialLanguage`
         // keeps it from reading the host page's `localStorage`.
-        <I18nProvider
-          initialLanguage={locale}
-          supportedLanguages={["en", "fr"]}
-          defaultLanguage={locale}
-        >
-          <PortalContainerProvider container={root}>
-            {launcher ? (
-              <Launcher
-                messages={messages}
-                position={position}
-                visible={launcherVisible}
-                open={open}
-                unread={unread}
-                identified={identified}
-                fabRef={fab}
-                onReport={() => {
-                  setEditing(false);
-                  setView("report");
-                  onOpenChange(true);
-                }}
-                onRequests={() => {
-                  setEditing(false);
-                  setView("requests");
-                  onOpenChange(true);
-                }}
-              />
-            ) : null}
-            {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
+        <IconSheets apiBase={apiBase}>
+          <I18nProvider
+            initialLanguage={locale}
+            supportedLanguages={["en", "fr"]}
+            defaultLanguage={locale}
+          >
+            <PortalContainerProvider container={root}>
+              {launcher ? (
+                <Launcher
+                  messages={messages}
+                  position={position}
+                  visible={launcherVisible}
+                  open={open}
+                  unread={unread}
+                  identified={identified}
+                  fabRef={fab}
+                  onReport={() => {
+                    setEditing(false);
+                    setView("report");
+                    onOpenChange(true);
+                  }}
+                  onRequests={() => {
+                    setEditing(false);
+                    setView("requests");
+                    onOpenChange(true);
+                  }}
+                />
+              ) : null}
+              {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
                 a phone): the task views open in a centred Dialog meanwhile. */}
-            <Dialog open={open} onOpenChange={onOpenChange}>
-              <DialogContent
-                layout="stack"
-                // The report grows into a two-column grid on wide screens; the thread and the
-                // list stay narrow. The editor needs room (px, not rem: the host owns the
-                // root font size) and takes the whole screen on a phone.
-                size={showing === "report" && !editing ? "lg" : "md"}
-                mobilePresentation={editing ? "fullscreen" : undefined}
-                className={
-                  editing ? "outline-none max-w-[1200px]" : "outline-none"
-                }
-                onCloseAutoFocus={(event) => {
-                  // A hidden or missing opener (launcher off or hidden) cannot take focus:
-                  // let Radix's default run.
-                  const target = fab.current;
-                  if (!target?.isConnected || target.closest("[hidden]"))
-                    return;
-                  event.preventDefault();
-                  target.focus();
-                }}
-              >
-                {body}
-              </DialogContent>
-            </Dialog>
-          </PortalContainerProvider>
-        </I18nProvider>
+              <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent
+                  layout="stack"
+                  // The editor needs room and takes the whole screen on a phone.
+                  size={editing ? "xl" : done ? "sm" : "lg"}
+                  mobilePresentation={editing ? "fullscreen" : undefined}
+                  className="outline-none"
+                  onCloseAutoFocus={(event) => {
+                    // A hidden or missing opener (launcher off or hidden) cannot take focus:
+                    // let Radix's default run.
+                    const target = fab.current;
+                    if (!target?.isConnected || target.closest("[hidden]"))
+                      return;
+                    event.preventDefault();
+                    target.focus();
+                  }}
+                >
+                  {body}
+                </DialogContent>
+              </Dialog>
+            </PortalContainerProvider>
+          </I18nProvider>
+        </IconSheets>
       ) : null}
     </div>
   );

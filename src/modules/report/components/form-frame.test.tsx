@@ -24,14 +24,14 @@ describe("FormFooter", () => {
     footer(false);
     const send = screen.getByRole("button", { name: m.submit });
     expect(send.hasAttribute("disabled")).toBe(false);
-    expect(send.getAttribute("aria-busy")).toBe("false");
+    expect(send.getAttribute("aria-busy")).not.toBe("true");
   });
 
-  test("while sending the label reads Sending... (never blank) and the button is disabled", () => {
+  test("while sending Send keeps its label and stays focusable (aria-busy, not disabled)", () => {
     footer(true);
-    const send = screen.getByRole("button", { name: m.submitting });
-    expect(send.textContent).toBe(m.submitting);
-    expect(send.hasAttribute("disabled")).toBe(true);
+    const send = screen.getByRole("button", { name: m.submit });
+    expect(send.textContent).toBe(m.submit);
+    expect(send.hasAttribute("disabled")).toBe(false);
     expect(send.getAttribute("aria-busy")).toBe("true");
   });
 

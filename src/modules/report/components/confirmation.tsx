@@ -25,12 +25,14 @@ export function Confirmation({
   uploads,
   doneRef,
   onClose,
+  onRequests,
 }: {
   messages: Messages;
   tracking: boolean;
   uploads: UploadOutcome[];
   doneRef: Ref<HTMLDivElement>;
   onClose: () => void;
+  onRequests?: () => void;
 }) {
   const failed = uploads.flatMap((upload) => (upload.ok ? [] : [upload]));
   const sent = uploads.length - failed.length;
@@ -80,7 +82,14 @@ export function Confirmation({
         </div>
       </DialogBody>
       <DialogFooter>
-        <Button onClick={onClose}>{messages.close}</Button>
+        {onRequests ? (
+          <Button type="button" variant="tonal" onClick={onClose}>
+            {messages.close}
+          </Button>
+        ) : null}
+        <Button onClick={onRequests ?? onClose}>
+          {onRequests ? messages.myRequests : messages.close}
+        </Button>
       </DialogFooter>
     </>
   );

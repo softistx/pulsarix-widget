@@ -231,8 +231,8 @@ describe("run-time setters", () => {
   test("type and impact are kept by setLocale", async () => {
     const h = await openWithDraft({ projectKey: "pk_live_abc" });
     const chip = (name: string) =>
-      [...shadowOf(h).querySelectorAll("[role=radio],button")].find(
-        (el) => el.textContent?.trim() === name,
+      [...shadowOf(h).querySelectorAll("[role=radio],button")].find((el) =>
+        el.textContent?.trim().startsWith(name),
       ) as HTMLElement;
     fireEvent.click(chip("Bug"));
     fireEvent.click(chip("Annoying"));

@@ -11,8 +11,9 @@ export interface Messages {
   /** The report dialog's Cancel. */
   cancel: string;
   screenshot: {
-    /** The one attachments button, which offers the capture and the upload. */
-    attach: string;
+    /** The capture section's title and its one line. */
+    sectionTitle: string;
+    sectionHint: string;
     add: string;
     upload: string;
     maskText: string;
@@ -36,6 +37,8 @@ export interface Messages {
   };
   files: {
     label: string;
+    /** The attachments section's one line. */
+    sectionHint: string;
     hint: string;
     dropTitle: string;
     screenshot: string;
@@ -60,6 +63,10 @@ export interface Messages {
     descriptionHint: string;
     email: string;
     emailHint: string;
+    /** The title of the first section: the title, the description and the two choices. */
+    details: string;
+    /** The title of the last section, which holds the e-mail. */
+    contact: string;
     type: string;
     impact: string;
   };
@@ -68,12 +75,16 @@ export interface Messages {
     type: { bug: string; question: string; suggestion: string };
     impact: { blocking: string; annoying: string; minor: string };
   };
+  /** The one-line description under each choice card. */
+  choiceHints: {
+    type: { bug: string; question: string; suggestion: string };
+    impact: { blocking: string; annoying: string; minor: string };
+  };
+  /** What is sent with a report (shown to an anonymous reporter). */
   privacy: string;
   /** The link text to the integrator's privacy page. */
   privacyLink: string;
   submit: string;
-  /** @deprecated Unused since material 3.239: the busy submit button keeps its label. */
-  submitting: string;
   errors: {
     titleRequired: string;
     titleTooLong: string;
@@ -83,7 +94,6 @@ export interface Messages {
   };
   failure: {
     summary: string;
-    retry: string;
     config: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;

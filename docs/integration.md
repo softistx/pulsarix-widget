@@ -238,6 +238,13 @@ Content-Security-Policy:
   (fetched on the first capture) and the markdown renderer of the team's replies (`chat-markdown-*.js`,
   about 740 KB, 221 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
   every file of the widget's folder beside the entry, with the bundle's cache headers.
+- The icons (the type and impact cards, the camera button) come from a small sheet at
+  `<apiBase>/widget/v1/icons/duotone.svg`, where `apiBase` is the loader's origin unless you set
+  `data-api-base`. Only the few icons the widget draws are in it. It is fetched once with CORS (no
+  credentials) and inlined into the widget's shadow root, so `connect-src` needs the `apiBase` origin
+  (already there for the API). An unavailable sheet, or an `apiBase` that is not `https` (or
+  `http://localhost`), leaves those icons blank; the form still works. Serve `icons/` with the rest of
+  the widget's folder.
 - The widget's styles are adopted into its shadow root: no `style-src 'unsafe-inline'`. The requests
   thread injects one `<style>` element; under a strict `style-src` give your page a nonce, which the
   widget reads from a `nonce` attribute on a `style` or `script` element or from this tag:
