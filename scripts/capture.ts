@@ -139,7 +139,11 @@ try {
         scheme,
       );
       await page.getByRole("button", { name: /^Report a problem/ }).click();
-      await page.getByRole("menuitem", { name: /Report a problem|Report/ }).first().click().catch(() => {});
+      await page
+        .getByRole("menuitem", { name: /Report a problem|Report/ })
+        .first()
+        .click()
+        .catch(() => {});
       await page.getByRole("dialog").waitFor();
       await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
       await page
@@ -164,14 +168,11 @@ try {
           .querySelector("pulsarix-widget")
           ?.shadowRoot?.querySelector("button"),
       );
-      await fr.evaluate(
-        (s) => {
-          const el = document.querySelector("pulsarix-widget");
-          el?.setAttribute("theme", s);
-          el?.setAttribute("locale", "fr");
-        },
-        scheme,
-      );
+      await fr.evaluate((s) => {
+        const el = document.querySelector("pulsarix-widget");
+        el?.setAttribute("theme", s);
+        el?.setAttribute("locale", "fr");
+      }, scheme);
       await fr.getByRole("button", { name: "Signaler un problème" }).click();
       await fr.getByRole("dialog").waitFor();
       await fr.waitForTimeout(500);
