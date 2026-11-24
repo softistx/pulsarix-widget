@@ -92,6 +92,17 @@ try {
       await page.getByRole("dialog").waitFor({ state: "detached" });
       await page.getByRole("button", { name: "Report a problem" }).click();
       await page.getByRole("dialog").waitFor();
+      // The chosen cards (Bug, Blocking), then a card with keyboard focus (Annoying).
+      await page.getByRole("radio", { name: /^Bug/ }).check({ force: true });
+      await page
+        .getByRole("radio", { name: /^Blocking/ })
+        .check({ force: true });
+      await page.waitForTimeout(200);
+      await shot("choices-selected");
+      await page.getByRole("radio", { name: /^Blocking/ }).focus();
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(200);
+      await shot("choices-focus");
       await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
       await page
         .getByRole("textbox", { name: /What happened/ })

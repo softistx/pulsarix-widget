@@ -3,7 +3,6 @@ import {
   AttachmentList,
   Button,
   FormCell,
-  FormGrid,
   SwitchField,
 } from "@softistx/material/embed";
 import {
@@ -138,8 +137,8 @@ export function AttachmentsControl({
           body="stack"
           className="outline-none"
         >
-          <FormGrid columns={2}>
-            <FormCell>
+          <FormCell span="full">
+            <div className="grid justify-items-start gap-3">
               <SwitchField
                 variant="plain"
                 checked={maskText}
@@ -148,8 +147,6 @@ export function AttachmentsControl({
                 label={t.maskText}
                 helperText={t.maskTextHint}
               />
-            </FormCell>
-            <FormCell>
               <Button
                 type="button"
                 variant="tonal"
@@ -158,8 +155,8 @@ export function AttachmentsControl({
               >
                 {t.add}
               </Button>
-            </FormCell>
-          </FormGrid>
+            </div>
+          </FormCell>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
           <ItemRows
             messages={messages}

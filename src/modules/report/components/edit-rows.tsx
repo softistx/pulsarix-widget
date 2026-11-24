@@ -32,7 +32,7 @@ export function EditRows({
 }) {
   const t = messages.screenshot;
   if (disabled) return null;
-  // Temporary, until material#5573 (per-row actions and a caption in AttachmentList):
+  // Temporary, until @softistx/material#5573 (per-row actions and a caption in AttachmentList):
   // the caption and the Edit button sit under the list meanwhile.
   return items
     .filter((i) => i.pageUrl !== undefined || canEdit(i))
@@ -41,14 +41,17 @@ export function EditRows({
         key={item.id}
         className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
       >
-        <p className="min-w-0 truncate text-muted-foreground text-sm">
-          {item.pageUrl ? t.capturedOn(item.pageUrl) : item.file.name}
-        </p>
+        {item.pageUrl ? (
+          <p className="min-w-0 truncate text-muted-foreground text-sm">
+            {t.capturedOn(item.pageUrl)}
+          </p>
+        ) : null}
         {canEdit(item) ? (
           <Button
             type="button"
             variant="tonal"
             size="sm"
+            className="col-start-2 justify-self-end"
             aria-label={editName(item, all, t)}
             disabled={disabled}
             onClick={() => onEdit(item.id)}
