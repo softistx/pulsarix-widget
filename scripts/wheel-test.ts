@@ -19,6 +19,9 @@ try {
       .querySelector("pulsarix-widget")
       ?.shadowRoot?.querySelector("button"),
   );
+  await page.evaluate(() => {
+    document.body.style.minHeight = "5000px";
+  });
   await page.getByRole("button", { name: "Report a problem" }).click();
   await page.getByRole("dialog").waitFor();
   await page.waitForTimeout(500);
@@ -47,7 +50,18 @@ try {
     before,
     after,
   );
-  failed = !ok;
+  // The page behind stays locked: past the form's end and over the overlay, window.scrollY stays 0.
+  await page.mouse.wheel(0, 3000);
+  await page.mouse.move(8, 8);
+  await page.mouse.wheel(0, 800);
+  await page.waitForTimeout(400);
+  const scrollY = await page.evaluate(() => window.scrollY);
+  const locked = scrollY === 0;
+  console.log(
+    `${locked ? "PASS" : "FAIL"}  the page behind does not scroll`,
+    scrollY,
+  );
+  failed = !(ok && locked);
 } finally {
   await browser.close();
   server.stop();

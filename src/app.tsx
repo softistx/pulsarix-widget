@@ -94,7 +94,8 @@ export function App({
   // Temporary, until @softistx/material#5678 (the embed Dialog's scroll lock swallows shadow-root wheels)
   // (react-remove-scroll listens on `document`, where the event is retargeted to the host, so it
   // looks "outside" the locked dialog and is preventDefault-ed): the wheel and touch moves stop at
-  // the root. The page behind stays locked by the body's `overflow: hidden`.
+  // the root (a capture-free, bubble-phase listener on the root itself; React `onWheel` /
+  // `onTouchMove` on elements under it never fire, since the event stops here). The page behind stays locked by the body's `overflow: hidden`.
   useEffect(() => {
     if (!root) return;
     const stop = (event: Event) => event.stopPropagation();

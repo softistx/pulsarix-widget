@@ -43,6 +43,7 @@ function ChoiceCards({
         label={messages.fields[name]}
         deselectable
         columns={3}
+        density="compact"
         options={Object.entries(labels).map(([value, title]) => ({
           value,
           title,

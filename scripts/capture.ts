@@ -98,6 +98,8 @@ try {
         await radio.scrollIntoViewIfNeeded();
         await radio.check({ force: true });
       }
+      // The pointer rests on the last card clicked: move it away so no hover tint reaches the shot.
+      await page.mouse.move(0, 0);
       await page.waitForTimeout(200);
       await shot("choices-selected");
       await page.getByRole("radio", { name: /^Blocking/ }).focus();
