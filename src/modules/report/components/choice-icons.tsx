@@ -8,9 +8,9 @@ const glyph = (name: Parameters<typeof Icon>[0]["name"]): ReactNode => (
 
 export const CHOICE_ICONS: Record<string, ReactNode> = {
   bug: glyph("bug"),
-  question: glyph("circle-question"),
+  question: glyph("question"),
   suggestion: glyph("lightbulb"),
-  blocking: glyph("circle-exclamation"),
+  blocking: glyph("ban"),
   annoying: glyph("triangle-exclamation"),
-  minor: glyph("circle-info"),
+  minor: glyph("info"),
 };
