@@ -50,7 +50,16 @@ try {
       const shoot = (page: Awaited<ReturnType<typeof visit>>, name: string) =>
         page.screenshot({ path: `${out}/${name}-${width}-${scheme}.png` });
       const tab = (page: Awaited<ReturnType<typeof visit>>) =>
-        page.getByRole("button", { name: /^Report a problem/ });
+        page.getByRole("button", {
+          name: /^(Report a problem|Feedback and requests)/,
+        });
+      const inShadow = <T>(
+        page: Awaited<ReturnType<typeof visit>>,
+        fn: (root: ShadowRoot) => T,
+      ) =>
+        page.evaluate(
+          `(${fn.toString()})(document.querySelector("pulsarix-widget").shadowRoot)`,
+        ) as Promise<T>;
 
       // Anonymous: rest, hover with the tooltip, the dialog open.
       let page = await visit("/");
@@ -71,6 +80,15 @@ try {
       await tab(page).hover();
       await page.waitForTimeout(600);
       await shoot(page, "hover");
+      // Keyboard focus on the right-docked tab: the two-tone ring and the key hint.
+      await page.mouse.move(2, 2);
+      await page.keyboard.press("Shift");
+      await tab(page).focus();
+      await page.waitForTimeout(600);
+      await shoot(page, "focus");
+      await page.evaluate(() =>
+        (document.activeElement as HTMLElement | null)?.blur(),
+      );
       // A drag moves it and never opens the dialog.
       const before = await tab(page).boundingBox();
       if (before) {
@@ -138,13 +156,39 @@ try {
 
       // Identified: the unread badge, the menu; and the left edge.
       page = await visit("/identified");
-      await page.getByRole("button", { name: /Report a problem, 3/ }).waitFor();
+      await page
+        .getByRole("button", { name: /Feedback and requests, 3/ })
+        .waitFor();
       await page.mouse.move(2, 2);
       await shoot(page, "identified");
       await tab(page).click();
       await page.getByRole("menuitem", { name: /My requests/ }).waitFor();
       await page.waitForTimeout(300);
       await shoot(page, "menu");
+      // What the library draws: the bubble's ring, and the duotone layer of the menu icons.
+      const probe = await inShadow(page, (root) => {
+        const bubble = root.querySelector(
+          '[data-slot="count-badge"] > [aria-hidden="true"]',
+        );
+        const icon = root.querySelector('svg[data-slot="icon"]');
+        return {
+          bubble: bubble ? getComputedStyle(bubble).boxShadow : null,
+          secondary: icon
+            ? getComputedStyle(icon).getPropertyValue("--fa-secondary-opacity")
+            : null,
+        };
+      });
+      console.log("probe", JSON.stringify(probe));
+      // Keyboard focus on a menu row (opened with Enter, first row focused).
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+      await page.keyboard.press("Shift");
+      await tab(page).focus();
+      await page.keyboard.press("Enter");
+      await page.getByRole("menuitem", { name: /My requests/ }).waitFor();
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(300);
+      await shoot(page, "menurow");
       await page.evaluate(() =>
         document
           .querySelector("pulsarix-widget")
@@ -154,6 +198,16 @@ try {
       await page.waitForTimeout(500);
       await page.mouse.move(width - 2, height - 2);
       await shoot(page, "left");
+      await page.close();
+
+      // The tab on a dark host page, with the light and the dark widget (the same scheme loop).
+      page = await visit("/dark");
+      await page.mouse.move(2, 2);
+      await shoot(page, "darkhost");
+      await page.close();
+      page = await visit("/dark-identified");
+      await page.mouse.move(2, 2);
+      await shoot(page, "darkhost-identified");
       await page.close();
     }
   }

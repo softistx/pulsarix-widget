@@ -1,4 +1,5 @@
 import {
+  Badge,
   CountBadge,
   DropdownMenu,
   DropdownMenuContent,
@@ -200,10 +201,10 @@ export function Launcher({
     action();
   };
 
+  // An identified reporter's tab opens a menu, so its name says so.
+  const label = identified ? messages.launcherMenu : messages.launcher;
   const name =
-    unread > 0
-      ? `${messages.launcher}, ${messages.launcherUnread(unread)}`
-      : messages.launcher;
+    unread > 0 ? `${label}, ${messages.launcherUnread(unread)}` : label;
   const hintId = `${menuId}-hint`;
   const keyHintId = `${menuId}-keyhint`;
 
@@ -227,14 +228,16 @@ export function Launcher({
       {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
       <CountBadge
         count={identified && menuOpen ? 0 : unread}
-        placement="top-start"
+        placement={side === "right" ? "top-start" : "top-end"}
         announce={false}
         animated
       >
-        <PulseMark />
+        <span className="pulsarix-tab-face">
+          <PulseMark />
+        </span>
       </CountBadge>
       <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
-        <strong>{messages.launcher}</strong>
+        <strong>{label}</strong>
         <small data-hint="drag">{messages.launcherHint}</small>
         <small data-hint="key">{messages.launcherKeyHint}</small>
       </span>
@@ -258,7 +261,7 @@ export function Launcher({
             align="start"
             sideOffset={10}
             collisionPadding={8}
-            aria-label={messages.launcher}
+            aria-label={label}
             onCloseAutoFocus={(event) => {
               // A choice opens the dialog, which takes focus: the menu must not pull it back.
               if (chose.current) {
@@ -285,7 +288,9 @@ export function Launcher({
               <Icon name="list-ul" className="size-5" aria-hidden="true" />
               <span>{messages.myRequests}</span>
               {unread > 0 ? (
-                <span className="pulsarix-tab-count">{unread}</span>
+                <Badge variant="error" aria-hidden="true">
+                  {unread}
+                </Badge>
               ) : null}
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -3,6 +3,7 @@ import type { Messages } from "./types";
 /** The English words of the widget. */
 export const EN: Messages = {
   launcher: "Report a problem",
+  launcherMenu: "Feedback and requests",
   launcherUnread: (n) => `${n} unread ${n === 1 ? "request" : "requests"}`,
   launcherHint: "Drag to move",
   launcherKeyHint: "Alt+↑/↓ to move",

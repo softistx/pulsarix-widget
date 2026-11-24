@@ -1,5 +1,7 @@
 export interface Messages {
   launcher: string;
+  /** The launcher's name and tooltip title for an identified reporter, whose tab opens a menu. */
+  launcherMenu: string;
   /** The launcher's accessible name with its unread count: "Report a problem, 2 unread requests". */
   launcherUnread: (count: number) => string;
   /** The tooltip's second line, and the launcher's description for assistive technology. */

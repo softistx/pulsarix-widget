@@ -129,19 +129,20 @@ progress::-moz-progress-bar {
   cursor: grabbing;
   transition: none;
 }
-.pulsarix-tab-count {
+/* The face: the 44 px that show at rest, so the count bubble anchors to the tab, not to the mark. */
+.pulsarix-tab-face {
   display: grid;
   place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  /* --error is 4.6:1 on --error-foreground in dark, 4.8:1 in light; --destructive was 2.9:1 in dark. */
-  background: var(--error);
-  color: var(--error-foreground);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
+  width: 44px;
+  height: 44px;
+}
+/* Temporary, until material#5669: the count bubble's ring is not drawn in a shadow root. */
+[data-slot="count-badge"] > span[aria-hidden="true"] {
+  box-shadow: 0 0 0 2px var(--background);
+}
+/* Temporary, until material#5671: inlined icon symbols lose the secondary layer's opacity. */
+svg[data-slot="icon"] path:first-child:not(:last-child) {
+  opacity: var(--fa-secondary-opacity, 0.4);
 }
 /* The label is a tooltip only: on the content side, after a short delay. */
 .pulsarix-tab-tip {
@@ -162,6 +163,11 @@ progress::-moz-progress-bar {
   opacity: 0;
   transition: opacity 0.12s 0.25s;
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+/* In dark, the tooltip wears material's tooltip tokens, fully opaque. */
+:host([data-resolved-theme="dark"]) .pulsarix-tab-tip {
+  background: var(--tooltip);
+  color: var(--tooltip-foreground);
 }
 .pulsarix-tab-tip small {
   font-size: 12px;
@@ -197,7 +203,6 @@ progress::-moz-progress-bar {
 }
 .pulsarix-tab-item {
   min-height: 44px;
-  font-weight: 600;
 }
 .pulsarix-tab-item > span:first-of-type {
   flex: 1;

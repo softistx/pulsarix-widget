@@ -250,7 +250,9 @@ describe("the launcher's side and starting height", () => {
 });
 
 const tabButton = () =>
-  screen.getByRole("button", { name: new RegExp(`^${MESSAGES.en.launcher}`) });
+  screen.getByRole("button", {
+    name: new RegExp(`^(${MESSAGES.en.launcher}|${MESSAGES.en.launcherMenu})`),
+  });
 
 describe("moving the launcher", () => {
   test("a drag moves it, and never opens the dialog", async () => {
@@ -454,16 +456,12 @@ describe("the launcher's CSS", () => {
     expect(css).toMatch(/color: var\(--inverse-foreground\)/);
   });
 
-  test("the menu count uses the error tokens, with no white fallback", () => {
+  test("the dark tooltip wears material's opaque tooltip tokens, and nothing uses --destructive", () => {
     expect(css).toMatch(
-      /background: var\(--error\);\s*color: var\(--error-foreground\);/,
+      /:host\(\[data-resolved-theme="dark"\]\) \.pulsarix-tab-tip \{\s*background: var\(--tooltip\);\s*color: var\(--tooltip-foreground\);/,
     );
     expect(css).not.toMatch(/var\(--destructive/);
-    const count = css.slice(
-      css.indexOf(".pulsarix-tab-count {"),
-      css.indexOf(".pulsarix-tab-tip {"),
-    );
-    expect(count).not.toMatch(/#fff/);
+    expect(css).not.toMatch(/pulsarix-tab-count/);
   });
 
   test("respects reduced motion and uses no rem", () => {
@@ -538,7 +536,7 @@ describe("the launcher for an identified reporter", () => {
     const item = screen.getByRole("menuitem", {
       name: new RegExp(MESSAGES.en.myRequests),
     });
-    expect(item.querySelector(".pulsarix-tab-count")?.textContent).toBe("3");
+    expect(item.querySelector('[data-slot="badge"]')?.textContent).toBe("3");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
     expect(badge()?.textContent).toBe("3");
@@ -582,14 +580,22 @@ describe("the unread count in the tab's name", () => {
 
   test("is in the accessible name, anonymous or identified, in both languages", () => {
     const names = {
-      en: "Report a problem, 2 unread requests",
-      fr: "Signaler un problème, 2 demandes non lues",
+      false: {
+        en: "Report a problem, 2 unread requests",
+        fr: "Signaler un problème, 2 demandes non lues",
+      },
+      true: {
+        en: "Feedback and requests, 2 unread requests",
+        fr: "Retours et demandes, 2 demandes non lues",
+      },
     };
     for (const identified of [false, true]) {
       for (const locale of ["en", "fr"] as const) {
         const { unmount } = render(launcher(identified, locale));
         expect(
-          screen.getByRole("button", { name: names[locale] }),
+          screen.getByRole("button", {
+            name: names[String(identified) as "true" | "false"][locale],
+          }),
         ).toBeTruthy();
         unmount();
       }

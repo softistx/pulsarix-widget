@@ -22,7 +22,9 @@ export function TestHost(props: Omit<AppProps, "open"> & { open?: boolean }) {
 /** FAB, then the "My requests" menu item (an identified reporter). */
 export async function openRequests() {
   await userEvent.click(
-    await screen.findByRole("button", { name: /^Report a problem/ }),
+    await screen.findByRole("button", {
+      name: /^(Report a problem|Feedback and requests)/,
+    }),
   );
   await userEvent.click(
     await screen.findByRole("menuitem", { name: /My requests/ }),

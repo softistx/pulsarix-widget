@@ -3,6 +3,7 @@
  *   /          the host page with the loader script tag
  *   /baseline  the same page without the widget (the reference for the leak test)
  *   /dist/*    the build output
+ *   /dark, /dark-identified  the host page on a dark background (anonymous, identified)
  *   /strict    the same page under a strict CSP (no inline script, no `blob:` image source)
  *   /strict-identified  the strict page with an identity token
  *   /strict-limited  the same, its token gets a 429 on the e-mail choice and "Delete my data"
@@ -32,6 +33,7 @@ const IDENTITIES: Record<string, string> = {
   "/identified-empty": "empty.token",
   "/identified-expired": "expired.token",
   "/strict-identified": "fixture.token",
+  "/dark-identified": "fixture.token",
   "/strict-limited": "limited.token",
 };
 
@@ -206,16 +208,25 @@ export function serveFixture(port = 0) {
         });
       }
       const identity = IDENTITIES[url.pathname];
-      if (["/", "/baseline", "/strict"].includes(url.pathname) || identity) {
+      if (
+        ["/", "/baseline", "/strict", "/dark"].includes(url.pathname) ||
+        identity
+      ) {
         const html = await Bun.file(join(root, "fixtures/host.html")).text();
         const loader =
           url.pathname !== "/baseline"
             ? `<script src="/dist/loader.js" async data-project-key="pk_test_fixture" data-launcher="true"${identity ? ` data-identity="${identity}"` : ""}></script>`
             : "";
         // The host's own `<style>` carries the nonce; any style the widget injected would not.
-        const page = url.pathname.startsWith("/strict")
+        let page = url.pathname.startsWith("/strict")
           ? html.replace("<style>", '<style nonce="host">')
           : html;
+        // A host page with a dark background, to see the tab on it (light and dark widget).
+        if (url.pathname.startsWith("/dark"))
+          page = page.replace(
+            "</head>",
+            "<style>html,body{background:#14161c !important;color:#e8eaf0 !important}</style></head>",
+          );
         return new Response(page.replace("<!--LOADER-->", loader), {
           headers: {
             "content-type": "text/html; charset=utf-8",
