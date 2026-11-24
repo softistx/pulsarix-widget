@@ -19,7 +19,7 @@ export interface AppProps {
   dark: boolean;
   open: boolean;
   launcher: boolean;
-  /** Read for compatibility: every value (`auto`, `pill`, `icon`) is the round FAB. */
+  /** Read for compatibility: every value (`auto`, `pill`, `icon`) is the edge tab. */
   launcherMode?: LauncherMode;
   /** `setLauncherVisible(false)` hides the launcher only, never an open dialog. */
   launcherVisible?: boolean;
@@ -37,7 +37,7 @@ export interface AppProps {
   metadata?: MetadataEntry[];
   /** The integrator's privacy page, linked in the privacy line. */
   privacyUrl?: string | null;
-  /** The host's signed identity token; with it the FAB opens a menu: report a problem, or My requests (one view each, no tabs). */
+  /** The host's signed identity token; with it the edge tab opens a menu: report a problem, or My requests (one view each, no tabs). */
   identity?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: (detail: SubmitDetail) => void;

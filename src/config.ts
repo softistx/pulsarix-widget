@@ -2,7 +2,7 @@
 
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
-/** Every value gives the round FAB; the values are read so existing embeds keep working. */
+/** Every value gives the edge tab; the values are read so existing embeds keep working. */
 export type LauncherMode = "auto" | "pill" | "icon";
 /** The edge the launcher is docked to. */
 export type LauncherSide = "right" | "left";
@@ -23,7 +23,7 @@ export interface WidgetConfig {
   projectKey: string | null;
   locale: Locale;
   theme: ThemeMode;
-  /** Read for compatibility (`launcher="pill"`, `"icon"`): the launcher is always the round FAB; `launcher="false"` is read by the element. */
+  /** Read for compatibility (`launcher="pill"`, `"icon"`): the launcher is always the edge tab; `launcher="false"` is read by the element. */
   launcherMode: LauncherMode;
   /** The launcher's starting edge and height (`launcher-side`, `launcher-offset`). */
   launcher: LauncherPlacement;
