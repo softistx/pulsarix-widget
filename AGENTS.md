@@ -40,8 +40,8 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
 - **UX (owner, 2026-11-22, #172)**: the launcher is one round icon FAB at every width (the `launcher`
   values `auto|pill|icon` are still parsed and all give the FAB); an identified reporter's FAB opens a
   menu (report, My requests with its unread badge), each item one view, never tabs; the report is one
-  unsplit form (no tabs, no steps) with titled groups: a "Capture" section (the capture button, its mask
-  switch and its pictures) and a separate "Pièces jointes" / "Attachments" section (a drop zone and the
+  unsplit form (no tabs, no steps) with titled groups: a "Screenshot" / "Capture d'écran" section (its mask
+  switch, the capture button and its pictures) and a separate "Pièces jointes" / "Attachments" section (a drop zone and the
   file list). A capture and an uploaded image both open
   straight in the editor (Cancel keeps the raw file), every image has an "Edit" button, and each capture
   stores the page it was taken on (`pageUrl`, shown as "Captured on ...", sent as the report's `pageUrl`

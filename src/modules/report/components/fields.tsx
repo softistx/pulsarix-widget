@@ -21,13 +21,13 @@ interface FieldsProps {
   control: Control<ReportValues>;
 }
 
-/** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
 // The severity reads at a glance: blocking is an error, annoying a warning, minor neutral.
 const TONES: Record<string, "error" | "warning" | undefined> = {
   blocking: "error",
   annoying: "warning",
 };
 
+/** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
 function ChoiceChips({
   name,
   messages,
@@ -42,7 +42,6 @@ function ChoiceChips({
         <ChipGroupField
           label={messages.fields[name]}
           deselectable
-          columns={3}
           value={field.value || null}
           onValueChange={(value) => field.onChange(value ?? "")}
           options={Object.entries(labels).map(([value, label]) => ({
@@ -76,7 +75,7 @@ export function FormGroup({
     <section
       {...rest}
       aria-labelledby={title ? titleId : undefined}
-      className={`grid gap-3 ${flush ? "" : "border-border border-t pt-6"}`}
+      className={`grid gap-4 ${flush ? "" : "border-border border-t pt-6"}`}
     >
       {title ? (
         <div className="grid gap-0.5">
