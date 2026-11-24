@@ -91,6 +91,20 @@ export function App({
     }
   }, [open]);
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  // Temporary, until @softistx/material#5678 (the embed Dialog's scroll lock swallows shadow-root wheels)
+  // (react-remove-scroll listens on `document`, where the event is retargeted to the host, so it
+  // looks "outside" the locked dialog and is preventDefault-ed): the wheel and touch moves stop at
+  // the root. The page behind stays locked by the body's `overflow: hidden`.
+  useEffect(() => {
+    if (!root) return;
+    const stop = (event: Event) => event.stopPropagation();
+    root.addEventListener("wheel", stop, { passive: true });
+    root.addEventListener("touchmove", stop, { passive: true });
+    return () => {
+      root.removeEventListener("wheel", stop);
+      root.removeEventListener("touchmove", stop);
+    };
+  }, [root]);
   // Radix remembers `document.activeElement`, which a shadow host retargets to the host
   // itself: it cannot hand focus back to the launcher, so the FAB is kept here.
   const fab = useRef<HTMLButtonElement | null>(null);
