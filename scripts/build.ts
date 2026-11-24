@@ -10,13 +10,16 @@
  *      chunks (dist/<name>.<hash>.js, listed in the manifest); dist/index.js is an unsplit copy for npm.
  *   3. tsc emits the declarations of the npm entry to dist/types.
  *   4. Bun bundles the server helper (src/server.ts) to dist/server.js, apart from the widget.
- *   5. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
+ *   5. dist/icons/duotone.svg: the icons of src/core/icons.ts cut from the licensed full sheet
+ *      (scripts/icon-sprite.ts; skipped with a warning when the sheet is absent).
+ *   6. Bun bundles the loader to a classic script (IIFE): dist/loader.js, with the
  *      hashed file name baked in.
  * dist/manifest.json names both; the UI serves the hashed file with a long cache and
  * loader.js with a short one (plan section 13).
  */
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { buildIconSprite } from "./icon-sprite";
 import { withPropertyFallbacks } from "@softistx/material/embed-css";
 
 const root = join(import.meta.dir, "..");
@@ -144,6 +147,7 @@ async function build() {
     join(dist, "manifest.json"),
     `${JSON.stringify({ loader: "loader.js", widget: widgetFile, chunks }, null, 2)}\n`,
   );
+  await buildIconSprite(dist);
   console.log(`built dist/loader.js and dist/${widgetFile}`);
 }
 

@@ -213,11 +213,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     const apiBase = config.apiBase?.replace(/\/+$/, "");
     this.#root.render(
       <InlineIconSprites
-        base={
-          apiBase
-            ? `${apiBase}/assets/icons/sprites/`
-            : "/assets/icons/sprites/"
-        }
+        base={`${apiBase ?? ""}/widget/v1/icons/`}
       >
         <App
           themeName={themeNameFor(config.accentColor)}
