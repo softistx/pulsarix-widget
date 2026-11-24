@@ -1,4 +1,9 @@
-import type { LauncherMode, Locale, MetadataEntry, Position } from "./config";
+import type {
+  LauncherMode,
+  LauncherPlacement,
+  Locale,
+  MetadataEntry,
+} from "./config";
 import type { Messages } from "./core/messages";
 import type { SubmitDetail } from "./modules/report/components/report-flow";
 
@@ -18,7 +23,10 @@ export interface AppProps {
   launcherMode?: LauncherMode;
   /** `setLauncherVisible(false)` hides the launcher only, never an open dialog. */
   launcherVisible?: boolean;
-  position: Position;
+  /** The launcher's starting edge and height (default: right, 0.5). */
+  placement?: LauncherPlacement;
+  /** Ignored: the edge is `placement.side`. Kept optional so older specs still compile. */
+  position?: "bottom-right" | "bottom-left";
   /** The screenshot's mask-text option starts on. */
   maskText?: boolean;
   /** `data-attachments="false"` hides the screenshot pane and the files. */

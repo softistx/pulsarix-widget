@@ -1,6 +1,9 @@
 /**
- * Captures the launcher in the host fixture: the round FAB at 360 and 1440 px, light and dark,
- * and one 360 px capture with an `offset` clearing a sticky action bar.
+ * Captures the edge-tab launcher in the host fixture, at 360 and 1440 px, light and dark:
+ *   - at rest (peeking), on hover with its tooltip, with the dialog open (anonymous reporter);
+ *   - the identified reporter's tab with its unread badge, and its menu;
+ *   - the tab on the left edge, and after a drag.
+ * It also checks the tab's size, that a drag never opens the dialog, and the keyboard move.
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright-core";
@@ -16,76 +19,134 @@ const check = (ok: boolean, what: string) => {
   if (!ok) failed = true;
 };
 
-const SETUP_BAR = () => {
-  const bar = document.createElement("div");
-  bar.id = "fake-bar";
-  bar.setAttribute(
-    "style",
-    "position:fixed;left:0;right:0;bottom:0;height:72px;display:flex;align-items:center;justify-content:flex-end;padding:0 16px;gap:8px;background:#fff!important;border-top:1px solid #ccc!important;z-index:10",
-  );
-  bar.innerHTML =
-    '<button type="button" style="padding:10px 20px!important;font:600 16px sans-serif!important;color:#fff!important;background:#2f5fd0!important;border:0!important;border-radius:20px!important">Save order</button>';
-  document.body.append(bar);
-};
-
 try {
   for (const [width, height] of [
     [360, 780],
     [1440, 900],
   ] as const) {
     for (const scheme of ["light", "dark"] as const) {
-      const page = await (
-        await browser.newContext({
-          viewport: { width, height },
-          colorScheme: scheme,
-        })
-      ).newPage();
-      await page.goto(`http://localhost:${server.port}/`);
+      const visit = async (path: string) => {
+        const page = await (
+          await browser.newContext({
+            viewport: { width, height },
+            colorScheme: scheme,
+            hasTouch: false,
+          })
+        ).newPage();
+        await page.goto(`http://localhost:${server.port}${path}`);
+        await page.waitForFunction(() =>
+          document
+            .querySelector("pulsarix-widget")
+            ?.shadowRoot?.querySelector("[data-launcher=tab]"),
+        );
+        await page.evaluate(
+          (s) =>
+            document.querySelector("pulsarix-widget")?.setAttribute("theme", s),
+          scheme,
+        );
+        await page.waitForTimeout(300);
+        return page;
+      };
+      const shoot = (page: Awaited<ReturnType<typeof visit>>, name: string) =>
+        page.screenshot({ path: `${out}/${name}-${width}-${scheme}.png` });
+      const tab = (page: Awaited<ReturnType<typeof visit>>) =>
+        page.getByRole("button", { name: /^Report a problem/ });
+
+      // Anonymous: rest, hover with the tooltip, the dialog open.
+      let page = await visit("/");
+      const box = await tab(page).boundingBox();
+      check(
+        !!box && Math.round(box.width) === 44 && Math.round(box.height) === 44,
+        `the tab is 44 x 44 at ${width} px (${box?.width} x ${box?.height})`,
+      );
+      await page.mouse.move(2, 2);
+      await shoot(page, "rest");
+      await tab(page).hover();
+      await page.waitForTimeout(600);
+      await shoot(page, "hover");
+      // A drag moves it and never opens the dialog.
+      const before = await tab(page).boundingBox();
+      if (before) {
+        await page.mouse.move(before.x + 20, before.y + 20);
+        await page.mouse.down();
+        await page.mouse.move(before.x + 20, before.y - 120, { steps: 8 });
+        await page.mouse.up();
+      }
+      const after = await tab(page).boundingBox();
+      check(
+        !!before && !!after && after.y < before.y - 100,
+        "dragging moves the tab up",
+      );
+      check(
+        (await page.getByRole("dialog").count()) === 0,
+        "a drag does not open the dialog",
+      );
+      await tab(page).focus();
+      await page.keyboard.press("Alt+ArrowDown");
+      const keyed = await tab(page).boundingBox();
+      check(
+        !!after && !!keyed && keyed.y > after.y,
+        "Alt+ArrowDown moves the tab down",
+      );
+      await page.reload();
       await page.waitForFunction(() =>
         document
           .querySelector("pulsarix-widget")
-          ?.shadowRoot?.querySelector("button"),
+          ?.shadowRoot?.querySelector("[data-launcher=tab]"),
       );
-      await page.evaluate((s) => {
-        document.querySelector("pulsarix-widget")?.setAttribute("theme", s);
-      }, scheme);
-      await page.waitForTimeout(300);
-      const kind = await page
-        .locator("pulsarix-widget")
-        .evaluate(
-          (el) =>
-            el.shadowRoot
-              ?.querySelector("[data-launcher]")
-              ?.getAttribute("data-launcher") ?? null,
-        );
-      check(kind === "fab", `the launcher is the round FAB at ${width} px`);
-      const fab = page.getByRole("button", { name: "Report a problem" });
-      const box = await fab.boundingBox();
+      const restored = await tab(page).boundingBox();
       check(
-        !!box && Math.abs(box.width - box.height) < 1 && box.width >= 48,
-        `the FAB is round and at least 48 px (${box?.width} x ${box?.height})`,
+        !!keyed && !!restored && Math.abs(restored.y - keyed.y) < 1,
+        "the position is restored after a reload",
       );
-      await page.screenshot({
-        path: `${out}/launcher-${width}-${scheme}.png`,
-      });
-      if (width === 360 && scheme === "light") {
-        await page.evaluate(SETUP_BAR);
-        await page.evaluate(() => {
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await page.waitForFunction(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("[data-launcher=tab]"),
+      );
+      await page.evaluate(
+        (s) =>
+          document.querySelector("pulsarix-widget")?.setAttribute("theme", s),
+        scheme,
+      );
+      await tab(page).click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForTimeout(500);
+      await shoot(page, "dock");
+      await page.keyboard.press("Escape");
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      const focused = await page.evaluate(
+        () =>
           document
             .querySelector("pulsarix-widget")
-            ?.setAttribute("offset-bottom", "88");
-        });
-        await page.waitForTimeout(300);
-        const bar = await page.locator("#fake-bar button").boundingBox();
-        const lifted = await fab.boundingBox();
-        check(
-          !!bar && !!lifted && lifted.y + lifted.height <= bar.y - 4,
-          "the offset lifts the launcher above the sticky bar's button",
-        );
-        await page.screenshot({
-          path: `${out}/launcher-offset-${width}-${scheme}.png`,
-        });
-      }
+            ?.shadowRoot?.activeElement?.getAttribute("aria-label") ?? null,
+      );
+      check(
+        !!focused?.startsWith("Report a problem"),
+        "Escape returns focus to the tab",
+      );
+      await page.close();
+
+      // Identified: the unread badge, the menu; and the left edge.
+      page = await visit("/identified");
+      await page.getByRole("button", { name: /Report a problem, 3/ }).waitFor();
+      await page.mouse.move(2, 2);
+      await shoot(page, "identified");
+      await tab(page).click();
+      await page.getByRole("menuitem", { name: /My requests/ }).waitFor();
+      await page.waitForTimeout(300);
+      await shoot(page, "menu");
+      await page.evaluate(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.setAttribute("launcher-side", "left"),
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+      await page.mouse.move(width - 2, height - 2);
+      await shoot(page, "left");
       await page.close();
     }
   }

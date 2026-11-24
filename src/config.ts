@@ -2,24 +2,31 @@
 
 export type Locale = "en" | "fr";
 export type ThemeMode = "light" | "dark" | "auto";
-export type Position = "bottom-right" | "bottom-left";
 /** Every value gives the round FAB; the values are read so existing embeds keep working. */
 export type LauncherMode = "auto" | "pill" | "icon";
-/** A launcher offset: a number is pixels, a string is any CSS length (`"2rem"`, `"env(...)"`). */
-export interface LauncherOffset {
-  bottom?: number | string;
-  side?: number | string;
+/** The edge the launcher is docked to. */
+export type LauncherSide = "right" | "left";
+/**
+ * Where the launcher starts: its edge and a vertical fraction of the free height (0 top, 1 bottom).
+ * The reporter can move it along the edge; what they chose wins over this starting point.
+ */
+export interface LauncherPlacement {
+  side: LauncherSide;
+  offset: number;
 }
+export const DEFAULT_PLACEMENT: LauncherPlacement = {
+  side: "right",
+  offset: 0.5,
+};
 
 export interface WidgetConfig {
   projectKey: string | null;
   locale: Locale;
   theme: ThemeMode;
-  position: Position;
   /** Read for compatibility (`launcher="pill"`, `"icon"`): the launcher is always the round FAB; `launcher="false"` is read by the element. */
   launcherMode: LauncherMode;
-  /** The launcher's offsets (`offset-bottom`, `offset-side`), as CSS lengths, or null. */
-  offset: { bottom: string | null; side: string | null };
+  /** The launcher's starting edge and height (`launcher-side`, `launcher-offset`). */
+  launcher: LauncherPlacement;
   /** A valid hex seed from the host, or null: the built-in lavande theme then applies. */
   accentColor: string | null;
   /**
@@ -62,10 +69,9 @@ export const OBSERVED_ATTRIBUTES = [
   "project-key",
   "locale",
   "theme",
-  "position",
   "launcher",
-  "offset-bottom",
-  "offset-side",
+  "launcher-side",
+  "launcher-offset",
   "accent-color",
   "inherit-theme",
   "api-base",
@@ -86,44 +92,17 @@ function oneOf<T extends string>(
   return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
-const UNIT_LENGTH =
-  /^\d+(?:\.\d+)?(?:px|r?em|ex|ch|vh|vw|vmin|vmax|svh|lvh|dvh|svw|lvw|dvw|cm|mm|in|pt|pc|%)$/i;
-const FUNCTION_LENGTH = /^(?:calc|min|max|clamp|var|env)\(/i;
-
-/** True when every `(` of the text is closed, none before it opens. */
-function balanced(text: string): boolean {
-  let depth = 0;
-  for (const char of text) {
-    if (char === "(") depth++;
-    else if (char === ")" && --depth < 0) return false;
-  }
-  return depth === 0;
-}
-
-/**
- * A CSS length for the launcher offset (a number of pixels, or `<number><unit>`, or a balanced
- * `calc()`, `min()`, `max()`, `clamp()`, `var()`, `env()` call), or null. A negative value, or
- * anything else (`;`, `}`, quotes, a bare word), is dropped. The browser's `CSS.supports` has
- * the last word where it exists.
- */
-export function lengthOf(
-  value: string | number | null | undefined,
-): string | null {
-  if (typeof value === "number")
-    return Number.isFinite(value) && value >= 0 ? `${value}px` : null;
-  const text = value?.trim() ?? "";
-  if (!text) return null;
-  if (/^\d+(\.\d+)?$/.test(text)) return `${text}px`;
-  const shaped =
-    UNIT_LENGTH.test(text) ||
-    (/^[\w\s.,+*/()%-]{1,100}$/.test(text) &&
-      FUNCTION_LENGTH.test(text) &&
-      text.endsWith(")") &&
-      balanced(text));
-  if (!shaped) return null;
-  if (typeof CSS !== "undefined" && typeof CSS.supports === "function")
-    return CSS.supports("bottom", text) ? text : null;
-  return text;
+/** A launcher offset: a number from 0 to 1 (a fraction of the free height), else the default 0.5. */
+export function offsetOf(value: string | number | null | undefined): number {
+  const n =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+  return Number.isFinite(n)
+    ? Math.min(1, Math.max(0, n))
+    : DEFAULT_PLACEMENT.offset;
 }
 
 /** A hex colour (#rgb or #rrggbb): the only form accepted as a seed. */
@@ -216,15 +195,10 @@ export function readConfig(get: (name: string) => string | null): WidgetConfig {
     projectKey: get("project-key"),
     locale: oneOf(get("locale"), ["en", "fr"], "en"),
     theme: oneOf(get("theme"), ["light", "dark", "auto"], "auto"),
-    position: oneOf(
-      get("position"),
-      ["bottom-right", "bottom-left"],
-      "bottom-right",
-    ),
     launcherMode: oneOf(get("launcher"), ["auto", "pill", "icon"], "auto"),
-    offset: {
-      bottom: lengthOf(get("offset-bottom")),
-      side: lengthOf(get("offset-side")),
+    launcher: {
+      side: oneOf(get("launcher-side"), ["right", "left"], "right"),
+      offset: offsetOf(get("launcher-offset")),
     },
     accentColor: isHexColor(accent) ? accent.trim() : null,
     inheritTheme: get("inherit-theme") !== "false",

@@ -46,11 +46,11 @@ and isolated in the widget's shadow root, so it never clashes with the page's ow
 ```
 
 Attributes (all optional but the key): `data-locale` (`en` default, `fr`), `data-theme`
-(`light`, `dark`, `auto` default), `data-position` (`bottom-right` default, `bottom-left`),
+(`light`, `dark`, `auto` default), `data-launcher-side` (`right` default, `left`) and `data-launcher-offset` (a fraction from 0, top, to 1, bottom; `0.5` default),
 `data-accent-color` (a hex seed for the theme; without it the widget wears the host's `@softistx/material` theme, else material's built-in `lavande`), `data-inherit-theme="false"` (never inherit the host's theme; see "Theme"), `data-api-base` (the
 pulsarix origin; defaults to the host that served the loader), `data-launcher="false"` (no
 floating button; open it with `window.PulsarixWidget.open()`) or `data-launcher="auto|pill|icon"`
-(any value other than `false` gives the round FAB), `data-offset-bottom` and `data-offset-side` (see "The launcher"), `data-mask-text="true"` (the
+(any value other than `false` gives the edge tab; see "The launcher"), `data-mask-text="true"` (the
 "Mask the text on the page" screenshot option starts on; see "Screenshots"), `data-attachments="false"`
 (no screenshot and no file controls; see "Attached files"), `data-privacy-url` (an http(s) link to your
 own privacy page, shown after the privacy line), `data-prefill-email` and `data-prefill-title` (starting
@@ -124,19 +124,17 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 `WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`, `LauncherMode`,
 `LauncherOffset`.
 
-| `MountOptions` | Type                                                | Default                                              |
-| -------------- | --------------------------------------------------- | ---------------------------------------------------- |
-| `projectKey`   | `string`                                            | required; missing reports `pulsarix:error` `config`  |
-| `apiBase`      | `string`                                            | none; required on the npm route                      |
-| `locale`       | `"en" \| "fr"`                                      | `"en"`                                               |
-| `theme`        | `"light" \| "dark" \| "auto"`                       | `"auto"`                                             |
-| `position`     | `"bottom-right" \| "bottom-left"`                   | `"bottom-right"`                                     |
-| `accentColor`  | hex string                                          | none: the built-in `lavande` theme                   |
-| `inheritTheme` | `boolean`                                           | `true`: wear the host's `@softistx/material` theme   |
-| `launcher`     | `boolean \| "auto" \| "pill" \| "icon"`             | `"auto"` (`false` removes the floating button)       |
-| `offset`       | `{ bottom?, side? }` (number = px, or a CSS length) | 16 px each, plus the bottom safe area                |
-| `identity`     | `string \| null`                                    | none: today's form only (see "Identified reporters") |
-| `target`       | `Element`                                           | `document.body`                                      |
+| `MountOptions` | Type                                                          | Default                                                    |
+| -------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| `projectKey`   | `string`                                                      | required; missing reports `pulsarix:error` `config`        |
+| `apiBase`      | `string`                                                      | none; required on the npm route                            |
+| `locale`       | `"en" \| "fr"`                                                | `"en"`                                                     |
+| `theme`        | `"light" \| "dark" \| "auto"`                                 | `"auto"`                                                   |
+| `accentColor`  | hex string                                                    | none: the built-in `lavande` theme                         |
+| `inheritTheme` | `boolean`                                                     | `true`: wear the host's `@softistx/material` theme         |
+| `launcher`     | `boolean \| "auto" \| "pill" \| "icon" \| { side?, offset? }` | `{ side: "right", offset: 0.5 }` (`false` removes the tab) |
+| `identity`     | `string \| null`                                              | none: today's form only (see "Identified reporters")       |
+| `target`       | `Element`                                                     | `document.body`                                            |
 
 `WidgetHandle`: `open()`, `close()`, `setLauncherVisible(visible)`, `holdLauncher()` (returns a release function), `destroy()`, `identify(token \| null)`, `setTheme(theme)`, `setLocale(locale)`,
 `setMetadata(metadata \| null)` (see "Changing theme, locale and metadata at run time"), `on(name, callback)` (returns the function that
@@ -181,13 +179,40 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 
 ## The launcher
 
-The launcher is one round FAB with the pulsarix mark at every width; with an identity token it opens a
-menu with "Report a problem" and "My requests" (unread badge), and its accessible name carries the unread
-count. `"auto"`, `"pill"` and `"icon"` all give the FAB, `false` removes it (the `pill` and `icon` values are kept for compatibility and are no-ops; the text pill is gone). With the launcher removed or held hidden, an identified reporter has no way to the requests list: keep it visible for them. To clear a sticky bar,
-`offset: { bottom: 88 }` (or `--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` in your own CSS), and
+The launcher is an **edge tab**: a 44 x 44 px icon button docked flush to the viewport edge, rounded on the
+content side only, with the pulsarix mark and the unread badge. At rest it peeks 6 px less; it slides fully
+in on hover, focus and while it is dragged. Its label is a tooltip only (hover or keyboard focus, hidden
+while dragging and on touch screens), and its accessible name carries the unread count ("Report a
+problem, 2 unread requests"). Without an identity token a click opens the report form; with one it opens a
+menu with "Report a problem" and "My requests" (unread badge).
+
+You choose where it starts, `launcher: { side: "right" | "left", offset: 0..1 }` (`offset` is a fraction of
+the free height, `0.5` by default; script tag: `data-launcher-side`, `data-launcher-offset`). The reporter can move it
+along the edge: by dragging it, or with Alt+ArrowUp / Alt+ArrowDown (each move is announced). Their
+position is saved in `localStorage` for your origin and wins over your starting point; it stays inside the
+viewport, also when the window is resized. A drag never opens the dialog.
+
+`false` removes the tab (`"auto"`, `"pill"` and `"icon"` are still read and give the default tab). With the
+launcher removed or held hidden, an identified reporter has no way to the requests list: keep it visible for them.
 `setLauncherVisible(false)` hides only the launcher, never an open dialog, and `holdLauncher()` hides it the same way while a host's own sticky bar is up (ref-counted, call the returned function to release); with the script tag it is
-`window.PulsarixWidget.setLauncherVisible(false)`. A negative or malformed offset is ignored. Details and examples:
+`window.PulsarixWidget.setLauncherVisible(false)`. Details and examples:
 [docs/integration.md](docs/integration.md).
+
+### Migrating from 0.6 (breaking)
+
+The floating round button, its `position` and its offsets are gone:
+
+| 0.6                                                      | Now                                                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `position: "bottom-left"` / `data-position`              | `launcher: { side: "left" }` / `data-launcher-side="left"`                                        |
+| `offset: { bottom: 88 }` / `data-offset-bottom`          | `launcher: { offset: 0.4 }` / `data-launcher-offset="0.4"` (a fraction of the height, not pixels) |
+| `offset.side` / `data-offset-side`                       | removed: the tab is flush to the edge                                                             |
+| `--pulsarix-launcher-bottom`, `--pulsarix-launcher-side` | removed: no longer read                                                                           |
+| `LauncherOffset`, `Position` types                       | `LauncherPlacement`, `LauncherSide`                                                               |
+
+A host that reserved space for the round button (a right padding, say) no longer needs it: the tab is 44 px
+wide, sits on the edge and the reporter can move it out of the way. To clear a sticky bar, use
+`holdLauncher()`.
 
 ## The report form
 
@@ -222,10 +247,10 @@ is kept in the widget's memory and is not written to the page; a token in `data-
 attribute of the element, so it is visible in the DOM (prefer `identify()` when that matters).
 
 - Without a token the dialog is the one report form, and the e-mail field is asked.
-- With one, the FAB opens a menu with "Report a problem" and "My requests" (no e-mail field). My requests is its own view, with its own title, and one list with
+- With one, the tab opens a menu with "Report a problem" and "My requests" (no e-mail field). My requests is its own view, with its own title, and one list with
   filter chips and their counts (Open by default, Resolved, Declined, All); requests with
   unread replies come first, and the list is read again each time the dialog opens.
-- The FAB (in its name) and the My requests menu item show the unread count.
+- The tab (in its name) and the My requests menu item show the unread count.
 - Opening a request shows its thread: the original message, then the replies of the team (plain
   text, with their file names). The reporter can reply, with up to three files sent the same way as
   a report's (the ticket upload below), resolve the request, and reopen a resolved one for 30 days.

@@ -153,54 +153,46 @@ describe("the launcher options", () => {
     handle?.element.shadowRoot?.querySelector<HTMLElement>("[data-launcher]") ??
     null;
 
-  test("the offset option sets the custom properties on the host element", () => {
+  test("the launcher option's side and offset reach the element and the tab", async () => {
     handle = mount({
       projectKey: "pk_live_abc",
-      offset: { bottom: 88, side: "1.5rem" },
+      launcher: { side: "left", offset: 0.25 },
     });
-    expect(
-      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
-    ).toBe("88px");
-    expect(
-      handle.element.style.getPropertyValue("--pulsarix-launcher-side"),
-    ).toBe("1.5rem");
+    expect(handle.element.config.launcher).toEqual({
+      side: "left",
+      offset: 0.25,
+    });
+    await settle();
+    expect(box()?.dataset.side).toBe("left");
   });
 
-  test("without the option nothing is set, so the default and the host's CSS stand", () => {
+  test("without the option the tab is on the right, halfway down", async () => {
     handle = mount({ projectKey: "pk_live_abc" });
-    expect(
-      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
-    ).toBe("");
+    expect(handle.element.config.launcher).toEqual({
+      side: "right",
+      offset: 0.5,
+    });
+    await settle();
+    expect(box()?.dataset.side).toBe("right");
     expect(handle.element.hasAttribute("style")).toBe(false);
   });
 
-  test("a property the host set itself is not removed, one the widget set is", () => {
-    handle = mount({ projectKey: "pk_live_abc", offset: { side: 24 } });
-    const { element } = handle;
-    element.style.setProperty("--pulsarix-launcher-bottom", "70px");
-    element.setAttribute("offset-side", "bogus;");
-    element.setLauncherVisible(true);
-    expect(element.style.getPropertyValue("--pulsarix-launcher-bottom")).toBe(
-      "70px",
-    );
-    expect(element.style.getPropertyValue("--pulsarix-launcher-side")).toBe("");
-  });
-
-  test("an unsafe length is dropped", () => {
+  test("a bad side or offset falls back to the defaults", () => {
     handle = mount({
       projectKey: "pk_live_abc",
-      offset: { bottom: "4px; color: red" },
+      launcher: { side: "top" as "left", offset: Number.NaN },
     });
-    expect(
-      handle.element.style.getPropertyValue("--pulsarix-launcher-bottom"),
-    ).toBe("");
+    expect(handle.element.config.launcher).toEqual({
+      side: "right",
+      offset: 0.5,
+    });
   });
 
-  test("the launcher option reaches the element (every mode is the FAB); false keeps its old meaning", async () => {
+  test("the launcher option reaches the element (every mode is the tab); false keeps its old meaning", async () => {
     handle = mount({ projectKey: "pk_live_abc", launcher: "icon" });
     expect(handle.element.config.launcherMode).toBe("icon");
     await settle();
-    expect(box()?.dataset.launcher).toBe("fab");
+    expect(box()?.dataset.launcher).toBe("tab");
     handle.destroy();
     handle = mount({ projectKey: "pk_live_abc", launcher: false });
     await settle();

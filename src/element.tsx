@@ -13,7 +13,6 @@ import { MESSAGES } from "./core/messages";
 import { createHostFollower } from "./core/theme/inherit";
 import { themeCssFor, themeNameFor } from "./core/theme/theme";
 import widgetCss from "./generated/widget-css";
-import { applyOffset } from "./offset";
 
 export const TAG_NAME = "pulsarix-widget";
 
@@ -66,7 +65,6 @@ export class PulsarixWidgetElement extends HTMLElement {
    */
   #identity: string | null = null;
   #launcherVisible = true;
-  #offsetProps = new Set<string>();
 
   get config(): WidgetConfig {
     const config = readConfig((name) => this.getAttribute(name));
@@ -207,7 +205,6 @@ export class PulsarixWidgetElement extends HTMLElement {
       : (this.#host.current.dark ??
         (config.theme === "dark" ||
           (config.theme === "auto" && !!this.#media?.matches)));
-    applyOffset(this, config.offset, this.#offsetProps);
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     this.#root.render(
@@ -229,7 +226,7 @@ export class PulsarixWidgetElement extends HTMLElement {
         metadata={config.metadata}
         privacyUrl={config.privacyUrl}
         identity={config.identity}
-        position={config.position}
+        placement={config.launcher}
         onOpenChange={(next) => this.#setOpen(next)}
         onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
         onReply={(detail) => this.#emit("pulsarix:reply", detail)}

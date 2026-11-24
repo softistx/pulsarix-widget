@@ -1,6 +1,11 @@
 export interface Messages {
   launcher: string;
-  /** The launcher's accessible addition while replies wait: "3 unread replies". */
+  /** The launcher's accessible name with its unread count: "Report a problem, 2 unread requests". */
+  launcherUnread: (count: number) => string;
+  /** The tooltip's second line, and the launcher's description for assistive technology. */
+  launcherHint: string;
+  /** Announced after the reporter moves the launcher: "Position: 45 %". */
+  launcherMoved: (percent: number) => string;
   title: string;
   intro: string;
   /** The intro once the project's name is known. */

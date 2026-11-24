@@ -1,9 +1,8 @@
-import {
-  type LauncherMode,
-  type LauncherOffset,
-  type Locale,
-  lengthOf,
-  type ThemeMode,
+import type {
+  LauncherMode,
+  LauncherPlacement,
+  Locale,
+  ThemeMode,
 } from "./config";
 import {
   defineWidget,
@@ -17,7 +16,6 @@ export interface MountOptions {
   projectKey: string;
   locale?: "en" | "fr";
   theme?: "light" | "dark" | "auto";
-  position?: "bottom-left" | "bottom-right";
   accentColor?: string;
   /**
    * Wear the host app's `@softistx/material` theme (colours, radius, light or dark) and follow
@@ -27,10 +25,13 @@ export interface MountOptions {
   inheritTheme?: boolean;
   /** Origin of the pulsarix host (`https://pulsarix.example.com`); the loader fills it in. */
   apiBase?: string;
-  /** The floating button: `"auto"`, `"pill"` and `"icon"` all give the round FAB (kept for compatibility), or `false` for none. */
-  launcher?: boolean | LauncherMode;
-  /** Launcher distance from the bottom and its side (16 px default): pixels, or a CSS length. */
-  offset?: LauncherOffset;
+  /**
+   * The edge tab: `false` for none, `"auto"`, `"pill"` and `"icon"` (kept for compatibility) for the
+   * default one, or `{ side, offset }` for its starting edge (`"right"` default or `"left"`) and
+   * height (a fraction from 0, top, to 1, bottom; 0.5 default). The reporter can move it along the
+   * edge, and what they chose wins.
+   */
+  launcher?: boolean | LauncherMode | Partial<LauncherPlacement>;
   /** The screenshot's "Mask the text on the page" option starts on. */
   maskText?: boolean;
   /** `false` hides the screenshot and file controls (`data-attachments="false"`). */
@@ -142,7 +143,6 @@ export function applyOptions(element: HTMLElement, options: MountOptions) {
   put("project-key", options.projectKey);
   put("locale", options.locale);
   put("theme", options.theme);
-  put("position", options.position);
   put("accent-color", options.accentColor);
   put("inherit-theme", options.inheritTheme === false && "false");
   put("api-base", options.apiBase);
@@ -161,6 +161,9 @@ export function applyOptions(element: HTMLElement, options: MountOptions) {
         ? launcher
         : null,
   );
-  put("offset-bottom", lengthOf(options.offset?.bottom));
-  put("offset-side", lengthOf(options.offset?.side));
+  if (launcher && typeof launcher === "object") {
+    put("launcher-side", launcher.side);
+    if (launcher.offset !== undefined)
+      put("launcher-offset", String(launcher.offset));
+  }
 }

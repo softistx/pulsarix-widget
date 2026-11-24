@@ -250,22 +250,22 @@ Content-Security-Policy:
 
 Script-tag attributes and `init` / `mount` options (all optional except the key):
 
-| Attribute / option                                  | Effect                                                             |
-| --------------------------------------------------- | ------------------------------------------------------------------ |
-| `data-project-key` / `projectKey`                   | the public key (required)                                          |
-| `data-api-base` / `apiBase`                         | the pulsarix origin; required on the npm route                     |
-| `data-locale` / `locale`                            | `en` (default) or `fr`                                             |
-| `data-theme` / `theme`                              | `light`, `dark` or `auto` (default)                                |
-| `data-position` / `position`                        | `bottom-right` (default) or `bottom-left`                          |
-| `data-accent-color` / `accentColor`                 | a hex seed for the theme                                           |
-| `data-launcher` / `launcher`                        | `false` for none; any other value gives the round FAB (section 11) |
-| `data-offset-bottom`, `data-offset-side` / `offset` | launcher distance from the bottom and its side (section 11)        |
-| `data-attachments="false"`                          | no screenshot and no file controls                                 |
-| `data-mask-text="true"`                             | "Mask the text on the page" starts on                              |
-| `data-privacy-url` / `privacyUrl`                   | an http(s) link to your privacy page                               |
-| `data-prefill-email`, `data-prefill-title`          | starting values of the form                                        |
-| `data-identity` / `identity`                        | the signed token (section 3)                                       |
-| `data-metadata` / `metadata`                        | a JSON object of strings stored with each report                   |
+| Attribute / option                         | Effect                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------- |
+| `data-project-key` / `projectKey`          | the public key (required)                                         |
+| `data-api-base` / `apiBase`                | the pulsarix origin; required on the npm route                    |
+| `data-locale` / `locale`                   | `en` (default) or `fr`                                            |
+| `data-theme` / `theme`                     | `light`, `dark` or `auto` (default)                               |
+| `data-launcher-side` / `launcher.side`     | `right` (default) or `left` (section 11)                          |
+| `data-launcher-offset` / `launcher.offset` | a fraction from 0 (top) to 1 (bottom), `0.5` default (section 11) |
+| `data-accent-color` / `accentColor`        | a hex seed for the theme                                          |
+| `data-launcher` / `launcher`               | `false` for none; any other value gives the edge tab (section 11) |
+| `data-attachments="false"`                 | no screenshot and no file controls                                |
+| `data-mask-text="true"`                    | "Mask the text on the page" starts on                             |
+| `data-privacy-url` / `privacyUrl`          | an http(s) link to your privacy page                              |
+| `data-prefill-email`, `data-prefill-title` | starting values of the form                                       |
+| `data-identity` / `identity`               | the signed token (section 3)                                      |
+| `data-metadata` / `metadata`               | a JSON object of strings stored with each report                  |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
 values of 512, 2 KB in all; the rest is dropped. The keys `capture-N-page` are reserved: the widget
@@ -466,55 +466,53 @@ Rules:
 
 ## 11. The launcher: look, position and visibility
 
-The floating button that opens the dialog. Three options shape it; each has a script-tag
-attribute and a `mount()` option.
+The edge tab that opens the dialog. Two options shape it; each has script-tag attributes and a `mount()` option.
 
 ### Look: `launcher`
 
-The launcher is one round floating action button (FAB) with the pulsarix mark, at every width. The
-`launcher` option no longer changes its look: `"auto"`, `"pill"` and `"icon"` all give the FAB (they
-are still read so existing embeds keep working), and `false` removes it (open the dialog with `open()`).
+The launcher is an icon button, 44 x 44 px at every width, docked flush to the viewport edge and
+rounded on the content side only. It wears the pulsarix mark and the unread badge. At rest it peeks 6 px
+less; it slides fully in on hover, focus and while dragged. Its label is a tooltip only
+("Report a problem", with "Drag to move" on a second line): shown on hover or keyboard focus after a short
+delay, hidden while dragging and on screens with no hover. The `launcher` option no longer changes its
+look: `"auto"`, `"pill"` and `"icon"` are still read so existing embeds keep working, and `false` removes it
+(open the dialog with `open()`).
 
-Without a token the FAB opens the report form directly. With a token it opens a small menu anchored
-to it with two items, "Report a problem" and "My requests" (with its unread badge); each opens one
-view, never tabs. The FAB keeps the localized label as its accessible name and carries the unread
-count in it ("Report a problem, 3"), with a visible focus ring.
+Without a token the tab opens the report form directly. With a token it opens a small menu beside it
+with two items, "Report a problem" and "My requests" (with its unread badge); each opens one
+view, never tabs. The tab keeps the localized label as its accessible name and carries the unread
+count in it ("Report a problem, 3 unread requests"). It has `aria-expanded`, `aria-controls` and
+`aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"`, a visible focus ring, and respects `prefers-reduced-motion`.
 
-```html
-<script src="https://<pulsarix-host>/widget/v1/loader.js" async
-        data-project-key="pk_live_xxx" data-launcher="icon"></script>
-```
+### Position: `launcher.side` and `launcher.offset`
 
-```ts
-mount({ projectKey: "pk_live_xxx", launcher: "auto" });
-```
-
-### Offset: `offset` and the CSS custom properties
-
-The launcher sits 16 px from the bottom and from its side, plus the device's safe area
-(`env(safe-area-inset-bottom)`) at the bottom. Move it to clear a sticky action bar:
+You choose where the tab starts: the edge (`"right"` default, or `"left"`) and a vertical fraction
+`offset` from `0` (top) to `1` (bottom), `0.5` by default. A value outside 0..1 is clamped, junk is the
+default.
 
 ```ts
-mount({ projectKey: "pk_live_xxx", offset: { bottom: 88, side: "1.5rem" } });
+mount({ projectKey: "pk_live_xxx", launcher: { side: "left", offset: 0.3 } });
 ```
 
 ```html
-<script ... data-offset-bottom="88" data-offset-side="1.5rem"></script>
+<script ... data-launcher-side="left" data-launcher-offset="0.3"></script>
 ```
 
-A number is pixels; a string is any CSS length (`"2rem"`, `"calc(var(--bar-height) + 8px)"`,
-`"env(...)"`). Negative values and anything that is not a length are ignored. The option sets two custom
-properties on the `<pulsarix-widget>` element, which a host can also set in its own stylesheet (for example
-from a media query, or following the height of its bar); the widget only ever removes a property it set itself:
+The reporter can then move it along the edge, by dragging it (pointer or touch) or with
+Alt+ArrowUp / Alt+ArrowDown (each move is announced in a live region). A drag never opens the dialog; only a
+click, Enter or Space does. The tab keeps a 16 px gap from the top and the bottom of the viewport, also
+when the window is resized. The position is saved in `localStorage` under a key of your page's origin
+(inside a try/catch: with storage blocked, it lasts until the page closes) and wins over your starting
+point from then on.
 
-```css
-pulsarix-widget {
-  --pulsarix-launcher-bottom: 88px;
-  --pulsarix-launcher-side: 24px;
-}
-```
+### Migrating from 0.6 (breaking)
 
-`side` is the distance from the edge named by `position` (`bottom-right` by default).
+`position`, `data-position`, `offset`, `data-offset-bottom`, `data-offset-side` and the custom properties
+`--pulsarix-launcher-bottom` / `--pulsarix-launcher-side` are removed. Use `launcher.side` and
+`launcher.offset` (a fraction of the height, no longer pixels or CSS lengths). The tab is flush to the
+edge, so there is no side distance. A host that reserved room for the round button can drop that
+reserve. To clear a sticky bar, use `holdLauncher()` (below). The `Position` and `LauncherOffset`
+types are replaced by `LauncherSide` and `LauncherPlacement`.
 
 ### Visibility: `setLauncherVisible(visible)`
 

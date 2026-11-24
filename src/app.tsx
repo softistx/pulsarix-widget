@@ -20,6 +20,8 @@ import { useUnread } from "./modules/requests/hooks/use-unread";
 const loadRequests = () => import("./modules/requests/components/panel");
 const RequestsPanel = lazy(loadRequests);
 
+const DOCK_ID = "pulsarix-dock";
+
 export type { AppProps } from "./app-props";
 
 /**
@@ -38,7 +40,7 @@ export function App({
   open,
   launcher,
   launcherVisible = true,
-  position,
+  placement,
   maskText = false,
   attachments = true,
   prefill,
@@ -168,7 +170,8 @@ export function App({
             {launcher ? (
               <Launcher
                 messages={messages}
-                position={position}
+                placement={placement}
+                dockId={DOCK_ID}
                 visible={launcherVisible}
                 open={open}
                 unread={unread}
@@ -190,6 +193,7 @@ export function App({
                 a phone): the task views open in a centred Dialog meanwhile. */}
             <Dialog open={open} onOpenChange={onOpenChange}>
               <DialogContent
+                id={DOCK_ID}
                 layout="stack"
                 // The report grows into a two-column grid on wide screens; the thread and the
                 // list stay narrow. The editor needs room (px, not rem: the host owns the
