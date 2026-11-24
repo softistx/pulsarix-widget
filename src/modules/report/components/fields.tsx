@@ -25,7 +25,7 @@ interface FieldsProps {
 }
 
 /**
- * Single-choice and optional: one card per row, pressing the chosen one clears it. Each field spans
+ * Single-choice and optional: cards in up to three columns (one on a phone, from the dialog's own width), pressing the chosen one clears it. Each field spans
  * the full row of the form grid, so Type and Gravité never share a row on wide screens.
  */
 function ChoiceCards({
@@ -42,7 +42,7 @@ function ChoiceCards({
         name={name}
         label={messages.fields[name]}
         deselectable
-        columns={1}
+        columns={3}
         options={Object.entries(labels).map(([value, title]) => ({
           value,
           title,

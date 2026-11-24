@@ -93,10 +93,11 @@ try {
       await page.getByRole("button", { name: "Report a problem" }).click();
       await page.getByRole("dialog").waitFor();
       // The chosen cards (Bug, Blocking), then a card with keyboard focus (Annoying).
-      await page.getByRole("radio", { name: /^Bug/ }).check({ force: true });
-      await page
-        .getByRole("radio", { name: /^Blocking/ })
-        .check({ force: true });
+      for (const name of [/^Bug/, /^Blocking/]) {
+        const radio = page.getByRole("radio", { name });
+        await radio.scrollIntoViewIfNeeded();
+        await radio.check({ force: true });
+      }
       await page.waitForTimeout(200);
       await shot("choices-selected");
       await page.getByRole("radio", { name: /^Blocking/ }).focus();
