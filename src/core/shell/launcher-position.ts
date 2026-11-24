@@ -1,6 +1,6 @@
 /** The edge tab's geometry and the saved position: pure helpers, so the component stays small. */
 
-/** The tab is a 44 px square at every width. */
+/** The tab is 44 px high at every width (24 px wide on phones, 44 px wide on wide screens). */
 export const TAB_SIZE = 44;
 /** The free gap kept above and below the tab. */
 export const TOP_GAP = 16;

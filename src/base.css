@@ -48,7 +48,8 @@ progress::-moz-progress-bar {
 }
 
 /* The launcher: an edge tab docked flush to the viewport edge (px only, never rem). At rest it
-   peeks 6 px less; it slides fully in on hover, focus, drag and while its menu is open. */
+   peeks 6 px less (not on phones, where the tab is 24 px wide); it slides fully in on hover, focus, drag and
+   while its menu is open. */
 .pulsarix-sr {
   position: absolute;
   width: 1px;
@@ -59,11 +60,25 @@ progress::-moz-progress-bar {
 }
 .pulsarix-tab {
   --dir: 1;
+  --tab-w: 44px;
+  --peek: 6px;
   position: fixed;
   z-index: 40;
-  /* 44 px stay on screen at rest after the 6 px peek translate: the tap target stays 44 px. */
-  width: 50px;
+  /* The visible width stays on screen at rest after the peek translate: it is the tap target. */
+  width: calc(var(--tab-w) + var(--peek));
   height: 44px;
+}
+/* On a phone the tab is 24 x 44 px (WCAG 2.2 target size AA) and does not peek, so it covers less of the
+   host's trailing controls; its hit area is its visible area. */
+@media (max-width: 600px) {
+  .pulsarix-tab {
+    --tab-w: 24px;
+    --peek: 0px;
+  }
+  .pulsarix-tab-face svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 .pulsarix-tab[hidden] {
   display: none;
@@ -79,7 +94,7 @@ progress::-moz-progress-bar {
   position: relative;
   display: grid;
   place-items: center;
-  width: 50px;
+  width: calc(var(--tab-w) + var(--peek));
   height: 44px;
   padding: 0;
   border: 0;
@@ -89,20 +104,21 @@ progress::-moz-progress-bar {
   box-shadow:
     0 0 0 1px var(--background),
     0 4px 14px rgb(0 0 0 / 0.25);
-  transform: translateX(calc(var(--dir) * 6px));
+  transform: translateX(calc(var(--dir) * var(--peek)));
   transition: transform 0.18s ease;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
-/* The 6 px that slide off screen are padding: the mark stays centred in the 44 px that show. */
+/* The peek (6 px on wide screens, 0 on phones) that slides off screen is padding: the mark stays centred
+   in the visible width (44 px, or 24 px on phones). */
 .pulsarix-tab[data-side="right"] .pulsarix-tab-button {
   border-radius: 12px 0 0 12px;
-  padding-right: 6px;
+  padding-right: var(--peek);
 }
 .pulsarix-tab[data-side="left"] .pulsarix-tab-button {
   border-radius: 0 12px 12px 0;
-  padding-left: 6px;
+  padding-left: var(--peek);
 }
 .pulsarix-tab-button:hover,
 .pulsarix-tab-button:focus-visible,
@@ -110,23 +126,25 @@ progress::-moz-progress-bar {
 .pulsarix-tab[data-dragging] .pulsarix-tab-button {
   transform: translateX(0);
 }
-/* A two-tone ring, visible on a light or a dark host: the page colour inside, the text colour out. */
+/* A two-tone ring drawn inside the tab so all four sides show at the screen edge, on a light or a dark host:
+   the text colour out, the page colour in. */
 .pulsarix-tab-button:focus-visible {
   outline: 2px solid transparent;
   box-shadow:
-    0 0 0 2px var(--background),
-    0 0 0 5px var(--foreground),
+    inset 0 0 0 2px var(--foreground),
+    inset 0 0 0 4px var(--background),
+    0 0 0 1px var(--background),
     0 4px 14px rgb(0 0 0 / 0.25);
 }
 .pulsarix-tab[data-dragging] .pulsarix-tab-button {
   cursor: grabbing;
   transition: none;
 }
-/* The face: the 44 px that show at rest, so the count bubble anchors to the tab, not to the mark. */
+/* The face: the visible width at rest (44 px, 24 px on phones), so the count bubble anchors to the tab, not to the mark. */
 .pulsarix-tab-face {
   display: grid;
   place-items: center;
-  width: 44px;
+  width: var(--tab-w);
   height: 44px;
 }
 /* Temporary, until @softistx/material#5669: the count bubble's ring is not drawn in a shadow root. */

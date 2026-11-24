@@ -179,7 +179,7 @@ works, and its limits: [docs/integration.md](docs/integration.md#9-inheriting-th
 
 ## The launcher
 
-The launcher is an **edge tab**: a 44 x 44 px icon button docked flush to the viewport edge, rounded on the
+The launcher is an **edge tab**: a 44 x 44 px icon button (24 x 44 px on phones, 600 px or less, with no peek) docked flush to the viewport edge, rounded on the
 content side only, with the pulsarix mark and the unread badge. At rest it peeks 6 px less; it slides fully
 in on hover, focus and while it is dragged. Its label is a tooltip only (hover or keyboard focus, hidden
 while dragging and on touch screens), and its accessible name carries the unread count ("Report a
@@ -211,7 +211,7 @@ The floating round button, its `position` and its offsets are gone:
 | `LauncherOffset`, `Position` types                       | `LauncherPlacement`, `LauncherSide`                                                               |
 
 A host that reserved space for the round button (a right padding, say) no longer needs it: the tab is 44 px
-wide, sits on the edge and the reporter can move it out of the way. To clear a sticky bar, use
+wide (24 px on phones), sits on the edge and the reporter can move it out of the way. To clear a sticky bar, use
 `holdLauncher()`.
 
 ## The report form

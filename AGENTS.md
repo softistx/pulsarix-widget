@@ -37,7 +37,7 @@ An embeddable widget is not a BFF: it keeps the invariants above and takes the U
 (`~/workspace/dev/operix/operix-ui/AGENTS.md`) wherever they cost no bytes. Where the code does not
 follow yet, the rule is the target and names its slice (tracking issue #134).
 
-- **UX (owner, 2026-11-22, #172)**: the launcher is an edge tab (owner, 2026-11-23, #179), a 44 px icon button
+- **UX (owner, 2026-11-22, #172)**: the launcher is an edge tab (owner, 2026-11-23, #179), a 44 px icon button (24 x 44 px at 600 px or less, so it covers less of a phone's list rows)
   docked flush to the viewport edge with a tooltip label, `launcher: { side, offset }` set by the host and
   movable by the reporter (drag, Alt+ArrowUp/Down, saved per host origin in `localStorage`; a drag never
   opens the dialog; breaking in 0.7: `position`, `offset` and `--pulsarix-launcher-*` are gone, see the README
