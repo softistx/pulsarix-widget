@@ -121,8 +121,8 @@ Server helper: `@softistx/pulsarix-widget/server` exports `signPulsarixIdentity`
 
 `mount`, `defineWidget` (registers the element; `mount` calls it), `PulsarixWidgetElement`,
 `TAG_NAME` (`"pulsarix-widget"`), and the types `MountOptions`,
-`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `Position`, `ThemeMode`, `LauncherMode`,
-`LauncherOffset`.
+`WidgetHandle`, `WidgetEvent`, `WidgetConfig`, `Locale`, `ThemeMode`, `LauncherMode`,
+`LauncherPlacement`, `LauncherSide`.
 
 | `MountOptions` | Type                                                          | Default                                                    |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |

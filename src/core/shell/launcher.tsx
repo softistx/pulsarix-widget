@@ -173,6 +173,7 @@ export function Launcher({
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    justDragged.current = false;
     if (event.button !== 0) return;
     drag.current = { y: event.clientY, top, moved: false };
     try {
@@ -199,16 +200,15 @@ export function Launcher({
     if (!current?.moved) return;
     setDragging(false);
     // The click that follows the release is the drag's own: it must not open anything.
+    // Cleared by the click itself, or by the next pointerdown or key press.
     justDragged.current = true;
-    setTimeout(() => {
-      justDragged.current = false;
-    }, 0);
     const final = clamp01(saved ?? placement.offset);
     writeSaved(final);
     announce(final);
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    justDragged.current = false;
     if (
       event.altKey &&
       (event.key === "ArrowUp" || event.key === "ArrowDown")
@@ -225,7 +225,10 @@ export function Launcher({
   };
 
   const onClick = () => {
-    if (justDragged.current) return;
+    if (justDragged.current) {
+      justDragged.current = false;
+      return;
+    }
     if (identified) setMenuOpen((value) => !value);
     else onReport();
   };

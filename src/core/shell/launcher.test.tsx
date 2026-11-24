@@ -273,6 +273,33 @@ describe("moving the launcher", () => {
     expect(opened).toEqual([true]);
   });
 
+  test("the click after a drag is consumed once, with no timer; the next one opens", () => {
+    const opened: boolean[] = [];
+    renderApp(false, { onOpenChange: (next) => opened.push(next) });
+    const button = tabButton();
+    fireEvent.pointerDown(button, { button: 0, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(button, { clientY: 360, pointerId: 1 });
+    fireEvent.pointerUp(button, { clientY: 360, pointerId: 1 });
+    fireEvent.click(button);
+    expect(opened).toEqual([]);
+    fireEvent.click(button);
+    expect(opened).toEqual([true]);
+  });
+
+  test("the end of a drag saves the position per host origin", () => {
+    renderApp(false);
+    const button = tabButton();
+    fireEvent.pointerDown(button, { button: 0, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(button, { clientY: 360, pointerId: 1 });
+    fireEvent.pointerUp(button, { clientY: 360, pointerId: 1 });
+    const saved = JSON.parse(
+      localStorage.getItem(`pulsarix-widget:launcher:${location.origin}`) ??
+        "null",
+    );
+    expect(typeof saved.offset).toBe("number");
+    expect(saved.offset).not.toBe(0.5);
+  });
+
   test("a small pointer move is still a click", () => {
     const opened: boolean[] = [];
     renderApp(false, { onOpenChange: (next) => opened.push(next) });

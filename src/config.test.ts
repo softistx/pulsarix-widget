@@ -11,7 +11,7 @@ import {
 const read = (attrs: Record<string, string>) =>
   readConfig((name) => attrs[name] ?? null);
 
-test("defaults: en, auto, bottom-right, no accent (lavande)", () => {
+test("defaults: en, auto, right edge at 0.5, no accent (lavande)", () => {
   expect(read({})).toEqual({
     projectKey: null,
     locale: "en",
