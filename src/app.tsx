@@ -9,6 +9,7 @@ import {
 } from "@softistx/material/embed";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { AppProps } from "./app-props";
+import { IconSheets } from "./core/icon-sheets";
 import { Launcher } from "./core/shell/launcher";
 import { themeNameFor } from "./core/theme/theme";
 import type { WidgetProject } from "./modules/report/api";
@@ -162,57 +163,59 @@ export function App({
       {root ? (
         // `/embed` carries its own i18n context (the `AttachmentList` labels); `initialLanguage`
         // keeps it from reading the host page's `localStorage`.
-        <I18nProvider
-          initialLanguage={locale}
-          supportedLanguages={["en", "fr"]}
-          defaultLanguage={locale}
-        >
-          <PortalContainerProvider container={root}>
-            {launcher ? (
-              <Launcher
-                messages={messages}
-                position={position}
-                visible={launcherVisible}
-                open={open}
-                unread={unread}
-                identified={identified}
-                fabRef={fab}
-                onReport={() => {
-                  setEditing(false);
-                  setView("report");
-                  onOpenChange(true);
-                }}
-                onRequests={() => {
-                  setEditing(false);
-                  setView("requests");
-                  onOpenChange(true);
-                }}
-              />
-            ) : null}
-            {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
+        <IconSheets apiBase={apiBase}>
+          <I18nProvider
+            initialLanguage={locale}
+            supportedLanguages={["en", "fr"]}
+            defaultLanguage={locale}
+          >
+            <PortalContainerProvider container={root}>
+              {launcher ? (
+                <Launcher
+                  messages={messages}
+                  position={position}
+                  visible={launcherVisible}
+                  open={open}
+                  unread={unread}
+                  identified={identified}
+                  fabRef={fab}
+                  onReport={() => {
+                    setEditing(false);
+                    setView("report");
+                    onOpenChange(true);
+                  }}
+                  onRequests={() => {
+                    setEditing(false);
+                    setView("requests");
+                    onOpenChange(true);
+                  }}
+                />
+              ) : null}
+              {/* Temporary, until material#5600 (an anchored panel for widgets, no scrim, a sheet on
                 a phone): the task views open in a centred Dialog meanwhile. */}
-            <Dialog open={open} onOpenChange={onOpenChange}>
-              <DialogContent
-                layout="stack"
-                // The editor needs room and takes the whole screen on a phone.
-                size={editing ? "xl" : done ? "sm" : "lg"}
-                mobilePresentation={editing ? "fullscreen" : undefined}
-                className="outline-none"
-                onCloseAutoFocus={(event) => {
-                  // A hidden or missing opener (launcher off or hidden) cannot take focus:
-                  // let Radix's default run.
-                  const target = fab.current;
-                  if (!target?.isConnected || target.closest("[hidden]"))
-                    return;
-                  event.preventDefault();
-                  target.focus();
-                }}
-              >
-                {body}
-              </DialogContent>
-            </Dialog>
-          </PortalContainerProvider>
-        </I18nProvider>
+              <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent
+                  layout="stack"
+                  // The editor needs room and takes the whole screen on a phone.
+                  size={editing ? "xl" : done ? "sm" : "lg"}
+                  mobilePresentation={editing ? "fullscreen" : undefined}
+                  className="outline-none"
+                  onCloseAutoFocus={(event) => {
+                    // A hidden or missing opener (launcher off or hidden) cannot take focus:
+                    // let Radix's default run.
+                    const target = fab.current;
+                    if (!target?.isConnected || target.closest("[hidden]"))
+                      return;
+                    event.preventDefault();
+                    target.focus();
+                  }}
+                >
+                  {body}
+                </DialogContent>
+              </Dialog>
+            </PortalContainerProvider>
+          </I18nProvider>
+        </IconSheets>
       ) : null}
     </div>
   );

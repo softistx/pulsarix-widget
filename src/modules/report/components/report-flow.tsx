@@ -82,6 +82,7 @@ export function ReportFlow({
     if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
   }, [failure]);
   // A rate limit holds Send off for the wait the alert names, then lets the person send again.
+  // `minutes` may be absent from the API's refusal: wait one minute then, never zero.
   useEffect(() => {
     if (failure?.kind !== "rate-limited") return;
     const timer = setTimeout(

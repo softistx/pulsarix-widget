@@ -11,7 +11,6 @@ export interface Messages {
   /** The report dialog's Cancel. */
   cancel: string;
   screenshot: {
-    /** The "Add" of the reporter's thread composer. */
     /** The capture section's title and its one line. */
     sectionTitle: string;
     sectionHint: string;
@@ -86,7 +85,6 @@ export interface Messages {
   /** The link text to the integrator's privacy page. */
   privacyLink: string;
   submit: string;
-  /** @deprecated Unused since material 3.239: the busy submit button keeps its label. */
   errors: {
     titleRequired: string;
     titleTooLong: string;

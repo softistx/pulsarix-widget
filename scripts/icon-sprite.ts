@@ -3,8 +3,8 @@
  * src/core/icons.ts, with the full sheet's ids (what InlineIconSprites looks up). The full sheet is a
  * licensed Font Awesome Pro file read from ICON_SPRITES_DIR (default: pulsarix-ui's
  * public/assets/icons/sprites); it is never committed and dist/icons is not in the npm package.
- * A missing source is a warning (CI and publish stay green, icons stay blank); a listed name absent
- * from the source fails the build.
+ * A missing source is a warning (CI and publish stay green, icons stay blank) unless REQUIRE_ICONS=1,
+ * which makes it an error (the deploy build); a listed name absent from the source fails the build.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -21,6 +21,10 @@ export const DEFAULT_SPRITES_DIR = join(
  * would be dropped and both layers would paint at full opacity. Each layer's style becomes the plain
  * `opacity` attribute holding its fallback (.4 for the secondary layer); the fill is inherited from
  * the svg's `fill-current`.
+ *
+ * Trade-off: the fixed .4 means a host-set dark tone or `--fa-secondary-opacity` no longer reaches
+ * the layer. The sanitizer now keeps `opacity` and `--fa-*` (material #5675, merged, not yet
+ * released); flattening can be revisited once that ships.
  */
 export function flatten(symbol: string): string {
   return symbol.replace(/\sstyle="([^"]*)"/g, (_, style: string) => {
@@ -55,6 +59,11 @@ export async function buildIconSprite(dist: string): Promise<boolean> {
   const dir = process.env.ICON_SPRITES_DIR ?? DEFAULT_SPRITES_DIR;
   const file = Bun.file(join(dir, "duotone.svg"));
   if (!(await file.exists())) {
+    if (process.env.REQUIRE_ICONS === "1") {
+      throw new Error(
+        `icon sprite: ${join(dir, "duotone.svg")} not found and REQUIRE_ICONS=1`,
+      );
+    }
     console.warn(
       `icon sprite skipped: ${join(dir, "duotone.svg")} not found (set ICON_SPRITES_DIR); the widget's icons stay blank`,
     );

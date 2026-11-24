@@ -116,3 +116,19 @@ test.skipIf(!existsSync(join(dist, "server.js")))(
     }
   },
 );
+
+// The icon sheet is cut from a licensed Font Awesome Pro file: it ships as a hosted artifact only.
+test("the npm package does not list dist/icons", async () => {
+  const pkg = await Bun.file(
+    join(import.meta.dir, "..", "package.json"),
+  ).json();
+  for (const entry of pkg.files ?? []) {
+    const path = String(entry).replace(/^\.\//, "").replace(/\/$/, "");
+    expect(
+      path === "dist" ||
+        path === "dist/icons" ||
+        path.startsWith("dist/icons/"),
+    ).toBe(false);
+    expect(path.includes("icons")).toBe(false);
+  }
+});

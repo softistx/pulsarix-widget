@@ -46,13 +46,6 @@ export interface AttachmentsControlProps {
 }
 
 /**
- * The report's attachments, in two titled sections: "Screenshot" (the capture, its mask switch
- * and its kept pictures) and "Attachments" (the drop zone of `@softistx/material/files/drop` and
- * the uploaded files). Files can also be dropped on the attachments section (the i18n provider
- * gives the overlay the widget's locale, `initialLanguage` keeps it from reading the host's
- * `localStorage`).
- */
-/**
  * One AttachmentList and its own caption + Edit row per item, so the Edit sits under its own file.
  * Temporary, until @softistx/material#5573 (per-row actions and a caption in AttachmentList).
  */
@@ -85,6 +78,13 @@ function ItemRows({
   ));
 }
 
+/**
+ * The report's attachments, in two titled sections: "Screenshot" (the capture, its mask switch
+ * and its kept pictures) and "Attachments" (the drop zone of `@softistx/material/files/drop` and
+ * the uploaded files). Files can also be dropped on the attachments section (the i18n provider
+ * gives the overlay the widget's locale, `initialLanguage` keeps it from reading the host's
+ * `localStorage`).
+ */
 export function AttachmentsControl({
   messages,
   locale,

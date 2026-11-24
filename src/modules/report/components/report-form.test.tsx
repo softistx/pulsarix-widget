@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+  act,
   cleanup,
   render,
   screen,
@@ -52,6 +53,12 @@ beforeEach(() => {
   projectName = "Acme Store";
   handler = () => ok(false);
   globalThis.fetch = mock(async (url: string, init: RequestInit) => {
+    // The icon sheet (InlineIconSprites): not an API call, answered empty.
+    if (String(url).endsWith("/icons/duotone.svg")) {
+      return new Response("<svg></svg>", {
+        headers: { "content-type": "image/svg+xml" },
+      });
+    }
     const call = {
       url,
       body: JSON.parse(String(init.body)) as Body,
@@ -428,6 +435,40 @@ describe("the report form", () => {
     await screen.findByText(m.failure.rateLimited(3));
   });
 
+  test("Send is blocked during a rate limit and re-enabled when its wait is over", async () => {
+    handler = () =>
+      json(429, { errors: [{ extensions: { code: "http-429" } }] });
+    const realSetTimeout = globalThis.setTimeout;
+    const waits: Array<() => void> = [];
+    globalThis.setTimeout = ((fn: () => void, ms?: number) => {
+      // The wait: no minutes from the API falls back to one minute.
+      if (ms === 60_000) {
+        waits.push(fn);
+        return 0;
+      }
+      return realSetTimeout(fn, ms);
+    }) as unknown as typeof setTimeout;
+    try {
+      const { user } = setup();
+      await fill(user, { title: "Crash", description: "On save" });
+      await send(user);
+      await screen.findByText(m.failure.rateLimited(1));
+      const button = screen.getByRole("button", { name: m.submit });
+      expect(button.hasAttribute("disabled")).toBe(true);
+      expect(waits).toHaveLength(1);
+      await act(async () => waits[0]?.());
+      await waitFor(() =>
+        expect(
+          screen
+            .getByRole("button", { name: m.submit })
+            .hasAttribute("disabled"),
+        ).toBe(false),
+      );
+    } finally {
+      globalThis.setTimeout = realSetTimeout;
+    }
+  });
+
   test("a network failure is told as such, with the text kept", async () => {
     globalThis.fetch = mock(async () => {
       throw new TypeError("Failed to fetch");
@@ -520,8 +561,9 @@ describe("the report form", () => {
 
   test("the request is the persisted JSON operation, without credentials", async () => {
     const seen: RequestInit[] = [];
-    globalThis.fetch = mock(async (_url: string, init: RequestInit) => {
-      seen.push(init);
+    globalThis.fetch = mock(async (url: string, init: RequestInit) => {
+      // The icon sheet is not a report request.
+      if (!String(url).endsWith("/icons/duotone.svg")) seen.push(init);
       return ok(false);
     }) as unknown as typeof fetch;
     const { user } = setup();

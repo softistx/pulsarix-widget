@@ -100,3 +100,7 @@ bun run capture <dir> # 360 and 1440 px, light and dark, widget open
 - The npm tarball ships `dist/index.js` and `dist/types` only (`files`). `loader.js`, the hashed
   bundle and `manifest.json` are the hosted artifacts the UI serves, not part of the npm package.
 - `sideEffects: true`: importing the entry registers `<pulsarix-widget>`.
+- **The icon sheet** (`dist/icons/duotone.svg`) is cut at build time from a licensed Font Awesome Pro
+  file read from `ICON_SPRITES_DIR`. It is never committed and never in the npm package; it ships only
+  as a hosted artifact beside the loader (the deploy builds with `REQUIRE_ICONS=1`, which makes a
+  missing source an error instead of a warning). The widget reads it from `<apiBase>/widget/v1/icons/`.
