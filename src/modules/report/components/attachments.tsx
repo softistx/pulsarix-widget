@@ -160,16 +160,18 @@ export function AttachmentsControl({
             </div>
           </FormCell>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
-          <div className="grid gap-4">
-            <ItemRows
-              messages={messages}
-              items={captures}
-              all={items}
-              disabled={locked || busy}
-              onRemove={remove}
-              onEdit={onEdit}
-            />
-          </div>
+          {captures.length > 0 ? (
+            <div className="grid gap-4">
+              <ItemRows
+                messages={messages}
+                items={captures}
+                all={items}
+                disabled={locked || busy}
+                onRemove={remove}
+                onEdit={onEdit}
+              />
+            </div>
+          ) : null}
         </Section>
       ) : null}
       <Section
