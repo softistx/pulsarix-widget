@@ -2,6 +2,7 @@ import {
   ChoiceCardGroupFormField,
   EmailFormField,
   FormCell,
+  FormGrid,
   FormSection,
   TextareaFormField,
   TextFormField,
@@ -109,8 +110,14 @@ export function ReportFields({ messages, control }: FieldsProps) {
           required
         />
       </FormCell>
-      <ChoiceCards name="type" messages={messages} control={control} />
-      <ChoiceCards name="impact" messages={messages} control={control} />
+      {/* Temporary, until @softistx/material#5653: the section's own grid has up to four columns
+          by its width, so the two choices would fill 2 of 3 at 1440; they pair in a grid of their own. */}
+      <FormCell span="full">
+        <FormGrid columns={2}>
+          <ChoiceCards name="type" messages={messages} control={control} />
+          <ChoiceCards name="impact" messages={messages} control={control} />
+        </FormGrid>
+      </FormCell>
     </Section>
   );
 }

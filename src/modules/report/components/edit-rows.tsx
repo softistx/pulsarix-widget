@@ -42,7 +42,7 @@ export function EditRows({
         className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
       >
         <p className="min-w-0 truncate text-muted-foreground text-sm">
-          {item.pageUrl ? t.capturedOn(item.pageUrl) : null}
+          {item.pageUrl ? t.capturedOn(item.pageUrl) : item.file.name}
         </p>
         {canEdit(item) ? (
           <Button

@@ -116,6 +116,73 @@ try {
       await page.close();
     }
   }
+  // The confirmation of an identified reporter (My requests), and the form in French.
+  for (const [width, height] of [
+    [360, 780],
+    [1440, 900],
+  ] as const) {
+    for (const scheme of ["light", "dark"] as const) {
+      const context = await browser.newContext({
+        viewport: { width, height },
+        colorScheme: scheme,
+      });
+      const page = await context.newPage();
+      await page.goto(`http://localhost:${server.port}/identified`);
+      await page.waitForFunction(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("button"),
+      );
+      await page.evaluate(
+        (s) =>
+          document.querySelector("pulsarix-widget")?.setAttribute("theme", s),
+        scheme,
+      );
+      await page.getByRole("button", { name: /^Report a problem/ }).click();
+      await page.getByRole("menuitem", { name: /Report a problem|Report/ }).first().click().catch(() => {});
+      await page.getByRole("dialog").waitFor();
+      await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
+      await page
+        .getByRole("textbox", { name: /What happened/ })
+        .fill("The pay button does nothing on the cart page.");
+      await page.getByRole("button", { name: "Send", exact: true }).click();
+      await page.getByRole("button", { name: "My requests" }).waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({
+        path: `${out}/done-identified-${width}-${scheme}.png`,
+      });
+      await context.close();
+      const fr = await (
+        await browser.newContext({
+          viewport: { width, height },
+          colorScheme: scheme,
+        })
+      ).newPage();
+      await fr.goto(`http://localhost:${server.port}/`);
+      await fr.waitForFunction(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("button"),
+      );
+      await fr.evaluate(
+        (s) => {
+          const el = document.querySelector("pulsarix-widget");
+          el?.setAttribute("theme", s);
+          el?.setAttribute("locale", "fr");
+        },
+        scheme,
+      );
+      await fr.getByRole("button", { name: "Signaler un problème" }).click();
+      await fr.getByRole("dialog").waitFor();
+      await fr.waitForTimeout(500);
+      await fr.screenshot({ path: `${out}/form-fr-${width}-${scheme}.png` });
+      await fr.getByRole("button", { name: "Envoyer", exact: true }).click();
+      await fr.getByText("Saisissez un titre.").waitFor();
+      await fr.waitForTimeout(300);
+      await fr.screenshot({ path: `${out}/errors-fr-${width}-${scheme}.png` });
+      await fr.context().close();
+    }
+  }
 } finally {
   await browser.close();
   server.stop(true);

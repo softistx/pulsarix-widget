@@ -3,7 +3,6 @@ import {
   DialogBody,
   DialogHeader,
   DialogTitle,
-  FormGrid,
 } from "@softistx/material/embed";
 import type { FormEventHandler, ReactNode, Ref } from "react";
 import type { Control } from "react-hook-form";
@@ -114,17 +113,15 @@ export function Form({
           noValidate
           className="grid gap-6"
         >
-          <FormGrid columns={2} className="gap-y-6">
-            <ReportFields messages={messages} control={control} />
-            {attachments}
-            {anonymous ? (
-              <ContactFields
-                messages={messages}
-                control={control}
-                privacyUrl={privacyUrl}
-              />
-            ) : null}
-          </FormGrid>
+          <ReportFields messages={messages} control={control} />
+          {attachments}
+          {anonymous ? (
+            <ContactFields
+              messages={messages}
+              control={control}
+              privacyUrl={privacyUrl}
+            />
+          ) : null}
           <Honeypot inputRef={honeypot} />
           <FailureAlert
             messages={messages}

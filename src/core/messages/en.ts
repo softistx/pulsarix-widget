@@ -118,6 +118,6 @@ export const EN: Messages = {
         : `Your ${count} files are attached.`,
     partialTitle: "Some files were not attached",
     partial: (failed, total) =>
-      `${failed} of ${total} ${total === 1 ? "file was" : "files were"} not attached.`,
+      `${failed} of ${total} ${total === 1 ? "file" : "files"} ${failed === 1 ? "was" : "were"} not attached.`,
   },
 };
