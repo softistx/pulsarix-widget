@@ -41,15 +41,6 @@ progress::-moz-progress-bar {
   border-radius: inherit;
 }
 
-/* Dark mode: material's error fill (about 4.5:1 under its white text) is darkened so the unread
-   counts clear 4.5:1 with margin. Temporary, until material#5617 (a darker dark error badge). */
-:host([data-resolved-theme="dark"]) .nxgt-fab > [data-slot="fab-count"],
-:host([data-resolved-theme="dark"])
-  .nxgt-fab-menu-item
-  > [data-slot="fab-menu-item-badge"] {
-  background: oklch(50% 0.17 27);
-  color: #fff;
-}
 /* A switch label keeps one colour, checked or not, light or dark (material tints it with
    `text-primary-text` only when checked). */
 [data-slot="switch-field"] label {
@@ -95,7 +86,9 @@ progress::-moz-progress-bar {
   cursor: pointer;
   background: var(--primary);
   color: var(--primary-foreground);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  box-shadow:
+    0 0 0 1px var(--background),
+    0 4px 14px rgb(0 0 0 / 0.25);
   transform: translateX(calc(var(--dir) * 6px));
   transition: transform 0.18s ease;
   touch-action: none;
@@ -136,13 +129,9 @@ progress::-moz-progress-bar {
   width: 44px;
   height: 44px;
 }
-/* Temporary, until material#5669: the count bubble's ring is not drawn in a shadow root. */
+/* Temporary, until @softistx/material#5669: the count bubble's ring is not drawn in a shadow root. */
 [data-slot="count-badge"] > span[aria-hidden="true"] {
   box-shadow: 0 0 0 2px var(--background);
-}
-/* Temporary, until material#5671: inlined icon symbols lose the secondary layer's opacity. */
-svg[data-slot="icon"] path:first-child:not(:last-child) {
-  opacity: var(--fa-secondary-opacity, 0.4);
 }
 /* The label is a tooltip only: on the content side, after a short delay. */
 .pulsarix-tab-tip {
@@ -200,6 +189,11 @@ svg[data-slot="icon"] path:first-child:not(:last-child) {
   .pulsarix-tab-tip {
     display: none;
   }
+}
+/* Temporary, until @softistx/material#5673: a menu row's keyboard focus has no visible ring (tint 1.07-1.14:1). */
+.pulsarix-tab-item:focus-visible {
+  outline: 2px solid var(--primary-indicator, var(--primary));
+  outline-offset: -2px;
 }
 .pulsarix-tab-item {
   min-height: 44px;

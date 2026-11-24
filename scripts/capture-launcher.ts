@@ -204,6 +204,10 @@ try {
       page = await visit("/dark");
       await page.mouse.move(2, 2);
       await shoot(page, "darkhost");
+      await page.keyboard.press("Shift");
+      await tab(page).focus();
+      await page.waitForTimeout(600);
+      await shoot(page, "darkhost-focus");
       await page.close();
       page = await visit("/dark-identified");
       await page.mouse.move(2, 2);
