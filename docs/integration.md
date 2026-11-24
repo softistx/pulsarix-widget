@@ -477,9 +477,13 @@ The edge tab that opens the dialog. Two options shape it; each has script-tag at
 
 ### Look: `launcher`
 
-The launcher is an icon button, 44 x 44 px on wide screens and 24 x 44 px on phones (viewport 600 px or less; the mark shrinks to 16 px, there is no peek and no hit area beyond the visible tab), docked flush to the viewport edge and
-rounded on the content side only. To avoid any overlap, reserve `padding-inline-end` (or `-start` for a left tab) of 24 px on phones and 44-48 px on wide screens. It wears the pulsarix mark and the unread badge. At rest it peeks 6 px
-less; it slides fully in on hover, focus and while dragged. Its label is a tooltip only
+The launcher is an icon button, 44 x 44 px on wide screens, docked flush to the viewport edge and
+rounded on the content side only. On phones (viewport 600 px or less) it is 24 x 44 px: the mark shrinks
+to 16 px, there is no peek, and the hit area is exactly the visible tab.
+To avoid any overlap, reserve `padding-inline-end` (`-start` for a left tab) of 24 px on phones and
+44-48 px on wide screens.
+It wears the pulsarix mark and the unread badge. On wide screens it peeks 6 px less at rest; it slides
+fully in on hover, focus and while dragged. Its label is a tooltip only
 ("Report a problem", with "Drag to move" on a second line): shown on hover or keyboard focus after a short
 delay, hidden while dragging and on screens with no hover. The `launcher` option no longer changes its
 look: `"auto"`, `"pill"` and `"icon"` are still read so existing embeds keep working, and `false` removes it

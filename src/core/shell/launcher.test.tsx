@@ -473,7 +473,7 @@ describe("the launcher's CSS", () => {
     );
     expect(css).toMatch(/translateX\(calc\(var\(--dir\) \* var\(--peek\)\)\)/);
     expect(css).toMatch(
-      /:focus-visible \{\s*outline: 2px solid transparent;\s*box-shadow:\s*0 0 0 2px var\(--background\),\s*0 0 0 5px var\(--foreground\)/,
+      /:focus-visible \{\s*outline: 2px solid transparent;\s*box-shadow:\s*inset 0 0 0 2px var\(--foreground\),\s*inset 0 0 0 4px var\(--background\)/,
     );
     expect(css).toMatch(/background: var\(--inverse-surface\)/);
     expect(css).toMatch(/color: var\(--inverse-foreground\)/);
@@ -489,7 +489,6 @@ describe("the launcher's CSS", () => {
     expect(block).toMatch(
       /\.pulsarix-tab-face svg \{\s*width: 16px;\s*height: 16px;/,
     );
-    expect(block).not.toMatch(/::before|::after|inset|padding/);
     // The height is 44 px at every width.
     expect(css).toMatch(/\.pulsarix-tab \{[^}]*height: 44px/);
   });

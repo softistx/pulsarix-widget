@@ -35,7 +35,7 @@ function PulseMark() {
  * Temporary, until @softistx/material#5672 (a docked launcher component): hand-made from a button,
  * CountBadge and DropdownMenu meanwhile.
  *
- * The launcher: a 44 px icon button docked flush to the viewport edge (an edge tab), with corners on the
+ * The launcher: a 44 px high icon button (24 px wide on phones) docked flush to the viewport edge (an edge tab), with corners on the
  * content side only, wearing the pulsarix mark and the unread count. Its label is a tooltip only
  * (hover or keyboard focus, hidden while dragging and on touch screens); its accessible name carries
  * the count ("Report a problem, 2 unread requests").
