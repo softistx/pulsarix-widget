@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Icon,
 } from "@softistx/material/embed";
 import {
   type PointerEvent as ReactPointerEvent,
@@ -47,51 +48,6 @@ function PulseMark() {
       strokeLinejoin="round"
     >
       <path d="M3 12.8h5l2-5.6 3.8 9.6 2-4h5.2" />
-    </svg>
-  );
-}
-
-/*
- * Temporary, until the host can serve the duotone sprite: `/embed`'s `Icon` reads `duotone.svg` (Font
- * Awesome Pro) from a hosted `InlineIconSprites base`, which would add an origin to `connect-src` and
- * a hosted Pro asset to a self-contained widget. The menu's two icons stay local SVGs meanwhile.
- */
-
-/** A report icon, for the first entry of the menu. */
-function ReportIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3 2.5 20h19L12 3Z" />
-      <path d="M12 10v4.5M12 17.5h.01" />
-    </svg>
-  );
-}
-
-/** A list icon, for "My requests". */
-function RequestsIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
     </svg>
   );
 }
@@ -315,14 +271,18 @@ export function Launcher({
               className="pulsarix-tab-item"
               onSelect={() => choose(onReport)}
             >
-              <ReportIcon />
+              <Icon
+                name="triangle-exclamation"
+                className="size-5"
+                aria-hidden="true"
+              />
               <span>{messages.title}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="pulsarix-tab-item"
               onSelect={() => choose(onRequests)}
             >
-              <RequestsIcon />
+              <Icon name="list-ul" className="size-5" aria-hidden="true" />
               <span>{messages.myRequests}</span>
               {unread > 0 ? (
                 <span className="pulsarix-tab-count">{unread}</span>
