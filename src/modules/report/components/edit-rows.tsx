@@ -50,7 +50,6 @@ export function EditRows({
           <Button
             type="button"
             variant="tonal"
-            size="sm"
             className="col-start-2 justify-self-end"
             aria-label={editName(item, all, t)}
             disabled={disabled}

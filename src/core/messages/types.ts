@@ -87,7 +87,6 @@ export interface Messages {
   privacyLink: string;
   submit: string;
   /** @deprecated Unused since material 3.239: the busy submit button keeps its label. */
-  submitting: string;
   errors: {
     titleRequired: string;
     titleTooLong: string;

@@ -11,6 +11,7 @@ export const ICON_NAMES = [
   "triangle-exclamation",
   "info",
   "list-ul",
+  "camera",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

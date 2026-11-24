@@ -88,7 +88,6 @@ export const EN: Messages = {
     "Your e-mail, if given, the address of this page and your browser are sent with the report.",
   privacyLink: "Privacy policy",
   submit: "Send",
-  submitting: "Sending...",
   errors: {
     titleRequired: "Enter a title.",
     titleTooLong: "The title is too long (200 characters at most).",
@@ -109,7 +108,7 @@ export const EN: Messages = {
   },
   done: {
     title: "Thank you",
-    body: "Your request was sent.",
+    body: "Your report was sent.",
     tracking: "We e-mailed you a link to follow it.",
     noTracking: "You gave no e-mail, so there is no link to follow it.",
     attached: (count) =>

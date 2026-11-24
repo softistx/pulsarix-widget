@@ -3,6 +3,7 @@ import {
   AttachmentList,
   Button,
   FormCell,
+  Icon,
   SwitchField,
 } from "@softistx/material/embed";
 import {
@@ -71,7 +72,7 @@ function ItemRows({
   onEdit: (id: string) => void;
 }) {
   return items.map((item) => (
-    <div key={item.id} className="grid gap-2">
+    <div key={item.id} className="grid gap-1">
       <AttachmentList items={[item]} onRemove={onRemove} thumbnailSize={56} />
       <EditRows
         messages={messages}
@@ -153,19 +154,22 @@ export function AttachmentsControl({
                 disabled={locked || busy}
                 onClick={onCapture}
               >
+                <Icon name="camera" aria-hidden="true" />
                 {t.add}
               </Button>
             </div>
           </FormCell>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
-          <ItemRows
-            messages={messages}
-            items={captures}
-            all={items}
-            disabled={locked || busy}
-            onRemove={remove}
-            onEdit={onEdit}
-          />
+          <div className="grid gap-4">
+            <ItemRows
+              messages={messages}
+              items={captures}
+              all={items}
+              disabled={locked || busy}
+              onRemove={remove}
+              onEdit={onEdit}
+            />
+          </div>
         </Section>
       ) : null}
       <Section
@@ -220,7 +224,7 @@ export function AttachmentsControl({
             {!canCapture ? (
               <PaneStatus messages={messages} busy={busy} notice={notice} />
             ) : null}
-            <div ref={uploadList} className="grid gap-3">
+            <div ref={uploadList} className="grid gap-4">
               <ItemRows
                 messages={messages}
                 items={uploads}

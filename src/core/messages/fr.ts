@@ -88,7 +88,6 @@ export const FR: Messages = {
     "Votre e-mail, s'il est donné, l'adresse de cette page et votre navigateur sont envoyés avec le signalement.",
   privacyLink: "Politique de confidentialité",
   submit: "Envoyer",
-  submitting: "Envoi...",
   errors: {
     titleRequired: "Saisissez un titre.",
     titleTooLong: "Le titre est trop long (200 caractères au plus).",
@@ -109,7 +108,7 @@ export const FR: Messages = {
   },
   done: {
     title: "Merci",
-    body: "Votre demande a été envoyée.",
+    body: "Votre signalement a été envoyé.",
     tracking: "Nous vous avons envoyé un lien pour le suivre.",
     noTracking: "Sans e-mail, il n'y a pas de lien de suivi.",
     attached: (count) =>
