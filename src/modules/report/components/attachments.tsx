@@ -2,6 +2,8 @@ import {
   Alert,
   AttachmentList,
   Button,
+  FormCell,
+  FormGrid,
   SwitchField,
 } from "@softistx/material/embed";
 import {
@@ -50,6 +52,39 @@ export interface AttachmentsControlProps {
  * gives the overlay the widget's locale, `initialLanguage` keeps it from reading the host's
  * `localStorage`).
  */
+/**
+ * One AttachmentList and its own caption + Edit row per item, so the Edit sits under its own file.
+ * Temporary, until @softistx/material#5573 (per-row actions and a caption in AttachmentList).
+ */
+function ItemRows({
+  messages,
+  items,
+  all,
+  disabled,
+  onRemove,
+  onEdit,
+}: {
+  messages: Messages;
+  items: Entry[];
+  all: Entry[];
+  disabled: boolean;
+  onRemove?: (id: string) => void;
+  onEdit: (id: string) => void;
+}) {
+  return items.map((item) => (
+    <div key={item.id} className="grid gap-2">
+      <AttachmentList items={[item]} onRemove={onRemove} thumbnailSize={56} />
+      <EditRows
+        messages={messages}
+        items={[item]}
+        all={all}
+        disabled={disabled}
+        onEdit={onEdit}
+      />
+    </div>
+  ));
+}
+
 export function AttachmentsControl({
   messages,
   locale,
@@ -103,35 +138,35 @@ export function AttachmentsControl({
           body="stack"
           className="outline-none"
         >
-          <div className="grid justify-items-start gap-3">
-            <Button
-              type="button"
-              variant="tonal"
-              disabled={locked || busy}
-              onClick={onCapture}
-            >
-              {t.add}
-            </Button>
-            <SwitchField
-              variant="plain"
-              checked={maskText}
-              disabled={busy || locked}
-              onCheckedChange={(checked) => onMaskText(checked === true)}
-              label={t.maskText}
-              helperText={t.maskTextHint}
-            />
-          </div>
+          <FormGrid columns={2}>
+            <FormCell>
+              <SwitchField
+                variant="plain"
+                checked={maskText}
+                disabled={busy || locked}
+                onCheckedChange={(checked) => onMaskText(checked === true)}
+                label={t.maskText}
+                helperText={t.maskTextHint}
+              />
+            </FormCell>
+            <FormCell>
+              <Button
+                type="button"
+                variant="tonal"
+                disabled={locked || busy}
+                onClick={onCapture}
+              >
+                {t.add}
+              </Button>
+            </FormCell>
+          </FormGrid>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
-          <AttachmentList
-            items={captures}
-            onRemove={remove}
-            thumbnailSize={56}
-          />
-          <EditRows
+          <ItemRows
             messages={messages}
             items={captures}
             all={items}
             disabled={locked || busy}
+            onRemove={remove}
             onEdit={onEdit}
           />
         </Section>
@@ -189,19 +224,15 @@ export function AttachmentsControl({
               <PaneStatus messages={messages} busy={busy} notice={notice} />
             ) : null}
             <div ref={uploadList} className="grid gap-3">
-              <AttachmentList
+              <ItemRows
+                messages={messages}
                 items={uploads}
+                all={items}
+                disabled={locked || busy}
                 onRemove={remove}
-                thumbnailSize={56}
+                onEdit={onEdit}
               />
             </div>
-            <EditRows
-              messages={messages}
-              items={uploads}
-              all={items}
-              disabled={locked || busy}
-              onEdit={onEdit}
-            />
             {overTotal ? (
               <Alert
                 variant="warning"

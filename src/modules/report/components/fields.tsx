@@ -133,16 +133,21 @@ export function ContactFields({
       title={messages.fields.contact}
       description={<PrivacyNote messages={messages} privacyUrl={privacyUrl} />}
     >
+      {/* Temporary, until @softistx/material#5653 (a width cap for a lone field in a wide section). */}
       <FormCell span="full">
-        <EmailFormField
-          control={control}
-          name="email"
-          inputMode="email"
-          label={messages.fields.email}
-          helperText={messages.fields.emailHint}
-          maxLength={EMAIL_MAX}
-          autoComplete="email"
-        />
+        <FormGrid columns={2}>
+          <FormCell>
+            <EmailFormField
+              control={control}
+              name="email"
+              inputMode="email"
+              label={messages.fields.email}
+              helperText={messages.fields.emailHint}
+              maxLength={EMAIL_MAX}
+              autoComplete="email"
+            />
+          </FormCell>
+        </FormGrid>
       </FormCell>
     </Section>
   );

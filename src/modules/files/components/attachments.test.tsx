@@ -214,9 +214,10 @@ describe("attached files", () => {
       file("trace.png", "image/png", 2048),
       file("invoice.pdf", "application/pdf", 4096),
     ]);
-    const list = await screen.findByRole("list", { name: "Attachments" });
-    expect(within(list).getByText("trace.png")).toBeTruthy();
-    expect(within(list).getByText("invoice.pdf")).toBeTruthy();
+    await screen.findAllByRole("list", { name: "Attachments" });
+    const list = screen.getByTestId("files-section");
+    expect(within(list).getAllByText("trace.png").length).toBeGreaterThan(0);
+    expect(within(list).getAllByText("invoice.pdf").length).toBeGreaterThan(0);
     await fillAndSend(user);
     await screen.findByText(en.done.attached(2));
     expect(declared).toEqual([
@@ -293,7 +294,8 @@ describe("refusals, as the API would give them", () => {
       file("empty.png", "image/png", 0),
       file("ok.webp", "image/webp"),
     ]);
-    const list = await screen.findByRole("list", { name: "Attachments" });
+    await screen.findAllByRole("list", { name: "Attachments" });
+    const list = screen.getByTestId("files-section");
     expect(within(list).getByText(en.files.reasons.type)).toBeTruthy();
     expect(within(list).getByText(en.files.reasons.size)).toBeTruthy();
     expect(within(list).getByText(en.files.reasons.unreadable)).toBeTruthy();
@@ -457,7 +459,8 @@ describe("French", () => {
       file("a.png", "image/png"),
       file("x.gif", "image/gif"),
     ]);
-    const list = await screen.findByRole("list");
+    await screen.findAllByRole("list");
+    const list = screen.getByTestId("files-section");
     expect(within(list).getByText(fr.files.reasons.type)).toBeTruthy();
     // The material list's own labels follow the locale (embed I18nProvider).
     expect(
