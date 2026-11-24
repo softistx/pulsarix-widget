@@ -41,12 +41,6 @@ progress::-moz-progress-bar {
   border-radius: inherit;
 }
 
-/* A section's fields sit 8px apart: the form's rhythm needs 16px between rows.
-   Temporary, until @softistx/material#5654 */
-[data-slot="form-section-fields"][data-body="grid"] {
-  row-gap: calc(var(--spacing) * 4);
-}
-
 /* Dark mode: material's error fill (about 4.5:1 under its white text) is darkened so the unread
    counts clear 4.5:1 with margin. Temporary, until @softistx/material#5617 (a darker dark error badge). */
 :host([data-resolved-theme="dark"]) .nxgt-fab > [data-slot="fab-count"],

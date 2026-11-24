@@ -225,6 +225,25 @@ export function serveFixture(port = 0) {
           },
         });
       }
+      // The duotone icon sheet the host serves (pulsarix-ui's public/assets/icons/sprites). It is a
+      // licensed file, so it is read from the sibling checkout (ICON_SPRITES_DIR) and never committed.
+      if (url.pathname.startsWith("/assets/icons/sprites/")) {
+        const file = Bun.file(
+          join(
+            process.env.ICON_SPRITES_DIR ??
+              join(
+                process.env.HOME ?? "",
+                "workspace/dev/pulsarix/pulsarix-ui/public/assets/icons/sprites",
+              ),
+            url.pathname.split("/").pop() ?? "",
+          ),
+        );
+        return (await file.exists())
+          ? new Response(file, {
+              headers: { "content-type": "image/svg+xml" },
+            })
+          : new Response("not found", { status: 404 });
+      }
       if (url.pathname.startsWith("/dist/")) {
         const file = Bun.file(join(root, url.pathname));
         if (await file.exists()) return new Response(file);

@@ -2,7 +2,6 @@ import {
   ChoiceCardGroupFormField,
   EmailFormField,
   FormCell,
-  FormGrid,
   FormSection,
   TextareaFormField,
   TextFormField,
@@ -66,6 +65,7 @@ export function Section({
   role?: string;
   tabIndex?: number;
   body?: "grid" | "stack";
+  columns?: 1 | 2 | 3;
   className?: string;
   ref?: Ref<HTMLDivElement>;
 }) {
@@ -86,7 +86,7 @@ export function Section({
 /** The whole report, in the order it is told: title, description, type, impact, then the e-mail. */
 export function ReportFields({ messages, control }: FieldsProps) {
   return (
-    <Section title={messages.fields.details}>
+    <Section title={messages.fields.details} columns={2}>
       <FormCell span="full">
         <TextFormField
           control={control}
@@ -110,14 +110,8 @@ export function ReportFields({ messages, control }: FieldsProps) {
           required
         />
       </FormCell>
-      {/* Temporary, until @softistx/material#5653: the section's own grid has up to four columns
-          by its width, so the two choices would fill 2 of 3 at 1440; they pair in a grid of their own. */}
-      <FormCell span="full">
-        <FormGrid columns={2}>
-          <ChoiceCards name="type" messages={messages} control={control} />
-          <ChoiceCards name="impact" messages={messages} control={control} />
-        </FormGrid>
-      </FormCell>
+      <ChoiceCards name="type" messages={messages} control={control} />
+      <ChoiceCards name="impact" messages={messages} control={control} />
     </Section>
   );
 }
@@ -132,22 +126,18 @@ export function ContactFields({
     <Section
       title={messages.fields.contact}
       description={<PrivacyNote messages={messages} privacyUrl={privacyUrl} />}
+      columns={2}
     >
-      {/* Temporary, until @softistx/material#5653 (a width cap for a lone field in a wide section). */}
-      <FormCell span="full">
-        <FormGrid columns={2}>
-          <FormCell>
-            <EmailFormField
-              control={control}
-              name="email"
-              inputMode="email"
-              label={messages.fields.email}
-              helperText={messages.fields.emailHint}
-              maxLength={EMAIL_MAX}
-              autoComplete="email"
-            />
-          </FormCell>
-        </FormGrid>
+      <FormCell>
+        <EmailFormField
+          control={control}
+          name="email"
+          inputMode="email"
+          label={messages.fields.email}
+          helperText={messages.fields.emailHint}
+          maxLength={EMAIL_MAX}
+          autoComplete="email"
+        />
       </FormCell>
     </Section>
   );
