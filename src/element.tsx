@@ -212,9 +212,7 @@ export class PulsarixWidgetElement extends HTMLElement {
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
     const apiBase = config.apiBase?.replace(/\/+$/, "");
     this.#root.render(
-      <InlineIconSprites
-        base={`${apiBase ?? ""}/widget/v1/icons/`}
-      >
+      <InlineIconSprites base={`${apiBase ?? ""}/widget/v1/icons/`}>
         <App
           themeName={themeNameFor(config.accentColor)}
           hostTokens={this.#host.current.tokens}

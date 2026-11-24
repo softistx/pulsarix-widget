@@ -19,8 +19,8 @@
  */
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { buildIconSprite } from "./icon-sprite";
 import { withPropertyFallbacks } from "@softistx/material/embed-css";
+import { buildIconSprite } from "./icon-sprite";
 
 const root = join(import.meta.dir, "..");
 const dist = join(root, "dist");
