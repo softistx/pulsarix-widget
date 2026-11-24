@@ -19,7 +19,7 @@ let failed = false;
 
 const shot = async (page: Page, name: string, w: number, scheme: string) => {
   await page
-    .locator("pulsarix-widget [data-testid=attachments]")
+    .locator("pulsarix-widget [data-testid=files-section]")
     .evaluate((el) => el.scrollIntoView({ block: "center" }));
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${out}/${name}-${w}-${scheme}.png` });

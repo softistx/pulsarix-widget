@@ -22,7 +22,7 @@ import { MESSAGES } from "../../../core/messages";
 setDefaultTimeout(30_000);
 
 // The editor needs a canvas and happy-dom cannot capture the screen: a stub capture and a stub
-// editor hand the flow a screenshot file by a click on "Add", then "Capture this page", then "stub-shot".
+// editor hand the flow a screenshot file by a click on "Capture this page", then "stub-shot".
 // `mock.module` is process-wide and survives the file: keep the real modules to put them back.
 const realCapture = { ...(await import("../../screenshot/model/capture")) };
 const realEditor = {
@@ -45,13 +45,7 @@ mock.module("../../screenshot/components/editor-host", () => ({
   ...realEditor,
   EditorHost: StubEditor,
 }));
-/** Opens the one "Add" button's choices. */
-const openAdd = async (user: ReturnType<typeof userEvent.setup>) => {
-  const add = await screen.findByRole("button", { name: "Add" });
-  if (add.getAttribute("aria-expanded") !== "true") await user.click(add);
-};
 const shoot = async (user: ReturnType<typeof userEvent.setup>) => {
-  await openAdd(user);
   await user.click(
     await screen.findByRole("button", { name: "Capture this page" }),
   );
@@ -182,7 +176,6 @@ function Host({ onSubmitted }: { onSubmitted: (detail: unknown) => void }) {
       dark={false}
       open={open}
       launcher={false}
-      position="bottom-right"
       onOpenChange={setOpen}
       onSubmitted={onSubmitted}
       onError={() => {}}
@@ -217,7 +210,9 @@ describe("a widgetConfig without `attachments` (an older API)", () => {
     configAttachments = undefined;
     const { user } = setup();
     await waitFor(() => expect(fileInput()).toBeNull());
-    expect(screen.queryByRole("button", { name: "Add" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Capture this page" }),
+    ).toBeNull();
     await send(user);
     await screen.findByText(MESSAGES.en.done.noTracking);
     expect(declared).toEqual([]);
@@ -232,7 +227,9 @@ describe("a failed widgetConfig read", () => {
     expect(fileInput()).toBeNull();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(fileInput()).toBeNull();
-    expect(screen.queryByRole("button", { name: "Add" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Capture this page" }),
+    ).toBeNull();
     await send(user);
     await screen.findByText(MESSAGES.en.done.noTracking);
     expect(declared).toEqual([]);
@@ -240,26 +237,6 @@ describe("a failed widgetConfig read", () => {
 });
 
 describe("the screenshot upload path", () => {
-  test("the Add disclosure toggles and closes after a choice, focus back on Add", async () => {
-    const { user } = setup();
-    const toggle = () => screen.getByRole("button", { name: "Add" });
-    await screen.findByRole("button", { name: "Add" });
-    expect(toggle().getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("button", { name: "Upload a file" })).toBeNull();
-    await user.click(toggle());
-    expect(toggle().getAttribute("aria-expanded")).toBe("true");
-    await user.click(toggle());
-    expect(toggle().getAttribute("aria-expanded")).toBe("false");
-    await user.click(toggle());
-    await user.click(
-      await screen.findByRole("button", { name: "Upload a file" }),
-    );
-    await waitFor(() =>
-      expect(toggle().getAttribute("aria-expanded")).toBe("false"),
-    );
-    expect(document.activeElement === toggle()).toBe(true);
-  });
-
   test("a screenshot is declared with role screenshot and its name", async () => {
     const { user, onSubmitted } = setup();
     await shoot(user);
@@ -352,7 +329,7 @@ describe("the screenshot upload path", () => {
       expiresAt: "2026-11-16T12:00:00Z",
     });
     const { user, onSubmitted } = setup();
-    await screen.findByRole("button", { name: "Add" });
+    await screen.findByRole("button", { name: "Capture this page" });
     await user.upload(fileInput() as HTMLInputElement, [
       new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
     ]);
@@ -432,7 +409,7 @@ describe("the editor opens on capture and upload, and each capture keeps its pag
 
   test("an uploaded image opens the editor, and Edit is offered on it", async () => {
     const { user } = setup();
-    await screen.findByRole("button", { name: "Add" });
+    await screen.findByRole("button", { name: "Capture this page" });
     await user.upload(fileInput() as HTMLInputElement, [
       new File([new Uint8Array(100)], "a.png", { type: "image/png" }),
     ]);
@@ -456,7 +433,6 @@ describe("the editor opens on capture and upload, and each capture keeps its pag
   test("three more captures fit beside the first, the next one is refused with the count notice", async () => {
     const { user } = setup();
     for (let n = 0; n < 4; n++) await shoot(user);
-    await openAdd(user);
     await user.click(
       await screen.findByRole("button", { name: "Capture this page" }),
     );

@@ -43,7 +43,9 @@ follow yet, the rule is the target and names its slice (tracking issue #134).
   opens the dialog; breaking since 0.6: `position`, `offset` and `--pulsarix-launcher-*` are gone, see the README
   migration). The `launcher` values `auto|pill|icon` are still parsed and give the tab; an identified reporter's tab opens a
   menu (report, My requests with its unread badge), each item one view, never tabs; the report is one
-  unsplit form with one attachments control. A capture and an uploaded image both open
+  unsplit form (no tabs, no steps) with titled groups: a "Screenshot" / "Capture d'écran" section (its mask
+  switch, the capture button and its pictures) and a separate "Pièces jointes" / "Attachments" section (a drop zone and the
+  file list). A capture and an uploaded image both open
   straight in the editor (Cancel keeps the raw file), every image has an "Edit" button, and each capture
   stores the page it was taken on (`pageUrl`, shown as "Captured on ...", sent as the report's `pageUrl`
   for the first and as `capture-N-page` metadata for each). The editor is wrapped by
@@ -101,3 +103,7 @@ bun run capture <dir> # 360 and 1440 px, light and dark, widget open
 - The npm tarball ships `dist/index.js` and `dist/types` only (`files`). `loader.js`, the hashed
   bundle and `manifest.json` are the hosted artifacts the UI serves, not part of the npm package.
 - `sideEffects: true`: importing the entry registers `<pulsarix-widget>`.
+- **The icon sheet** (`dist/icons/duotone.svg`) is cut at build time from a licensed Font Awesome Pro
+  file read from `ICON_SPRITES_DIR`. It is never committed and never in the npm package; it ships only
+  as a hosted artifact beside the loader (the deploy builds with `REQUIRE_ICONS=1`, which makes a
+  missing source an error instead of a warning). The widget reads it from `<apiBase>/widget/v1/icons/`.

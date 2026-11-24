@@ -39,7 +39,6 @@ const base: AppProps = {
   dark: false,
   open: true,
   launcher: false,
-  position: "bottom-right",
   minFillMs: 0,
   onOpenChange: () => {},
   onSubmitted: () => {},

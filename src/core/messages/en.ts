@@ -17,14 +17,15 @@ export const EN: Messages = {
   myRequests: "My requests",
   cancel: "Cancel",
   screenshot: {
-    attach: "Add",
+    sectionTitle: "Screenshot",
+    sectionHint: "Show us what you see. You can annotate it.",
     add: "Capture this page",
     upload: "Upload a file",
     maskText: "Mask the text on the page",
     maskTextHint:
       "Covers every character of the page with black boxes before the picture is taken.",
     capturing: "Taking the screenshot...",
-    noticeTitle: "Screenshot",
+    noticeTitle: "Capture failed",
     editorLabel: "Annotate the screenshot",
     edit: "Edit",
     editCapture: (n) => `Edit capture ${n}`,
@@ -42,8 +43,9 @@ export const EN: Messages = {
     },
   },
   files: {
-    label: "Attachments (optional)",
-    hint: "A screenshot, plus up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
+    label: "Attachments",
+    sectionHint: "Photos, documents or logs that help us look into it.",
+    hint: "Up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
     dropTitle: "Drop files to attach",
     screenshot: "Screenshot",
     count: "A report takes 3 files at most.",
@@ -67,18 +69,31 @@ export const EN: Messages = {
     descriptionHint: "What you did and saw",
     email: "Your e-mail (optional)",
     emailHint: "To get a link to your report",
+    details: "Details",
+    contact: "Contact",
     type: "Type (optional)",
-    impact: "How much it blocks you (optional)",
+    impact: "Severity for you (optional)",
   },
   choices: {
     type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
     impact: { blocking: "Blocking", annoying: "Annoying", minor: "Minor" },
   },
+  choiceHints: {
+    type: {
+      bug: "Something does not work",
+      question: "I need help or an answer",
+      suggestion: "An idea to improve it",
+    },
+    impact: {
+      blocking: "I cannot go on",
+      annoying: "It gets in my way",
+      minor: "A small blemish",
+    },
+  },
   privacy:
     "Your e-mail, if given, the address of this page and your browser are sent with the report.",
   privacyLink: "Privacy policy",
   submit: "Send",
-  submitting: "Sending...",
   errors: {
     titleRequired: "Enter a title.",
     titleTooLong: "The title is too long (200 characters at most).",
@@ -89,7 +104,6 @@ export const EN: Messages = {
   },
   failure: {
     summary: "Your report was not sent",
-    retry: "Try again",
     config: "This form is not set up correctly. Tell the owner of this site.",
     unavailable: "The service is busy right now. Try again in a moment.",
     rateLimited: (minutes) =>
@@ -109,6 +123,6 @@ export const EN: Messages = {
         : `Your ${count} files are attached.`,
     partialTitle: "Some files were not attached",
     partial: (failed, total) =>
-      `Your report was sent, but ${failed} of ${total} ${total === 1 ? "file" : "files"} could not be attached.`,
+      `${failed} of ${total} ${total === 1 ? "file" : "files"} ${failed === 1 ? "was" : "were"} not attached.`,
   },
 };

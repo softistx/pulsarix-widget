@@ -25,8 +25,6 @@ export interface AppProps {
   launcherVisible?: boolean;
   /** The launcher's starting edge and height (default: right, 0.5). */
   placement?: LauncherPlacement;
-  /** Ignored: the edge is `placement.side`. Kept optional so older specs still compile. */
-  position?: "bottom-right" | "bottom-left";
   /** The screenshot's mask-text option starts on. */
   maskText?: boolean;
   /** `data-attachments="false"` hides the screenshot pane and the files. */

@@ -364,13 +364,13 @@ With the npm route, call `widget.identify(token)` on the handle `mount()` return
 ## Screenshots
 
 A report can carry one optional screenshot, never taken without a click (and a per-report
-choice). The one "Attachments" control of the form offers:
+choice). The form has a "Screenshot" section and a separate "Attachments" section:
 
-- **Capture this page** (under the one "Add" control): the browser's screen capture (`getDisplayMedia`). The widget hides itself
+- **Capture this page** (Screenshot section): the browser's screen capture (`getDisplayMedia`). The widget hides itself
   (`visibility`, not unmount, so the form keeps its text) while the frame is grabbed, then shows
   itself again. Not offered on a phone, without the API, or under a Permissions-Policy that blocks
   `display-capture`.
-- **Upload a file** (under "Add"): always offered, and the only choice where capture is unavailable or was
+- **Upload a file** (Attachments section, a drop zone with a Browse button): always offered, and the only choice where capture is unavailable or was
   refused. PNG, JPEG, WebP or PDF. An uploaded image opens in the same editor as a capture (a PDF is
   a plain attachment).
 - **Mask the text on the page** (off by default; `data-mask-text="true"`, or `maskText: true` in `init` / `mount`, turns it on when the dialog opens): covers the
@@ -410,7 +410,7 @@ widget.on("pulsarix:error", (event) => console.warn(event.detail.code));
 ## Attached files
 
 Besides the screenshot, a reporter can attach up to 3 files (PNG, JPEG, WebP or PDF, 5 MB each,
-12 MB for the report, screenshot included) by dropping them on the dialog or with "Add" then "Upload a file". The
+12 MB for the report, screenshot included) by dropping them on the Attachments zone or with "Upload a file". The
 checks mirror the API's, so a refused file is shown with its reason and never sent; the list shows
 each file's type icon, name, size, a thumbnail for images, a Remove button, and its progress while
 the report goes out.

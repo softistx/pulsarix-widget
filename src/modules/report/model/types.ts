@@ -28,6 +28,10 @@ export interface ReportFlowProps {
   onClose: () => void;
   /** Told when the screenshot editor opens or closes (the dialog widens for it). */
   onEditing?: (editing: boolean) => void;
+  /** Told when the confirmation replaces the form (the dialog narrows for it). */
+  onDone?: (done: boolean) => void;
+  /** Opens the reporter's own requests, offered on the confirmation when they are identified. */
+  onRequests?: () => void;
   /** Overridable for specs; the API's own minimum otherwise. */
   minFillMs?: number;
   /** The screenshot's mask-text option starts on (`data-mask-text="true"`). */

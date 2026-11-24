@@ -1,4 +1,4 @@
-import { adoptStyles, InlineIconSprites } from "@softistx/material/embed";
+import { adoptStyles } from "@softistx/material/embed";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./app";
 import {
@@ -207,42 +207,33 @@ export class PulsarixWidgetElement extends HTMLElement {
           (config.theme === "auto" && !!this.#media?.matches)));
     // The widget's own resolved scheme drives `color-scheme` (base.css); nothing is inherited.
     this.setAttribute("data-resolved-theme", dark ? "dark" : "light");
-    const apiBase = config.apiBase?.replace(/\/+$/, "");
     this.#root.render(
-      <InlineIconSprites
-        base={
-          apiBase
-            ? `${apiBase}/assets/icons/sprites/`
-            : "/assets/icons/sprites/"
-        }
-      >
-        <App
-          themeName={themeNameFor(config.accentColor)}
-          hostTokens={this.#host.current.tokens}
-          messages={MESSAGES[config.locale]}
-          locale={config.locale}
-          projectKey={config.projectKey}
-          apiBase={config.apiBase}
-          dark={dark}
-          open={this.#open}
-          launcher={this.getAttribute("launcher") !== "false"}
-          launcherMode={config.launcherMode}
-          launcherVisible={this.#launcherVisible}
-          maskText={config.maskText}
-          attachments={config.attachments}
-          prefill={config.prefill}
-          metadata={config.metadata}
-          privacyUrl={config.privacyUrl}
-          identity={config.identity}
-          placement={config.launcher}
-          onOpenChange={(next) => this.#setOpen(next)}
-          onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
-          onReply={(detail) => this.#emit("pulsarix:reply", detail)}
-          onUnreadChange={(detail) => this.#emit("pulsarix:unread", detail)}
-          onErase={(detail) => this.#emit("pulsarix:erase", detail)}
-          onError={(detail) => this.#emit("pulsarix:error", detail)}
-        />
-      </InlineIconSprites>,
+      <App
+        themeName={themeNameFor(config.accentColor)}
+        hostTokens={this.#host.current.tokens}
+        messages={MESSAGES[config.locale]}
+        locale={config.locale}
+        projectKey={config.projectKey}
+        apiBase={config.apiBase}
+        dark={dark}
+        open={this.#open}
+        launcher={this.getAttribute("launcher") !== "false"}
+        launcherMode={config.launcherMode}
+        launcherVisible={this.#launcherVisible}
+        maskText={config.maskText}
+        attachments={config.attachments}
+        prefill={config.prefill}
+        metadata={config.metadata}
+        privacyUrl={config.privacyUrl}
+        identity={config.identity}
+        placement={config.launcher}
+        onOpenChange={(next) => this.#setOpen(next)}
+        onSubmitted={(detail) => this.#emit("pulsarix:submit", detail)}
+        onReply={(detail) => this.#emit("pulsarix:reply", detail)}
+        onUnreadChange={(detail) => this.#emit("pulsarix:unread", detail)}
+        onErase={(detail) => this.#emit("pulsarix:erase", detail)}
+        onError={(detail) => this.#emit("pulsarix:error", detail)}
+      />,
     );
   }
 }

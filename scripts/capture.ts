@@ -55,6 +55,31 @@ try {
       await page.getByText("Your report was not sent").waitFor();
       await page.waitForTimeout(300);
       await shot("failure");
+      // Probe: does the failure alert's scrollIntoView move the dialog box itself (header and
+      // footer out of place) beside the scrolling body?
+      console.log(
+        `PROBE ${width}-${scheme}`,
+        JSON.stringify(
+          await widget.evaluate((el) => {
+            const root = el.shadowRoot;
+            const box = root?.querySelector('[data-slot="dialog-content"]');
+            const header = root?.querySelector('[data-slot="dialog-header"]');
+            const body = root?.querySelector('[data-slot="dialog-body"]');
+            const footer = root?.querySelector('[data-slot="dialog-footer"]');
+            const top = box?.getBoundingClientRect().top ?? 0;
+            return {
+              boxScrollTop: box?.scrollTop,
+              boxScrollable:
+                (box?.scrollHeight ?? 0) - (box?.clientHeight ?? 0),
+              headerOffset: (header?.getBoundingClientRect().top ?? 0) - top,
+              footerBottomGap:
+                (box?.getBoundingClientRect().bottom ?? 0) -
+                (footer?.getBoundingClientRect().bottom ?? 0),
+              bodyScrollTop: body?.scrollTop,
+            };
+          }),
+        ),
+      );
       await page
         .getByRole("textbox", { name: /Title/ })
         .fill("Checkout limited");
@@ -62,6 +87,22 @@ try {
       await page.getByText("Try again in 10 minutes").waitFor();
       await page.waitForTimeout(300);
       await shot("ratelimit");
+      // A rate limit holds Send off: close and open the form again for the next steps.
+      await page.keyboard.press("Escape");
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await page.getByRole("button", { name: "Report a problem" }).click();
+      await page.getByRole("dialog").waitFor();
+      // The chosen cards (Bug, Blocking), then a card with keyboard focus (Annoying).
+      await page.getByRole("radio", { name: /^Bug/ }).check({ force: true });
+      await page
+        .getByRole("radio", { name: /^Blocking/ })
+        .check({ force: true });
+      await page.waitForTimeout(200);
+      await shot("choices-selected");
+      await page.getByRole("radio", { name: /^Blocking/ }).focus();
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(200);
+      await shot("choices-focus");
       await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
       await page
         .getByRole("textbox", { name: /What happened/ })
@@ -84,6 +125,74 @@ try {
         console.error(`focus did not return to the launcher (${focused})`);
       }
       await page.close();
+    }
+  }
+  // The confirmation of an identified reporter (My requests), and the form in French.
+  for (const [width, height] of [
+    [360, 780],
+    [1440, 900],
+  ] as const) {
+    for (const scheme of ["light", "dark"] as const) {
+      const context = await browser.newContext({
+        viewport: { width, height },
+        colorScheme: scheme,
+      });
+      const page = await context.newPage();
+      await page.goto(`http://localhost:${server.port}/identified`);
+      await page.waitForFunction(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("button"),
+      );
+      await page.evaluate(
+        (s) =>
+          document.querySelector("pulsarix-widget")?.setAttribute("theme", s),
+        scheme,
+      );
+      await page.getByRole("button", { name: /^Report a problem/ }).click();
+      await page
+        .getByRole("menuitem", { name: /Report a problem|Report/ })
+        .first()
+        .click()
+        .catch(() => {});
+      await page.getByRole("dialog").waitFor();
+      await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
+      await page
+        .getByRole("textbox", { name: /What happened/ })
+        .fill("The pay button does nothing on the cart page.");
+      await page.getByRole("button", { name: "Send", exact: true }).click();
+      await page.getByRole("button", { name: "My requests" }).waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({
+        path: `${out}/done-identified-${width}-${scheme}.png`,
+      });
+      await context.close();
+      const fr = await (
+        await browser.newContext({
+          viewport: { width, height },
+          colorScheme: scheme,
+        })
+      ).newPage();
+      await fr.goto(`http://localhost:${server.port}/`);
+      await fr.waitForFunction(() =>
+        document
+          .querySelector("pulsarix-widget")
+          ?.shadowRoot?.querySelector("button"),
+      );
+      await fr.evaluate((s) => {
+        const el = document.querySelector("pulsarix-widget");
+        el?.setAttribute("theme", s);
+        el?.setAttribute("locale", "fr");
+      }, scheme);
+      await fr.getByRole("button", { name: "Signaler un problème" }).click();
+      await fr.getByRole("dialog").waitFor();
+      await fr.waitForTimeout(500);
+      await fr.screenshot({ path: `${out}/form-fr-${width}-${scheme}.png` });
+      await fr.getByRole("button", { name: "Envoyer", exact: true }).click();
+      await fr.getByText("Saisissez un titre.").waitFor();
+      await fr.waitForTimeout(300);
+      await fr.screenshot({ path: `${out}/errors-fr-${width}-${scheme}.png` });
+      await fr.context().close();
     }
   }
 } finally {
