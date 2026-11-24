@@ -467,13 +467,31 @@ describe("the launcher's CSS", () => {
 
   test("keeps 44 px on screen at rest, a two-tone focus ring and the inverse tooltip", () => {
     // 50 px wide, 6 px peek translate: 44 px stay visible.
-    expect(css).toMatch(/\.pulsarix-tab-button \{[^}]*width: 50px/);
-    expect(css).toMatch(/translateX\(calc\(var\(--dir\) \* 6px\)\)/);
+    expect(css).toMatch(/--tab-w: 44px;\s*--peek: 6px;/);
+    expect(css).toMatch(
+      /\.pulsarix-tab-button \{[^}]*width: calc\(var\(--tab-w\) \+ var\(--peek\)\)/,
+    );
+    expect(css).toMatch(/translateX\(calc\(var\(--dir\) \* var\(--peek\)\)\)/);
     expect(css).toMatch(
       /:focus-visible \{\s*outline: 2px solid transparent;\s*box-shadow:\s*0 0 0 2px var\(--background\),\s*0 0 0 5px var\(--foreground\)/,
     );
     expect(css).toMatch(/background: var\(--inverse-surface\)/);
     expect(css).toMatch(/color: var\(--inverse-foreground\)/);
+  });
+
+  test("on a phone (max 600 px) the tab is 24 x 44 px, no peek, a 16 px mark and no extra hit area", () => {
+    const block = css.match(
+      /@media \(max-width: 600px\) \{([\s\S]*?)\n\}\n/,
+    )?.[1];
+    expect(block).toBeDefined();
+    expect(block).toMatch(/--tab-w: 24px;/);
+    expect(block).toMatch(/--peek: 0px;/);
+    expect(block).toMatch(
+      /\.pulsarix-tab-face svg \{\s*width: 16px;\s*height: 16px;/,
+    );
+    expect(block).not.toMatch(/::before|::after|inset|padding/);
+    // The height is 44 px at every width.
+    expect(css).toMatch(/\.pulsarix-tab \{[^}]*height: 44px/);
   });
 
   test("the dark tooltip wears material's opaque tooltip tokens, and nothing uses --destructive", () => {
