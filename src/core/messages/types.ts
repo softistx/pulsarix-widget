@@ -6,6 +6,8 @@ export interface Messages {
   launcherHint: string;
   /** The keyboard way to move the launcher, shown in the tooltip on keyboard focus and read as a description. */
   launcherKeyHint: string;
+  /** The same hint spelled out for assistive technology (no symbols): the launcher's second description. */
+  launcherKeyHintSpoken: string;
   /** Announced after the reporter moves the launcher: "Position: 45 %". */
   launcherMoved: (percent: number) => string;
   title: string;

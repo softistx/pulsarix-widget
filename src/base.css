@@ -189,10 +189,10 @@ progress::-moz-progress-bar {
   display: block;
 }
 .pulsarix-tab[data-side="right"] .pulsarix-tab-tip {
-  right: calc(100% + 4px);
+  right: calc(100% + 10px);
 }
 .pulsarix-tab[data-side="left"] .pulsarix-tab-tip {
-  left: calc(100% + 4px);
+  left: calc(100% + 10px);
 }
 .pulsarix-tab-button:hover .pulsarix-tab-tip,
 .pulsarix-tab-button:focus-visible .pulsarix-tab-tip {

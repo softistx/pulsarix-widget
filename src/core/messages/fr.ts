@@ -7,6 +7,7 @@ export const FR: Messages = {
     `${n} ${n === 1 ? "demande non lue" : "demandes non lues"}`,
   launcherHint: "Glisser pour déplacer",
   launcherKeyHint: "Alt+↑/↓ pour déplacer",
+  launcherKeyHintSpoken: "Alt plus flèche haut ou bas pour déplacer",
   launcherMoved: (percent) => `Position : ${percent} %`,
   title: "Signaler un problème",
   intro: "Dites-nous ce qui ne va pas, nous allons regarder.",

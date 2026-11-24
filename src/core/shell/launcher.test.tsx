@@ -424,8 +424,11 @@ describe("moving the launcher", () => {
     const texts = ids.map((id) => document.getElementById(id)?.textContent);
     expect(texts).toEqual([
       MESSAGES.en.launcherHint,
-      MESSAGES.en.launcherKeyHint,
+      "Alt plus Up or Down arrow to move",
     ]);
+    expect(MESSAGES.fr.launcherKeyHintSpoken).toBe(
+      "Alt plus flèche haut ou bas pour déplacer",
+    );
     expect(MESSAGES.en.launcherKeyHint).toBe("Alt+↑/↓ to move");
     expect(MESSAGES.fr.launcherKeyHint).toBe("Alt+↑/↓ pour déplacer");
   });

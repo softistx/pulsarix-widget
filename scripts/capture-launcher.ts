@@ -151,7 +151,7 @@ try {
           ?.setAttribute("launcher-side", "left"),
       );
       await page.keyboard.press("Escape");
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
       await page.mouse.move(width - 2, height - 2);
       await shoot(page, "left");
       await page.close();

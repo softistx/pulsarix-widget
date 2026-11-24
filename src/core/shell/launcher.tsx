@@ -343,7 +343,7 @@ export function Launcher({
         {messages.launcherHint}
       </span>
       <span id={keyHintId} className="pulsarix-sr">
-        {messages.launcherKeyHint}
+        {messages.launcherKeyHintSpoken}
       </span>
       <span role="status" aria-live="polite" className="pulsarix-sr">
         {announcement}
