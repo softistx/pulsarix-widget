@@ -24,7 +24,10 @@ interface FieldsProps {
   control: Control<ReportValues>;
 }
 
-/** Single-choice and optional: one card per row, pressing the chosen one clears it. */
+/**
+ * Single-choice and optional: one card per row, pressing the chosen one clears it. Each field spans
+ * the full row of the form grid, so Type and Gravité never share a row on wide screens.
+ */
 function ChoiceCards({
   name,
   messages,
@@ -33,7 +36,7 @@ function ChoiceCards({
   const labels: Record<string, string> = messages.choices[name];
   const hints: Record<string, string> = messages.choiceHints[name];
   return (
-    <FormCell>
+    <FormCell span="full">
       <ChoiceCardGroupFormField
         control={control}
         name={name}

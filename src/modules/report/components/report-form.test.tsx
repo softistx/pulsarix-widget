@@ -221,6 +221,16 @@ describe("the report form", () => {
     });
   });
 
+  test("type and gravité each span the full row of the form grid", () => {
+    setup();
+    for (const name of [/Bug/, /Blocking/]) {
+      const cell = screen
+        .getByRole("radio", { name })
+        .closest('[class*="col-span-full"]');
+      expect(cell).not.toBeNull();
+    }
+  });
+
   test("Send is the retry: no second button, the same draft goes out again, and the confirmation narrows the dialog", async () => {
     handler = () => refusal(503, "intake.errors.unavailable", {}, "busy");
     const { user } = setup();
