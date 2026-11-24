@@ -136,6 +136,29 @@ try {
           document.querySelector("pulsarix-widget")?.setAttribute("theme", s),
         scheme,
       );
+      // A mouse press (pointerdown is cancelled for the drag) still leaves focus on the tab.
+      const pressBox = await tab(page).boundingBox();
+      if (pressBox) {
+        await page.mouse.move(
+          pressBox.x + pressBox.width / 2,
+          pressBox.y + pressBox.height / 2,
+        );
+        await page.mouse.down();
+        const pressed = await page.evaluate(
+          () =>
+            document
+              .querySelector("pulsarix-widget")
+              ?.shadowRoot?.activeElement?.getAttribute("aria-label") ?? null,
+        );
+        await page.mouse.up();
+        check(
+          !!pressed?.startsWith("Report a problem"),
+          "a mouse press leaves focus on the tab",
+        );
+        await page.getByRole("dialog").waitFor();
+        await page.keyboard.press("Escape");
+        await page.getByRole("dialog").waitFor({ state: "detached" });
+      }
       await tab(page).click();
       await page.getByRole("dialog").waitFor();
       await page.waitForTimeout(500);

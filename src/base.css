@@ -133,7 +133,8 @@ progress::-moz-progress-bar {
 [data-slot="count-badge"] > span[aria-hidden="true"] {
   box-shadow: 0 0 0 2px var(--background);
 }
-/* The label is a tooltip only: on the content side, after a short delay. */
+/* The label is a tooltip only: on the content side, after a short delay.
+   Temporary, until @softistx/material#5670 (Tooltip in /embed). */
 .pulsarix-tab-tip {
   position: absolute;
   top: 50%;

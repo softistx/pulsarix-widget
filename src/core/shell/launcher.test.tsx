@@ -302,6 +302,26 @@ describe("moving the launcher", () => {
     expect(saved.offset).not.toBe(0.5);
   });
 
+  test("a pointerup right after a pointermove saves the release point, not the last render", () => {
+    renderApp(false);
+    const button = tabButton();
+    const key = `pulsarix-widget:launcher:${location.origin}`;
+    fireEvent.pointerDown(button, { button: 0, clientY: 300, pointerId: 1 });
+    fireEvent.pointerMove(button, { clientY: 340, pointerId: 1 });
+    fireEvent.pointerUp(button, { clientY: 340, pointerId: 1 });
+    const first = JSON.parse(localStorage.getItem(key) ?? "null").offset;
+    fireEvent.pointerDown(button, { button: 0, clientY: 340, pointerId: 1 });
+    // No render between the move and the release: both fire in one batch.
+    act(() => {
+      fireEvent.pointerMove(button, { clientY: 400, pointerId: 1 });
+      fireEvent.pointerUp(button, { clientY: 460, pointerId: 1 });
+    });
+    const saved = JSON.parse(localStorage.getItem(key) ?? "null").offset;
+    expect(saved).toBeGreaterThan(first);
+    // The release point (120 px below the press) was saved, not the move's (60 px).
+    expect(saved - first).toBeGreaterThan(0.1);
+  });
+
   test("a small pointer move is still a click", () => {
     const opened: boolean[] = [];
     renderApp(false, { onOpenChange: (next) => opened.push(next) });

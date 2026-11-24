@@ -1,35 +1,13 @@
-import {
-  Badge,
-  CountBadge,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Icon,
-} from "@softistx/material/embed";
-import {
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { CountBadge } from "@softistx/material/embed";
+import { type RefObject, useId, useState } from "react";
 import {
   DEFAULT_PLACEMENT,
   type LauncherPlacement,
   type LauncherSide,
 } from "../../config";
 import type { Messages } from "../messages";
-import {
-  clamp01,
-  DRAG_THRESHOLD,
-  KEY_STEP,
-  ratioOf,
-  readSaved,
-  topOf,
-  writeSaved,
-} from "./launcher-position";
+import { LauncherMenu } from "./launcher-menu";
+import { useLauncherMove } from "./use-launcher-move";
 
 /**
  * The pulsarix mark, a pulse line, as an inline SVG in `currentColor`: it takes the theme's primary
@@ -53,18 +31,10 @@ function PulseMark() {
   );
 }
 
-/** The viewport's height, followed on resize so the tab stays inside it. */
-function useViewportHeight() {
-  const [height, setHeight] = useState(() => window.innerHeight);
-  useEffect(() => {
-    const onResize = () => setHeight(window.innerHeight);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  return height;
-}
-
 /**
+ * Temporary, until @softistx/material#5672 (a docked launcher component): hand-made from a button,
+ * CountBadge and DropdownMenu meanwhile.
+ *
  * The launcher: a 44 px icon button docked flush to the viewport edge (an edge tab), with corners on the
  * content side only, wearing the pulsarix mark and the unread count. Its label is a tooltip only
  * (hover or keyboard focus, hidden while dragging and on touch screens); its accessible name carries
@@ -110,95 +80,17 @@ export function Launcher({
 }) {
   const side: LauncherSide = placement.side;
   const menuId = useId();
-  const height = useViewportHeight();
-  // The reporter's own position wins over the host's starting point.
-  const [saved, setSaved] = useState<number | null>(readSaved);
-  const ratio = clamp01(saved ?? placement.offset);
-  const top = topOf(ratio, height);
-  const [dragging, setDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
-  const drag = useRef<{ y: number; top: number; moved: boolean } | null>(null);
-  const justDragged = useRef(false);
-  // A choice opens the dialog, which takes focus: the menu must not pull it back onto the tab.
-  const chose = useRef(false);
-
-  const announce = (value: number) => {
-    // Emptied first so a repeated value is announced again.
-    setAnnouncement("");
-    setTimeout(
-      () => setAnnouncement(messages.launcherMoved(Math.round(value * 100))),
-      30,
-    );
-  };
-
-  const move = (to: number) => {
-    const next = clamp01(to);
-    setSaved(next);
-    writeSaved(next);
-    announce(next);
-  };
-
-  const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    justDragged.current = false;
-    if (event.button !== 0) return;
-    // The menu opens on click, never on pointerdown, so a drag along the edge cannot open it.
-    event.preventDefault();
-    drag.current = { y: event.clientY, top, moved: false };
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {
-      // Not every environment can capture a pointer.
-    }
-  };
-  const onPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const current = drag.current;
-    if (!current) return;
-    const dy = event.clientY - current.y;
-    if (!current.moved && Math.abs(dy) < DRAG_THRESHOLD) return;
-    if (!current.moved) {
-      current.moved = true;
-      setDragging(true);
-      setMenuOpen(false);
-    }
-    setSaved(ratioOf(current.top + dy, height));
-  };
-  const endDrag = () => {
-    const current = drag.current;
-    drag.current = null;
-    if (!current?.moved) return;
-    setDragging(false);
-    // The click that follows the release is the drag's own: it must not open anything.
-    // Cleared by the click itself, or by the next pointerdown or key press.
-    justDragged.current = true;
-    const final = clamp01(saved ?? placement.offset);
-    writeSaved(final);
-    announce(final);
-  };
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    justDragged.current = false;
-    if (
-      event.altKey &&
-      (event.key === "ArrowUp" || event.key === "ArrowDown")
-    ) {
-      event.preventDefault();
-      move(ratio + (event.key === "ArrowUp" ? -KEY_STEP : KEY_STEP));
-    }
-  };
+  const move = useLauncherMove({
+    messages,
+    placement,
+    onDragStart: () => setMenuOpen(false),
+  });
 
   const onClick = () => {
-    if (justDragged.current) {
-      justDragged.current = false;
-      return;
-    }
+    if (move.consumeDragClick()) return;
     if (identified) setMenuOpen((value) => !value);
     else onReport();
-  };
-
-  const choose = (action: () => void) => {
-    chose.current = true;
-    action();
   };
 
   // An identified reporter's tab opens a menu, so its name says so.
@@ -218,11 +110,7 @@ export function Launcher({
       aria-expanded={identified ? menuOpen : open}
       aria-controls={identified ? undefined : dockId}
       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      onKeyDown={onKeyDown}
+      {...move.handlers}
       onClick={onClick}
     >
       {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
@@ -236,6 +124,7 @@ export function Launcher({
           <PulseMark />
         </span>
       </CountBadge>
+      {/* Temporary, until @softistx/material#5670 (Tooltip in /embed): a CSS-only tooltip meanwhile. */}
       <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
         <strong>{label}</strong>
         <small data-hint="drag">{messages.launcherHint}</small>
@@ -249,52 +138,22 @@ export function Launcher({
       hidden={open || !visible}
       data-launcher="tab"
       data-side={side}
-      data-dragging={dragging || undefined}
+      data-dragging={move.dragging || undefined}
       className="pulsarix-tab"
-      style={{ top }}
+      style={{ top: move.top }}
     >
       {identified ? (
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-          <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
-          <DropdownMenuContent
-            side={side === "right" ? "left" : "right"}
-            align="start"
-            sideOffset={10}
-            collisionPadding={8}
-            aria-label={label}
-            onCloseAutoFocus={(event) => {
-              // A choice opens the dialog, which takes focus: the menu must not pull it back.
-              if (chose.current) {
-                chose.current = false;
-                event.preventDefault();
-              }
-            }}
-          >
-            <DropdownMenuItem
-              className="pulsarix-tab-item"
-              onSelect={() => choose(onReport)}
-            >
-              <Icon
-                name="triangle-exclamation"
-                className="size-5"
-                aria-hidden="true"
-              />
-              <span>{messages.title}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="pulsarix-tab-item"
-              onSelect={() => choose(onRequests)}
-            >
-              <Icon name="list-ul" className="size-5" aria-hidden="true" />
-              <span>{messages.myRequests}</span>
-              {unread > 0 ? (
-                <Badge variant="error" aria-hidden="true">
-                  {unread}
-                </Badge>
-              ) : null}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LauncherMenu
+          messages={messages}
+          side={side}
+          label={label}
+          unread={unread}
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          trigger={button}
+          onReport={onReport}
+          onRequests={onRequests}
+        />
       ) : (
         button
       )}
@@ -305,7 +164,7 @@ export function Launcher({
         {messages.launcherKeyHintSpoken}
       </span>
       <span role="status" aria-live="polite" className="pulsarix-sr">
-        {announcement}
+        {move.announcement}
       </span>
     </div>
   );

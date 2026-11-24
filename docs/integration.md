@@ -512,6 +512,8 @@ when the window is resized. The position is saved in `localStorage` under a key 
 (inside a try/catch: with storage blocked, it lasts until the page closes) and wins over your starting
 point from then on.
 
+Alt+ArrowUp and Alt+ArrowDown may clash with an assistive technology or a window manager shortcut; dragging the tab always remains available.
+
 ### Migrating from 0.6 (breaking)
 
 `position`, `data-position`, `offset`, `data-offset-bottom`, `data-offset-side` and the custom properties
