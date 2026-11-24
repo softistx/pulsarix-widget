@@ -83,6 +83,7 @@ function setup(
     projectKey?: string | null;
     apiBase?: string | null;
     minFillMs?: number;
+    identity?: string | null;
   } = {},
 ) {
   const locale = options.locale ?? "en";
@@ -102,6 +103,7 @@ function setup(
           : options.apiBase
       }
       dark={false}
+      identity={options.identity ?? null}
       open
       launcher={false}
       position="bottom-right"
@@ -234,6 +236,26 @@ describe("the report form", () => {
       description: "On save",
     });
     expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("sm");
+  });
+
+  test("the confirmation offers My requests to an identified reporter, and it opens that view", async () => {
+    const { user } = setup({ identity: "tok" });
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    await user.click(screen.getByRole("button", { name: m.myRequests }));
+    expect(
+      await screen.findByRole("dialog", { name: m.myRequests }),
+    ).toBeTruthy();
+  });
+
+  test("the confirmation of an anonymous reporter has no My requests button", async () => {
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText(m.done.noTracking);
+    expect(screen.queryByRole("button", { name: m.myRequests })).toBeNull();
+    expect(screen.getByRole("button", { name: m.close })).toBeTruthy();
   });
 
   test("a rate limit keeps Send disabled and names the wait in minutes", async () => {
