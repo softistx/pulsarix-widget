@@ -55,9 +55,16 @@ try {
       // Anonymous: rest, hover with the tooltip, the dialog open.
       let page = await visit("/");
       const box = await tab(page).boundingBox();
+      // 50 px wide, 6 px off screen at rest: 44 x 44 stay visible (the tap target).
+      const visible = box
+        ? Math.min(box.x + box.width, width) - Math.max(box.x, 0)
+        : 0;
       check(
-        !!box && Math.round(box.width) === 44 && Math.round(box.height) === 44,
-        `the tab is 44 x 44 at ${width} px (${box?.width} x ${box?.height})`,
+        !!box &&
+          Math.round(box.width) === 50 &&
+          Math.round(visible) === 44 &&
+          Math.round(box.height) === 44,
+        `the tab shows 44 x 44 of ${box?.width} x ${box?.height} at ${width} px (${visible} visible)`,
       );
       await page.mouse.move(2, 2);
       await shoot(page, "rest");
