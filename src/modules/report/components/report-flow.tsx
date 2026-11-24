@@ -32,6 +32,7 @@ export function ReportFlow({
   onError,
   onClose,
   onEditing,
+  onDone,
   minFillMs = MIN_FILL_MS,
   maskText = false,
   attachments = true,
@@ -88,6 +89,10 @@ export function ReportFlow({
   useEffect(() => {
     if (sent) done.current?.focus();
   }, [sent]);
+  useEffect(() => {
+    onDone?.(!!sent);
+    return () => onDone?.(false);
+  }, [sent, onDone]);
 
   const submit = handleSubmit((values) =>
     runSubmit(values, {

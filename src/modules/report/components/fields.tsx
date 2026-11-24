@@ -22,6 +22,12 @@ interface FieldsProps {
 }
 
 /** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
+// The severity reads at a glance: blocking is an error, annoying a warning, minor neutral.
+const TONES: Record<string, "error" | "warning" | undefined> = {
+  blocking: "error",
+  annoying: "warning",
+};
+
 function ChoiceChips({
   name,
   messages,
@@ -36,12 +42,13 @@ function ChoiceChips({
         <ChipGroupField
           label={messages.fields[name]}
           deselectable
-          overflow="wrap"
+          columns={3}
           value={field.value || null}
           onValueChange={(value) => field.onChange(value ?? "")}
           options={Object.entries(labels).map(([value, label]) => ({
             value,
             label,
+            tone: TONES[value],
           }))}
         />
       )}

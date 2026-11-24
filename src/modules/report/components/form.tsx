@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   DialogBody,
   DialogHeader,
   DialogTitle,
@@ -112,7 +111,7 @@ export function Form({
           id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
-          className="grid gap-6 max-sm:pb-20"
+          className="grid gap-6"
         >
           <ReportFields
             messages={messages}

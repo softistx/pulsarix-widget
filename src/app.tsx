@@ -56,6 +56,7 @@ export function App({
 }: AppProps) {
   // While the screenshot editor is open the dialog widens: the editor needs more than a form.
   const [editing, setEditing] = useState(false);
+  const [done, setDone] = useState(false);
   // The key's config survives a change of view (the form remounts), not a close.
   const [project, setProject] = useState<WidgetProject | null>(null);
   const identified = !!identity && !!projectKey && !!apiBase;
@@ -135,6 +136,7 @@ export function App({
           retryDelayMs={retryDelayMs}
           maskText={maskText}
           onEditing={setEditing}
+          onDone={setDone}
           attachments={attachments}
           prefill={prefill}
           metadata={metadata}
@@ -192,7 +194,7 @@ export function App({
               <DialogContent
                 layout="stack"
                 // The editor needs room and takes the whole screen on a phone.
-                size={editing ? "xl" : "md"}
+                size={editing ? "xl" : done ? "sm" : "md"}
                 mobilePresentation={editing ? "fullscreen" : undefined}
                 className="outline-none"
                 onCloseAutoFocus={(event) => {

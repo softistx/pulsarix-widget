@@ -10,7 +10,7 @@ import {
   filterFiles,
 } from "@softistx/material/files/drop";
 import { I18nProvider } from "@softistx/material/i18n";
-import { type Ref, useId, useRef } from "react";
+import { type Ref, useEffect, useId, useRef } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
@@ -74,6 +74,23 @@ export function AttachmentsControl({
   const captures = items.filter((i) => i.pageUrl !== undefined);
   const uploads = items.filter((i) => i.pageUrl === undefined);
   const remove = locked ? undefined : onRemove;
+  const uploadList = useRef<HTMLDivElement>(null);
+  const scrollToRefused = useRef(false);
+  const drop = (accepted: File[], refused: DropRefusal[]) => {
+    scrollToRefused.current = refused.length > 0;
+    onDrop(accepted, refused);
+  };
+  // A refused file is shown with its reason: bring the first one into view.
+  useEffect(() => {
+    if (!scrollToRefused.current) return;
+    scrollToRefused.current = false;
+    const reason = items.find((i) => i.refusal)?.refusal;
+    if (!reason) return;
+    const row = [...(uploadList.current?.querySelectorAll("*") ?? [])].find(
+      (el) => el.children.length === 0 && el.textContent === reason,
+    );
+    row?.scrollIntoView?.({ block: "nearest" });
+  }, [items]);
   return (
     <div
       ref={region}
@@ -89,14 +106,6 @@ export function AttachmentsControl({
           data-testid="capture-section"
         >
           <div className="grid justify-items-start gap-3">
-            <Button
-              type="button"
-              variant="tonal"
-              disabled={locked || busy}
-              onClick={onCapture}
-            >
-              {t.add}
-            </Button>
             <SwitchField
               variant="plain"
               checked={maskText}
@@ -105,6 +114,14 @@ export function AttachmentsControl({
               label={t.maskText}
               helperText={t.maskTextHint}
             />
+            <Button
+              type="button"
+              variant="tonal"
+              disabled={locked || busy}
+              onClick={onCapture}
+            >
+              {t.add}
+            </Button>
           </div>
           <PaneStatus messages={messages} busy={busy} notice={notice} />
           <AttachmentList items={captures} onRemove={remove} />
@@ -135,9 +152,9 @@ export function AttachmentsControl({
             maxSize={MAX_FILE_BYTES}
             title={messages.files.dropTitle}
             description={messages.files.hint}
-            onDrop={onDrop}
+            onDrop={drop}
             zone
-            zoneLayout="inline"
+            zoneLayout="full"
             zoneTitle={messages.files.dropTitle}
             browseLabel={t.upload}
             className="grid gap-3"
@@ -158,14 +175,16 @@ export function AttachmentsControl({
                     accept: ACCEPTED_TYPES,
                     maxSize: MAX_FILE_BYTES,
                   });
-                  onDrop(accepted, refused);
+                  drop(accepted, refused);
                 }
               }}
             />
             {!canCapture ? (
               <PaneStatus messages={messages} busy={busy} notice={notice} />
             ) : null}
-            <AttachmentList items={uploads} onRemove={remove} />
+            <div ref={uploadList} className="grid gap-3">
+              <AttachmentList items={uploads} onRemove={remove} />
+            </div>
             <EditRows
               messages={messages}
               items={uploads}
