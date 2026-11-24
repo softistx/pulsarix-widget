@@ -195,11 +195,12 @@ export function App({
               <DialogContent
                 id={DOCK_ID}
                 layout="stack"
-                // The report grows into a two-column grid on wide screens; the thread and the
-                // list stay narrow. The editor needs room (px, not rem: the host owns the
-                // root font size) and takes the whole screen on a phone.
-                size={showing === "report" && !editing ? "lg" : "md"}
-                mobilePresentation={editing ? "fullscreen" : undefined}
+                // The dock stays compact: "md" is about 672 px wide from 1280 px, enough for the
+                // report's two-column grid, and the thread and list fit it too. The editor needs
+                // room (px, not rem: the host owns the root font size) and takes the whole
+                // screen on a phone; every other view is a bottom sheet there.
+                size="md"
+                mobilePresentation={editing ? "fullscreen" : "bottom-sheet"}
                 className={
                   editing ? "outline-none max-w-[1200px]" : "outline-none"
                 }

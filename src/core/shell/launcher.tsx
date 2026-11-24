@@ -45,6 +45,13 @@ function PulseMark() {
   );
 }
 
+/*
+ * Temporary, until @softistx/material#5651 (`/embed` exports `Icon` and the duotone sprites): the
+ * menu's two icons are local SVGs meanwhile.
+ * Temporary, until @softistx/material#5616 (`/embed` exports a Menu): `DropdownMenu` is only in the
+ * main entry, +146 KB gzipped and no CSS in `embed.css`, so the menu below stays hand-made.
+ */
+
 /** A report icon, for the first entry of the menu. */
 function ReportIcon() {
   return (
@@ -290,6 +297,7 @@ export function Launcher({
       ? `${messages.launcher}, ${messages.launcherUnread(unread)}`
       : messages.launcher;
   const hintId = `${menuId}-hint`;
+  const keyHintId = `${menuId}-keyhint`;
 
   return (
     <div
@@ -306,7 +314,7 @@ export function Launcher({
         type="button"
         className="pulsarix-tab-button"
         aria-label={name}
-        aria-describedby={hintId}
+        aria-describedby={`${hintId} ${keyHintId}`}
         aria-expanded={identified ? menuOpen : open}
         aria-controls={identified ? (menuOpen ? menuId : undefined) : dockId}
         aria-haspopup={identified ? "menu" : undefined}
@@ -319,18 +327,23 @@ export function Launcher({
         onClick={onClick}
       >
         <PulseMark />
-        {unread > 0 ? (
+        {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
+        {unread > 0 && !(identified && menuOpen) ? (
           <span className="pulsarix-tab-badge" aria-hidden="true">
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
         <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
           <strong>{messages.launcher}</strong>
-          <small>{messages.launcherHint}</small>
+          <small data-hint="drag">{messages.launcherHint}</small>
+          <small data-hint="key">{messages.launcherKeyHint}</small>
         </span>
       </button>
       <span id={hintId} className="pulsarix-sr">
         {messages.launcherHint}
+      </span>
+      <span id={keyHintId} className="pulsarix-sr">
+        {messages.launcherKeyHint}
       </span>
       <span role="status" aria-live="polite" className="pulsarix-sr">
         {announcement}

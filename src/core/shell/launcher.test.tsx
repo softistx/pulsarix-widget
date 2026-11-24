@@ -407,8 +407,27 @@ describe("moving the launcher", () => {
     renderApp(false);
     const tip = tabButton().querySelector("[data-tip]");
     expect(tip?.textContent).toBe(
-      `${MESSAGES.en.launcher}${MESSAGES.en.launcherHint}`,
+      `${MESSAGES.en.launcher}${MESSAGES.en.launcherHint}${MESSAGES.en.launcherKeyHint}`,
     );
+    // Hover shows the drag hint, keyboard focus the keyboard one.
+    expect(tip?.querySelector("[data-hint=drag]")?.textContent).toBe(
+      MESSAGES.en.launcherHint,
+    );
+    expect(tip?.querySelector("[data-hint=key]")?.textContent).toBe(
+      MESSAGES.en.launcherKeyHint,
+    );
+  });
+
+  test("both hints describe the tab for assistive technology, in both languages", () => {
+    renderApp(false);
+    const ids = (tabButton().getAttribute("aria-describedby") ?? "").split(" ");
+    const texts = ids.map((id) => document.getElementById(id)?.textContent);
+    expect(texts).toEqual([
+      MESSAGES.en.launcherHint,
+      MESSAGES.en.launcherKeyHint,
+    ]);
+    expect(MESSAGES.en.launcherKeyHint).toBe("Alt+↑/↓ to move");
+    expect(MESSAGES.fr.launcherKeyHint).toBe("Alt+↑/↓ pour déplacer");
   });
 });
 
@@ -419,6 +438,29 @@ describe("the launcher's CSS", () => {
     expect(css).toMatch(/\[data-dragging\] \.pulsarix-tab-tip/);
     expect(css).toMatch(/\[aria-expanded="true"\] \.pulsarix-tab-tip/);
     expect(css).toMatch(/@media \(hover: none\)/);
+  });
+
+  test("keeps 44 px on screen at rest, a two-tone focus ring and the inverse tooltip", () => {
+    // 50 px wide, 6 px peek translate: 44 px stay visible.
+    expect(css).toMatch(/\.pulsarix-tab-button \{[^}]*width: 50px/);
+    expect(css).toMatch(/translateX\(calc\(var\(--dir\) \* 6px\)\)/);
+    expect(css).toMatch(
+      /:focus-visible \{\s*outline: 2px solid transparent;\s*box-shadow:\s*0 0 0 2px var\(--background\),\s*0 0 0 5px var\(--foreground\)/,
+    );
+    expect(css).toMatch(/background: var\(--inverse-surface\)/);
+    expect(css).toMatch(/color: var\(--inverse-foreground\)/);
+  });
+
+  test("the badge and the menu count use the error tokens, with no white fallback", () => {
+    expect(css).toMatch(
+      /background: var\(--error\);\s*color: var\(--error-foreground\);/,
+    );
+    expect(css).not.toMatch(/var\(--destructive/);
+    const badge = css.slice(
+      css.indexOf(".pulsarix-tab-badge,"),
+      css.indexOf(".pulsarix-tab-tip {"),
+    );
+    expect(badge).not.toMatch(/#fff/);
   });
 
   test("respects reduced motion and uses no rem", () => {
@@ -465,6 +507,36 @@ describe("the launcher for an identified reporter", () => {
       screen.getByRole("menuitem", { name: MESSAGES.en.myRequests }) !== null,
     ).toBe(true);
     expect(tabButton().getAttribute("aria-expanded")).toBe("true");
+  });
+
+  test("the unread count is on the tab at rest, then only on My requests while the menu is open", async () => {
+    const user = userEvent.setup();
+    render(
+      <Launcher
+        messages={MESSAGES.en}
+        open={false}
+        unread={3}
+        identified
+        fabRef={createRef<HTMLButtonElement>()}
+        onReport={() => {}}
+        onRequests={() => {}}
+      />,
+    );
+    expect(document.querySelector(".pulsarix-tab-badge")?.textContent).toBe(
+      "3",
+    );
+    await user.click(tabButton());
+    await screen.findByRole("menu");
+    expect(document.querySelector(".pulsarix-tab-badge")).toBeNull();
+    const item = screen.getByRole("menuitem", {
+      name: new RegExp(MESSAGES.en.myRequests),
+    });
+    expect(item.querySelector(".pulsarix-tab-count")?.textContent).toBe("3");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(document.querySelector(".pulsarix-tab-badge")?.textContent).toBe(
+      "3",
+    );
   });
 
   test("Escape closes the menu and focus goes back to the tab", async () => {

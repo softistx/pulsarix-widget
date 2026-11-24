@@ -70,7 +70,8 @@ progress::-moz-progress-bar {
   --dir: 1;
   position: fixed;
   z-index: 40;
-  width: 44px;
+  /* 44 px stay on screen at rest after the 6 px peek translate: the tap target stays 44 px. */
+  width: 50px;
   height: 44px;
 }
 .pulsarix-tab[hidden] {
@@ -87,7 +88,7 @@ progress::-moz-progress-bar {
   position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 50px;
   height: 44px;
   padding: 0;
   border: 0;
@@ -101,11 +102,14 @@ progress::-moz-progress-bar {
   user-select: none;
   -webkit-user-select: none;
 }
+/* The 6 px that slide off screen are padding: the mark stays centred in the 44 px that show. */
 .pulsarix-tab[data-side="right"] .pulsarix-tab-button {
   border-radius: 12px 0 0 12px;
+  padding-right: 6px;
 }
 .pulsarix-tab[data-side="left"] .pulsarix-tab-button {
   border-radius: 0 12px 12px 0;
+  padding-left: 6px;
 }
 .pulsarix-tab-button:hover,
 .pulsarix-tab-button:focus-visible,
@@ -113,9 +117,13 @@ progress::-moz-progress-bar {
 .pulsarix-tab[data-dragging] .pulsarix-tab-button {
   transform: translateX(0);
 }
+/* A two-tone ring, visible on a light or a dark host: the page colour inside, the text colour out. */
 .pulsarix-tab-button:focus-visible {
-  outline: 3px solid var(--foreground);
-  outline-offset: 2px;
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 5px var(--foreground),
+    0 4px 14px rgb(0 0 0 / 0.25);
 }
 .pulsarix-tab[data-dragging] .pulsarix-tab-button {
   cursor: grabbing;
@@ -129,8 +137,10 @@ progress::-moz-progress-bar {
   height: 20px;
   padding: 0 5px;
   border-radius: 10px;
-  background: var(--destructive);
-  color: var(--destructive-foreground, #fff);
+  /* Temporary, until @softistx/material#5652 (CountBadge start placement). --error is 4.6:1 on
+     --error-foreground in dark, 4.8:1 in light; --destructive was 2.9:1 in dark. */
+  background: var(--error);
+  color: var(--error-foreground);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -155,8 +165,8 @@ progress::-moz-progress-bar {
   gap: 2px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: var(--foreground);
-  color: var(--background);
+  background: var(--inverse-surface);
+  color: var(--inverse-foreground);
   font-size: 13px;
   line-height: 1.3;
   text-align: start;
@@ -170,11 +180,19 @@ progress::-moz-progress-bar {
   font-size: 12px;
   opacity: 0.75;
 }
+/* Hovering shows the drag hint, keyboard focus the keyboard one. */
+.pulsarix-tab-tip small[data-hint="key"],
+.pulsarix-tab-button:focus-visible .pulsarix-tab-tip small[data-hint="drag"] {
+  display: none;
+}
+.pulsarix-tab-button:focus-visible .pulsarix-tab-tip small[data-hint="key"] {
+  display: block;
+}
 .pulsarix-tab[data-side="right"] .pulsarix-tab-tip {
-  right: calc(100% + 10px);
+  right: calc(100% + 4px);
 }
 .pulsarix-tab[data-side="left"] .pulsarix-tab-tip {
-  left: calc(100% + 10px);
+  left: calc(100% + 4px);
 }
 .pulsarix-tab-button:hover .pulsarix-tab-tip,
 .pulsarix-tab-button:focus-visible .pulsarix-tab-tip {

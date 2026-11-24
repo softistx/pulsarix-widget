@@ -5,6 +5,7 @@ export const EN: Messages = {
   launcher: "Report a problem",
   launcherUnread: (n) => `${n} unread ${n === 1 ? "request" : "requests"}`,
   launcherHint: "Drag to move",
+  launcherKeyHint: "Alt+↑/↓ to move",
   launcherMoved: (percent) => `Position: ${percent} %`,
   title: "Report a problem",
   intro: "Tell us what went wrong and we will look into it.",
