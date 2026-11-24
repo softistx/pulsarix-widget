@@ -17,10 +17,8 @@ describe("cutSprite", () => {
     expect(cut.svg).toContain('id="ban"');
     expect(cut.svg).not.toContain('id="x"');
     expect(cut.svg.startsWith("<svg")).toBe(true);
-    // Two tones, as plain attributes (InlineIconSprites drops style and any value with a "(").
-    expect(cut.svg).toContain('<path opacity=".4" d="b"/>');
-    expect(cut.svg).not.toContain('style="fill');
-    expect(cut.svg).not.toContain("var(");
+    // The tones keep their style: material's InlineIconSprites keeps opacity and --fa-* (#5675).
+    expect(cut.svg).toContain("opacity:var(--fa-secondary-opacity,.4)");
   });
 
   test("reports every missing name", () => {
