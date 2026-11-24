@@ -200,15 +200,21 @@ export function App({
                 <DialogContent
                   id={DOCK_ID}
                   layout="stack"
-                  // The dock stays compact: "md" is about 672 px wide from 1280 px, enough for the
-                  // report's two-column grid, and the thread and list fit it too. The editor needs
-                  // room (px, not rem: the host owns the root font size) and takes the whole
-                  // screen on a phone; every other view is a bottom sheet there.
-                  size={done && !editing ? "sm" : "md"}
-                  mobilePresentation={editing ? "fullscreen" : "bottom-sheet"}
-                  className={
-                    editing ? "outline-none max-w-[1200px]" : "outline-none"
+                  // The report is "lg" (its two-column grid); the requests list and thread stay compact
+                  // ("md"), the confirmation "sm". The editor needs room (px, not rem: the host owns
+                  // the root font size) and takes the whole screen on a phone; every other view is a
+                  // bottom sheet there.
+                  size={
+                    editing
+                      ? "xl"
+                      : done
+                        ? "sm"
+                        : showing === "report"
+                          ? "lg"
+                          : "md"
                   }
+                  mobilePresentation={editing ? "fullscreen" : "bottom-sheet"}
+                  className="outline-none"
                   onCloseAutoFocus={(event) => {
                     // A hidden or missing opener (launcher off or hidden) cannot take focus:
                     // let Radix's default run.

@@ -230,7 +230,7 @@ describe("the report form", () => {
     expect(
       screen.queryByRole("button", { name: /again|retry|réessayer/i }),
     ).toBeNull();
-    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("md");
+    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("lg");
     handler = () => ok(false);
     await send(user);
     await screen.findByText(m.done.body, {
