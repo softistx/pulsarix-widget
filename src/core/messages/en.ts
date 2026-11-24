@@ -11,7 +11,6 @@ export const EN: Messages = {
   myRequests: "My requests",
   cancel: "Cancel",
   screenshot: {
-    attach: "Add",
     sectionTitle: "Screenshot",
     sectionHint: "Show us what you see. You can annotate it.",
     add: "Capture this page",
@@ -64,6 +63,7 @@ export const EN: Messages = {
     descriptionHint: "What you did and saw",
     email: "Your e-mail (optional)",
     emailHint: "To get a link to your report",
+    details: "Details",
     contact: "Contact",
     type: "Type (optional)",
     impact: "Severity for you (optional)",
@@ -99,7 +99,6 @@ export const EN: Messages = {
   },
   failure: {
     summary: "Your report was not sent",
-    retry: "Try again",
     config: "This form is not set up correctly. Tell the owner of this site.",
     unavailable: "The service is busy right now. Try again in a moment.",
     rateLimited: (minutes) =>
@@ -110,7 +109,7 @@ export const EN: Messages = {
   },
   done: {
     title: "Thank you",
-    body: "Your report was sent.",
+    body: "Your request was sent.",
     tracking: "We e-mailed you a link to follow it.",
     noTracking: "You gave no e-mail, so there is no link to follow it.",
     attached: (count) =>

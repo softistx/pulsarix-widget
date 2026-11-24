@@ -137,6 +137,7 @@ export function App({
           maskText={maskText}
           onEditing={setEditing}
           onDone={setDone}
+          onRequests={identified ? () => setView("requests") : undefined}
           attachments={attachments}
           prefill={prefill}
           metadata={metadata}
@@ -194,7 +195,7 @@ export function App({
               <DialogContent
                 layout="stack"
                 // The editor needs room and takes the whole screen on a phone.
-                size={editing ? "xl" : done ? "sm" : "md"}
+                size={editing ? "xl" : done ? "sm" : "lg"}
                 mobilePresentation={editing ? "fullscreen" : undefined}
                 className="outline-none"
                 onCloseAutoFocus={(event) => {

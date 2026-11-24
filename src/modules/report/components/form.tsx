@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   DialogBody,
   DialogHeader,
   DialogTitle,
@@ -48,12 +47,6 @@ function FailureAlert({
           variant="error"
           title={messages.failure.summary}
           description={failureText(messages, failure)}
-          // Send again: the draft is intact, the same submit.
-          actions={
-            <Button type="submit" form={FORM_ID} variant="filled" size="sm">
-              {messages.failure.retry}
-            </Button>
-          }
         />
       ) : null}
     </div>
@@ -121,7 +114,7 @@ export function Form({
           noValidate
           className="grid gap-6"
         >
-          <FormGrid className="gap-y-6">
+          <FormGrid columns={2} className="gap-y-6">
             <ReportFields messages={messages} control={control} />
             {attachments}
             {anonymous ? (

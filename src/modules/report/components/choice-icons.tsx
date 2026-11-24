@@ -19,7 +19,7 @@ function Glyph({ children }: { children: ReactNode }) {
   );
 }
 
-// Temporary, until material exports its icons from /embed: small local glyphs meanwhile.
+// Temporary, until @softistx/material#5651 (an Icon export from /embed): small local glyphs meanwhile.
 export const CHOICE_ICONS: Record<string, ReactNode> = {
   bug: (
     <Glyph>

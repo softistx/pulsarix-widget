@@ -11,7 +11,6 @@ export const FR: Messages = {
   myRequests: "Mes demandes",
   cancel: "Annuler",
   screenshot: {
-    attach: "Ajouter",
     sectionTitle: "Capture d'écran",
     sectionHint: "Montrez-nous ce que vous voyez. Vous pourrez l'annoter.",
     add: "Capturer la page",
@@ -64,6 +63,7 @@ export const FR: Messages = {
     descriptionHint: "Ce que vous avez fait et vu",
     email: "Votre e-mail (facultatif)",
     emailHint: "Ajoutez-le pour recevoir un lien de suivi",
+    details: "Détails",
     contact: "Contact",
     type: "Type (facultatif)",
     impact: "Gravité pour vous (facultatif)",
@@ -99,7 +99,6 @@ export const FR: Messages = {
   },
   failure: {
     summary: "Votre signalement n'a pas été envoyé",
-    retry: "Réessayer",
     config: "Ce formulaire est mal configuré. Prévenez le responsable du site.",
     unavailable: "Le service est occupé. Réessayez dans un instant.",
     rateLimited: (minutes) =>
@@ -110,7 +109,7 @@ export const FR: Messages = {
   },
   done: {
     title: "Merci",
-    body: "Votre signalement a été envoyé.",
+    body: "Votre demande a été envoyée.",
     tracking: "Nous vous avons envoyé un lien pour le suivre.",
     noTracking: "Sans e-mail, il n'y a pas de lien de suivi.",
     attached: (count) =>

@@ -336,7 +336,7 @@ try {
     );
     for (let left = await thumbs(page).count(); left > 0; left--)
       await page
-        .locator("pulsarix-widget [data-testid='attachments']")
+        .locator("pulsarix-widget [data-testid='capture-section']")
         .getByRole("button", { name: /remove|delete/i })
         .first()
         .click();

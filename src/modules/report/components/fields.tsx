@@ -6,7 +6,7 @@ import {
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type { Control } from "react-hook-form";
 import type { Messages } from "../../../core/messages";
 import {
@@ -63,6 +63,10 @@ export function Section({
   children: ReactNode;
   "data-testid"?: string;
   role?: string;
+  tabIndex?: number;
+  body?: "grid" | "stack";
+  className?: string;
+  ref?: Ref<HTMLDivElement>;
 }) {
   return (
     <FormSection
@@ -81,7 +85,7 @@ export function Section({
 /** The whole report, in the order it is told: title, description, type, impact, then the e-mail. */
 export function ReportFields({ messages, control }: FieldsProps) {
   return (
-    <FormSection title="" aria-label={messages.title} separated={false}>
+    <Section title={messages.fields.details}>
       <FormCell span="full">
         <TextFormField
           control={control}
@@ -107,7 +111,7 @@ export function ReportFields({ messages, control }: FieldsProps) {
       </FormCell>
       <ChoiceCards name="type" messages={messages} control={control} />
       <ChoiceCards name="impact" messages={messages} control={control} />
-    </FormSection>
+    </Section>
   );
 }
 

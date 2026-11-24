@@ -33,6 +33,7 @@ export function ReportFlow({
   onClose,
   onEditing,
   onDone,
+  onRequests,
   minFillMs = MIN_FILL_MS,
   maskText = false,
   attachments = true,
@@ -79,6 +80,15 @@ export function ReportFlow({
   // A failure shows in the scrolling body, above the sticky footer on a phone.
   useEffect(() => {
     if (failure) alertBox.current?.scrollIntoView?.({ block: "nearest" });
+  }, [failure]);
+  // A rate limit holds Send off for the wait the alert names, then lets the person send again.
+  useEffect(() => {
+    if (failure?.kind !== "rate-limited") return;
+    const timer = setTimeout(
+      () => setFailure(null),
+      Math.max(1, failure.minutes ?? 1) * 60_000,
+    );
+    return () => clearTimeout(timer);
   }, [failure]);
   const { control, handleSubmit, formState } = useReportForm({
     messages,
@@ -127,6 +137,7 @@ export function ReportFlow({
         uploads={sent.uploads}
         doneRef={done}
         onClose={onClose}
+        onRequests={onRequests}
       />
     );
   }
@@ -143,7 +154,10 @@ export function ReportFlow({
       failure={failure}
       submitting={formState.isSubmitting}
       blocked={
-        failure?.kind === "rejected" || failure?.kind === "config" || overTotal
+        failure?.kind === "rejected" ||
+        failure?.kind === "config" ||
+        failure?.kind === "rate-limited" ||
+        overTotal
       }
       anonymous={!identity}
       attachments={

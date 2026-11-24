@@ -12,7 +12,6 @@ export interface Messages {
   cancel: string;
   screenshot: {
     /** The "Add" of the reporter's thread composer. */
-    attach: string;
     /** The capture section's title and its one line. */
     sectionTitle: string;
     sectionHint: string;
@@ -65,6 +64,8 @@ export interface Messages {
     descriptionHint: string;
     email: string;
     emailHint: string;
+    /** The title of the first section: the title, the description and the two choices. */
+    details: string;
     /** The title of the last section, which holds the e-mail. */
     contact: string;
     type: string;
@@ -96,7 +97,6 @@ export interface Messages {
   };
   failure: {
     summary: string;
-    retry: string;
     config: string;
     unavailable: string;
     rateLimited: (minutes: number) => string;

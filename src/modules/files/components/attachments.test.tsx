@@ -420,7 +420,7 @@ describe("the controls can be off", () => {
     expect(input()).toBeNull();
     expect(screen.queryByText(en.files.label)).toBeNull();
     expect(
-      screen.queryByRole("button", { name: en.screenshot.attach }),
+      screen.queryByRole("button", { name: en.screenshot.add }),
     ).toBeNull();
     expect(
       screen.queryByRole("button", { name: en.screenshot.upload }),
@@ -435,7 +435,7 @@ describe("the controls can be off", () => {
     setup();
     await waitFor(() => expect(screen.queryByText(en.files.label)).toBeNull());
     expect(
-      screen.queryByRole("button", { name: en.screenshot.attach }),
+      screen.queryByRole("button", { name: en.screenshot.add }),
     ).toBeNull();
     expect(
       screen.queryByRole("button", { name: en.screenshot.upload }),

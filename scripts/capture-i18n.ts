@@ -52,7 +52,7 @@ try {
           );
           await page.getByRole("button", { name: remove }).first().waitFor();
           await page
-            .locator("pulsarix-widget [data-testid=attachments]")
+            .locator("pulsarix-widget [data-testid=files-section]")
             .evaluate((el) => el.scrollIntoView({ block: "center" }));
           await page.waitForTimeout(300);
           await page.screenshot({

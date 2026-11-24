@@ -90,17 +90,18 @@ export function AttachmentsControl({
     row?.scrollIntoView?.({ block: "nearest" });
   }, [items]);
   return (
-    <div
-      ref={region}
-      tabIndex={-1}
-      data-testid="attachments"
-      className="col-span-full grid gap-6 outline-none"
-    >
+    // Fragment: the sections stay direct children of the form's grid, so the rule between two
+    // sections is drawn. The focus target is the first section shown.
+    <>
       {canCapture || captures.length > 0 ? (
         <Section
           title={t.sectionTitle}
           description={t.sectionHint}
           data-testid="capture-section"
+          ref={region}
+          tabIndex={-1}
+          body="stack"
+          className="outline-none"
         >
           <div className="grid justify-items-start gap-3">
             <Button
@@ -139,6 +140,11 @@ export function AttachmentsControl({
         title={messages.files.label}
         description={messages.files.sectionHint}
         role="group"
+        data-testid="files-section"
+        body="stack"
+        ref={canCapture || captures.length > 0 ? undefined : region}
+        tabIndex={canCapture || captures.length > 0 ? undefined : -1}
+        className="outline-none"
       >
         <I18nProvider
           key={locale}
@@ -205,6 +211,6 @@ export function AttachmentsControl({
           </DropOverlay>
         </I18nProvider>
       </Section>
-    </div>
+    </>
   );
 }

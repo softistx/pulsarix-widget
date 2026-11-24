@@ -40,7 +40,7 @@ async function drag(page: Page, from: [number, number], to: [number, number]) {
 
 const notice = (page: Page) =>
   page
-    .getByTestId("attachments")
+    .getByTestId("capture-section")
     .locator('[role="status"]:not(:empty)')
     .waitFor();
 
@@ -76,7 +76,7 @@ try {
       };
       const shot = async (page: Page, name: string) => {
         // The attachments control is not on screen while the editor is open.
-        const pane = page.getByTestId("attachments");
+        const pane = page.getByTestId("capture-section");
         if (await pane.count())
           await pane.evaluate((el) => el.scrollIntoView({ block: "center" }));
         await page.waitForTimeout(300);
@@ -139,7 +139,7 @@ try {
           .first()
           .waitFor();
         await b.page
-          .locator("pulsarix-widget [data-testid=attachments]")
+          .locator("pulsarix-widget [data-testid=capture-section]")
           .evaluate((el) => el.scrollIntoView({ block: "center" }));
         await b.page.waitForTimeout(500);
         await shot(b.page, "pane-kept");

@@ -213,21 +213,60 @@ describe("the report form", () => {
     });
   });
 
-  test("the failure alert offers to send again, and the confirmation narrows the dialog", async () => {
+  test("Send is the retry: no second button, the same draft goes out again, and the confirmation narrows the dialog", async () => {
     handler = () => refusal(503, "intake.errors.unavailable", {}, "busy");
     const { user } = setup();
     await fill(user, { title: "Crash", description: "On save" });
     await send(user);
     await screen.findByText("busy");
-    const dialog = screen.getByRole("dialog");
-    const wide = dialog.outerHTML.slice(0, dialog.outerHTML.indexOf(">"));
+    expect(
+      screen.queryByRole("button", { name: /again|retry|réessayer/i }),
+    ).toBeNull();
+    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("lg");
     handler = () => ok(false);
-    await user.click(screen.getByRole("button", { name: m.failure.retry }));
+    await send(user);
     await screen.findByText(m.done.body, {
       selector: "[data-slot=dialog-description], *",
     });
-    const narrow = screen.getByRole("dialog").outerHTML;
-    expect(narrow.slice(0, narrow.indexOf(">"))).not.toBe(wide);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.body.variables.input).toMatchObject({
+      title: "Crash",
+      description: "On save",
+    });
+    expect(screen.getByRole("dialog").getAttribute("data-size")).toBe("sm");
+  });
+
+  test("a rate limit keeps Send disabled and names the wait in minutes", async () => {
+    handler = () =>
+      refusal(
+        429,
+        "intake.errors.too-many-requests",
+        { minutes: 4 },
+        "Wait 4 minutes.",
+      );
+    const { user } = setup();
+    await fill(user, { title: "Crash", description: "On save" });
+    await send(user);
+    await screen.findByText("Wait 4 minutes.");
+    expect(
+      (screen.getByRole("button", { name: m.submit }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  test("the sections run in order, each under its title: details, files, then contact (the e-mail last)", async () => {
+    setup();
+    await screen.findByRole("textbox", { name: /Title/ });
+    // No page capture in this environment: the screenshot section is not offered.
+    const titles = [m.fields.details, m.files.label, m.fields.contact];
+    const headings = await waitFor(() => {
+      const found = screen
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent);
+      expect(found).toEqual(titles);
+      return found;
+    });
+    expect(headings).toHaveLength(3);
   });
 
   test("empty required fields and a bad e-mail show their errors and send nothing", async () => {
@@ -523,7 +562,7 @@ describe("the split dialog", () => {
     // One form holds the fields and the attachments in titled groups: no tabs, no steps, no side pane.
     const form = dialog.querySelector("form") as HTMLFormElement;
     expect(form.querySelectorAll("[role=tablist], [role=tab]")).toHaveLength(0);
-    expect(form.querySelector("[data-testid=attachments]")).not.toBeNull();
+    expect(form.querySelector("[data-testid=files-section]")).not.toBeNull();
     expect(
       within(form).getByRole("group", { name: m.files.label }),
     ).toBeTruthy();

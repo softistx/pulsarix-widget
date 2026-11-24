@@ -55,6 +55,31 @@ try {
       await page.getByText("Your report was not sent").waitFor();
       await page.waitForTimeout(300);
       await shot("failure");
+      // Probe: does the failure alert's scrollIntoView move the dialog box itself (header and
+      // footer out of place) beside the scrolling body?
+      console.log(
+        `PROBE ${width}-${scheme}`,
+        JSON.stringify(
+          await widget.evaluate((el) => {
+            const root = el.shadowRoot;
+            const box = root?.querySelector('[data-slot="dialog-content"]');
+            const header = root?.querySelector('[data-slot="dialog-header"]');
+            const body = root?.querySelector('[data-slot="dialog-body"]');
+            const footer = root?.querySelector('[data-slot="dialog-footer"]');
+            const top = box?.getBoundingClientRect().top ?? 0;
+            return {
+              boxScrollTop: box?.scrollTop,
+              boxScrollable:
+                (box?.scrollHeight ?? 0) - (box?.clientHeight ?? 0),
+              headerOffset: (header?.getBoundingClientRect().top ?? 0) - top,
+              footerBottomGap:
+                (box?.getBoundingClientRect().bottom ?? 0) -
+                (footer?.getBoundingClientRect().bottom ?? 0),
+              bodyScrollTop: body?.scrollTop,
+            };
+          }),
+        ),
+      );
       await page
         .getByRole("textbox", { name: /Title/ })
         .fill("Checkout limited");
@@ -62,6 +87,11 @@ try {
       await page.getByText("Try again in 10 minutes").waitFor();
       await page.waitForTimeout(300);
       await shot("ratelimit");
+      // A rate limit holds Send off: close and open the form again for the next steps.
+      await page.keyboard.press("Escape");
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await page.getByRole("button", { name: "Report a problem" }).click();
+      await page.getByRole("dialog").waitFor();
       await page.getByRole("textbox", { name: /Title/ }).fill("Checkout fails");
       await page
         .getByRole("textbox", { name: /What happened/ })
