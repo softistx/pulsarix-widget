@@ -129,7 +129,6 @@ progress::-moz-progress-bar {
   cursor: grabbing;
   transition: none;
 }
-.pulsarix-tab-badge,
 .pulsarix-tab-count {
   display: grid;
   place-items: center;
@@ -137,24 +136,12 @@ progress::-moz-progress-bar {
   height: 20px;
   padding: 0 5px;
   border-radius: 10px;
-  /* Temporary, until @softistx/material#5652 (CountBadge start placement). --error is 4.6:1 on
-     --error-foreground in dark, 4.8:1 in light; --destructive was 2.9:1 in dark. */
+  /* --error is 4.6:1 on --error-foreground in dark, 4.8:1 in light; --destructive was 2.9:1 in dark. */
   background: var(--error);
   color: var(--error-foreground);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
-}
-.pulsarix-tab-badge {
-  position: absolute;
-  top: -8px;
-  border: 2px solid var(--background);
-}
-.pulsarix-tab[data-side="right"] .pulsarix-tab-badge {
-  left: -8px;
-}
-.pulsarix-tab[data-side="left"] .pulsarix-tab-badge {
-  right: -8px;
 }
 /* The label is a tooltip only: on the content side, after a short delay. */
 .pulsarix-tab-tip {
@@ -208,57 +195,12 @@ progress::-moz-progress-bar {
     display: none;
   }
 }
-/* The identified reporter's menu, beside the tab, growing away from the nearer screen edge. */
-.pulsarix-tab-menu {
-  position: absolute;
-  display: grid;
-  gap: 4px;
-  min-width: 220px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--popover, var(--background));
-  color: var(--popover-foreground, var(--foreground));
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.25);
-}
-.pulsarix-tab-menu[data-below="true"] {
-  top: 0;
-}
-.pulsarix-tab-menu[data-below="false"] {
-  bottom: 0;
-}
-.pulsarix-tab[data-side="right"] .pulsarix-tab-menu {
-  right: calc(100% + 10px);
-}
-.pulsarix-tab[data-side="left"] .pulsarix-tab-menu {
-  left: calc(100% + 10px);
-}
 .pulsarix-tab-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   font-weight: 600;
-  text-align: start;
-  cursor: pointer;
 }
 .pulsarix-tab-item > span:first-of-type {
   flex: 1;
-}
-.pulsarix-tab-item:hover,
-.pulsarix-tab-item:focus-visible {
-  background: var(--accent);
-  color: var(--accent-foreground, inherit);
-}
-.pulsarix-tab-item:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .pulsarix-tab-button,

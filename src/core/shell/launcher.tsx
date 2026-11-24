@@ -1,7 +1,13 @@
 import {
+  CountBadge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@softistx/material/embed";
+import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
-  useCallback,
   useEffect,
   useId,
   useRef,
@@ -46,10 +52,9 @@ function PulseMark() {
 }
 
 /*
- * Temporary, until @softistx/material#5651 (`/embed` exports `Icon` and the duotone sprites): the
- * menu's two icons are local SVGs meanwhile.
- * Temporary, until @softistx/material#5616 (`/embed` exports a Menu): `DropdownMenu` is only in the
- * main entry, +146 KB gzipped and no CSS in `embed.css`, so the menu below stays hand-made.
+ * Temporary, until the host can serve the duotone sprite: `/embed`'s `Icon` reads `duotone.svg` (Font
+ * Awesome Pro) from a hosted `InlineIconSprites base`, which would add an origin to `connect-src` and
+ * a hosted Pro asset to a self-contained widget. The menu's two icons stay local SVGs meanwhile.
  */
 
 /** A report icon, for the first entry of the menu. */
@@ -158,8 +163,6 @@ export function Launcher({
   const [announcement, setAnnouncement] = useState("");
   const drag = useRef<{ y: number; top: number; moved: boolean } | null>(null);
   const justDragged = useRef(false);
-  const box = useRef<HTMLDivElement | null>(null);
-  const menu = useRef<HTMLDivElement | null>(null);
   // A choice opens the dialog, which takes focus: the menu must not pull it back onto the tab.
   const chose = useRef(false);
 
@@ -182,6 +185,8 @@ export function Launcher({
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     justDragged.current = false;
     if (event.button !== 0) return;
+    // The menu opens on click, never on pointerdown, so a drag along the edge cannot open it.
+    event.preventDefault();
     drag.current = { y: event.clientY, top, moved: false };
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -222,12 +227,6 @@ export function Launcher({
     ) {
       event.preventDefault();
       move(ratio + (event.key === "ArrowUp" ? -KEY_STEP : KEY_STEP));
-    } else if (event.key === "Escape" && menuOpen) {
-      event.preventDefault();
-      setMenuOpen(false);
-    } else if (event.key === "ArrowDown" && identified && !menuOpen) {
-      event.preventDefault();
-      setMenuOpen(true);
     }
   };
 
@@ -242,54 +241,7 @@ export function Launcher({
 
   const choose = (action: () => void) => {
     chose.current = true;
-    setMenuOpen(false);
     action();
-  };
-
-  // The menu takes focus when it opens, and gives it back to the tab on close unless a choice opened
-  // the dialog. A click outside closes it.
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    if (menuOpen) {
-      menu.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus();
-    } else if (wasOpen.current) {
-      if (chose.current) chose.current = false;
-      else fabRef.current?.focus();
-    }
-    wasOpen.current = menuOpen;
-  }, [menuOpen, fabRef]);
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const root = box.current?.getRootNode() as
-      | Document
-      | ShadowRoot
-      | undefined;
-    const outside = (event: Event) => {
-      if (!event.composedPath().includes(box.current as EventTarget))
-        closeMenu();
-    };
-    root?.addEventListener("pointerdown", outside);
-    document.addEventListener("pointerdown", outside);
-    return () => {
-      root?.removeEventListener("pointerdown", outside);
-      document.removeEventListener("pointerdown", outside);
-    };
-  }, [menuOpen, closeMenu]);
-
-  const onMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const items = [
-      ...event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]"),
-    ];
-    const at = items.indexOf(event.target as HTMLElement);
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setMenuOpen(false);
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const delta = event.key === "ArrowDown" ? 1 : -1;
-      items[(at + delta + items.length) % items.length]?.focus();
-    }
   };
 
   const name =
@@ -299,9 +251,42 @@ export function Launcher({
   const hintId = `${menuId}-hint`;
   const keyHintId = `${menuId}-keyhint`;
 
+  const button = (
+    <button
+      ref={fabRef}
+      type="button"
+      className="pulsarix-tab-button"
+      aria-label={name}
+      aria-describedby={`${hintId} ${keyHintId}`}
+      aria-expanded={identified ? menuOpen : open}
+      aria-controls={identified ? undefined : dockId}
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onKeyDown={onKeyDown}
+      onClick={onClick}
+    >
+      {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
+      <CountBadge
+        count={identified && menuOpen ? 0 : unread}
+        placement="top-start"
+        announce={false}
+        animated
+      >
+        <PulseMark />
+      </CountBadge>
+      <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
+        <strong>{messages.launcher}</strong>
+        <small data-hint="drag">{messages.launcherHint}</small>
+        <small data-hint="key">{messages.launcherKeyHint}</small>
+      </span>
+    </button>
+  );
+
   return (
     <div
-      ref={box}
       hidden={open || !visible}
       data-launcher="tab"
       data-side={side}
@@ -309,36 +294,45 @@ export function Launcher({
       className="pulsarix-tab"
       style={{ top }}
     >
-      <button
-        ref={fabRef}
-        type="button"
-        className="pulsarix-tab-button"
-        aria-label={name}
-        aria-describedby={`${hintId} ${keyHintId}`}
-        aria-expanded={identified ? menuOpen : open}
-        aria-controls={identified ? (menuOpen ? menuId : undefined) : dockId}
-        aria-haspopup={identified ? "menu" : undefined}
-        aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onKeyDown={onKeyDown}
-        onClick={onClick}
-      >
-        <PulseMark />
-        {/* The count moves to "My requests" while the menu is open: shown once, never twice. */}
-        {unread > 0 && !(identified && menuOpen) ? (
-          <span className="pulsarix-tab-badge" aria-hidden="true">
-            {unread > 99 ? "99+" : unread}
-          </span>
-        ) : null}
-        <span className="pulsarix-tab-tip" aria-hidden="true" data-tip>
-          <strong>{messages.launcher}</strong>
-          <small data-hint="drag">{messages.launcherHint}</small>
-          <small data-hint="key">{messages.launcherKeyHint}</small>
-        </span>
-      </button>
+      {identified ? (
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+          <DropdownMenuContent
+            side={side === "right" ? "left" : "right"}
+            align="start"
+            sideOffset={10}
+            collisionPadding={8}
+            aria-label={messages.launcher}
+            onCloseAutoFocus={(event) => {
+              // A choice opens the dialog, which takes focus: the menu must not pull it back.
+              if (chose.current) {
+                chose.current = false;
+                event.preventDefault();
+              }
+            }}
+          >
+            <DropdownMenuItem
+              className="pulsarix-tab-item"
+              onSelect={() => choose(onReport)}
+            >
+              <ReportIcon />
+              <span>{messages.title}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="pulsarix-tab-item"
+              onSelect={() => choose(onRequests)}
+            >
+              <RequestsIcon />
+              <span>{messages.myRequests}</span>
+              {unread > 0 ? (
+                <span className="pulsarix-tab-count">{unread}</span>
+              ) : null}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        button
+      )}
       <span id={hintId} className="pulsarix-sr">
         {messages.launcherHint}
       </span>
@@ -348,39 +342,6 @@ export function Launcher({
       <span role="status" aria-live="polite" className="pulsarix-sr">
         {announcement}
       </span>
-      {identified && menuOpen ? (
-        <div
-          ref={menu}
-          id={menuId}
-          role="menu"
-          aria-label={messages.launcher}
-          className="pulsarix-tab-menu"
-          data-below={top < height / 2 ? "true" : "false"}
-          onKeyDown={onMenuKeyDown}
-        >
-          <button
-            type="button"
-            role="menuitem"
-            className="pulsarix-tab-item"
-            onClick={() => choose(onReport)}
-          >
-            <ReportIcon />
-            <span>{messages.title}</span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="pulsarix-tab-item"
-            onClick={() => choose(onRequests)}
-          >
-            <RequestsIcon />
-            <span>{messages.myRequests}</span>
-            {unread > 0 ? (
-              <span className="pulsarix-tab-count">{unread}</span>
-            ) : null}
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }

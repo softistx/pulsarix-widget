@@ -454,16 +454,16 @@ describe("the launcher's CSS", () => {
     expect(css).toMatch(/color: var\(--inverse-foreground\)/);
   });
 
-  test("the badge and the menu count use the error tokens, with no white fallback", () => {
+  test("the menu count uses the error tokens, with no white fallback", () => {
     expect(css).toMatch(
       /background: var\(--error\);\s*color: var\(--error-foreground\);/,
     );
     expect(css).not.toMatch(/var\(--destructive/);
-    const badge = css.slice(
-      css.indexOf(".pulsarix-tab-badge,"),
+    const count = css.slice(
+      css.indexOf(".pulsarix-tab-count {"),
       css.indexOf(".pulsarix-tab-tip {"),
     );
-    expect(badge).not.toMatch(/#fff/);
+    expect(count).not.toMatch(/#fff/);
   });
 
   test("respects reduced motion and uses no rem", () => {
@@ -484,6 +484,12 @@ describe("the launcher's visibility", () => {
     expect(launcherBox().hidden).toBe(true);
   });
 });
+
+/** The unread bubble of the library's CountBadge, on the tab. */
+const badge = () =>
+  document.querySelector<HTMLElement>(
+    '[data-slot="count-badge"] > [aria-hidden="true"]:not(svg)',
+  );
 
 describe("the launcher for an identified reporter", () => {
   const realFetch = globalThis.fetch;
@@ -525,21 +531,17 @@ describe("the launcher for an identified reporter", () => {
         onRequests={() => {}}
       />,
     );
-    expect(document.querySelector(".pulsarix-tab-badge")?.textContent).toBe(
-      "3",
-    );
+    expect(badge()?.textContent).toBe("3");
     await user.click(tabButton());
     await screen.findByRole("menu");
-    expect(document.querySelector(".pulsarix-tab-badge")).toBeNull();
+    expect(badge()).toBeNull();
     const item = screen.getByRole("menuitem", {
       name: new RegExp(MESSAGES.en.myRequests),
     });
     expect(item.querySelector(".pulsarix-tab-count")?.textContent).toBe("3");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    expect(document.querySelector(".pulsarix-tab-badge")?.textContent).toBe(
-      "3",
-    );
+    expect(badge()?.textContent).toBe("3");
   });
 
   test("Escape closes the menu and focus goes back to the tab", async () => {
