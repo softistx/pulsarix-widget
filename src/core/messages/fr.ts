@@ -12,13 +12,15 @@ export const FR: Messages = {
   cancel: "Annuler",
   screenshot: {
     attach: "Ajouter",
+    sectionTitle: "Capture d'écran",
+    sectionHint: "Montrez-nous ce que vous voyez. Vous pourrez l'annoter.",
     add: "Capturer la page",
     upload: "Téléverser un fichier",
     maskText: "Masquer le texte de la page",
     maskTextHint:
       "Couvre chaque caractère de la page de rectangles noirs avant la capture.",
     capturing: "Capture en cours...",
-    noticeTitle: "Capture d'écran",
+    noticeTitle: "Capture impossible",
     editorLabel: "Annoter la capture",
     edit: "Modifier",
     editCapture: (n) => `Modifier la capture ${n}`,
@@ -36,8 +38,9 @@ export const FR: Messages = {
     },
   },
   files: {
-    label: "Pièces jointes (facultatif)",
-    hint: "Une capture, plus 3 fichiers au plus : PNG, JPEG, WebP ou PDF, 5 Mo chacun.",
+    label: "Pièces jointes",
+    sectionHint: "Photos, documents ou journaux utiles à l'analyse.",
+    hint: "3 fichiers au plus : PNG, JPEG, WebP ou PDF, 5 Mo chacun.",
     dropTitle: "Déposez les fichiers à joindre",
     screenshot: "Capture d'écran",
     count: "Un signalement accepte 3 fichiers au plus.",
@@ -103,6 +106,6 @@ export const FR: Messages = {
         : `Vos ${count} fichiers sont joints.`,
     partialTitle: "Certains fichiers n'ont pas été joints",
     partial: (failed, total) =>
-      `Votre signalement a été envoyé, mais ${failed} fichier${failed === 1 ? "" : "s"} sur ${total} n'${failed === 1 ? "a" : "ont"} pas pu être joint${failed === 1 ? "" : "s"}.`,
+      `${failed} fichier${failed === 1 ? "" : "s"} sur ${total} n'${failed === 1 ? "a" : "ont"} pas été joint${failed === 1 ? "" : "s"}.`,
   },
 };

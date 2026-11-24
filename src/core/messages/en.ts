@@ -12,13 +12,15 @@ export const EN: Messages = {
   cancel: "Cancel",
   screenshot: {
     attach: "Add",
+    sectionTitle: "Screenshot",
+    sectionHint: "Show us what you see. You can annotate it.",
     add: "Capture this page",
     upload: "Upload a file",
     maskText: "Mask the text on the page",
     maskTextHint:
       "Covers every character of the page with black boxes before the picture is taken.",
     capturing: "Taking the screenshot...",
-    noticeTitle: "Screenshot",
+    noticeTitle: "Capture failed",
     editorLabel: "Annotate the screenshot",
     edit: "Edit",
     editCapture: (n) => `Edit capture ${n}`,
@@ -36,8 +38,9 @@ export const EN: Messages = {
     },
   },
   files: {
-    label: "Attachments (optional)",
-    hint: "A screenshot, plus up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
+    label: "Attachments",
+    sectionHint: "Photos, documents or logs that help us look into it.",
+    hint: "Up to 3 files: PNG, JPEG, WebP or PDF, 5 MB each.",
     dropTitle: "Drop files to attach",
     screenshot: "Screenshot",
     count: "A report takes 3 files at most.",
@@ -62,7 +65,7 @@ export const EN: Messages = {
     email: "Your e-mail (optional)",
     emailHint: "To get a link to your report",
     type: "Type (optional)",
-    impact: "How much it blocks you (optional)",
+    impact: "Severity for you (optional)",
   },
   choices: {
     type: { bug: "Bug", question: "Question", suggestion: "Suggestion" },
@@ -103,6 +106,6 @@ export const EN: Messages = {
         : `Your ${count} files are attached.`,
     partialTitle: "Some files were not attached",
     partial: (failed, total) =>
-      `Your report was sent, but ${failed} of ${total} ${total === 1 ? "file" : "files"} could not be attached.`,
+      `${failed} of ${total} ${total === 1 ? "file was" : "files were"} not attached.`,
   },
 };

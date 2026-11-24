@@ -11,7 +11,7 @@ import type { IntakeError } from "../../../core/api/api";
 import type { Messages } from "../../../core/messages";
 import { failureText } from "../model/failure-text";
 import type { ReportValues } from "../model/validation";
-import { FORM_ID, ReportFields } from "./fields";
+import { FORM_ID, PrivacyNote, ReportFields } from "./fields";
 import { FormFooter, FormHeader } from "./form-frame";
 
 /** A field a person never sees; a bot that fills every field trips the API's check. */
@@ -41,18 +41,12 @@ function FailureAlert({
   alertBox: Ref<HTMLDivElement>;
 }) {
   return (
-    <div role="alert" ref={alertBox} className="scroll-mb-24 lg:col-span-2">
+    <div role="alert" ref={alertBox} className="scroll-mb-24">
       {failure ? (
         <Alert
           variant="error"
           title={messages.failure.summary}
           description={failureText(messages, failure)}
-          // Send again: the draft is intact, the same submit.
-          actions={
-            <Button type="submit" form={FORM_ID} variant="filled" size="sm">
-              {messages.failure.retry}
-            </Button>
-          }
         />
       ) : null}
     </div>
@@ -118,18 +112,16 @@ export function Form({
           id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
-          className="grid items-start gap-5 max-sm:pb-20 lg:grid-cols-2"
+          className="grid gap-6 max-sm:pb-20"
         >
           <ReportFields
             messages={messages}
             control={control}
             anonymous={anonymous}
-            privacyUrl={privacyUrl}
           />
-          {attachments ? (
-            <div className="border-border border-t pt-5 lg:col-span-2">
-              {attachments}
-            </div>
+          {attachments}
+          {anonymous ? (
+            <PrivacyNote messages={messages} privacyUrl={privacyUrl} />
           ) : null}
           <Honeypot inputRef={honeypot} />
           <FailureAlert

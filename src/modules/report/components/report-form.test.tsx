@@ -483,9 +483,10 @@ describe("the split dialog", () => {
     const dialog = await screen.findByRole("dialog");
     await screen.findByRole("group", { name: m.files.label });
     expect(dialog.getAttribute("data-layout")).not.toBe("split");
-    // One form holds the fields and the attachments; no titled group, no side pane.
+    // One form holds the fields and the attachments in titled groups: no tabs, no steps, no side pane.
     const form = dialog.querySelector("form") as HTMLFormElement;
-    expect(form.querySelectorAll("section, hr, h3")).toHaveLength(0);
+    expect(form.querySelectorAll("[role=tablist], [role=tab]")).toHaveLength(0);
+    expect(form.querySelector("[data-testid=attachments]")).not.toBeNull();
     expect(
       within(form).getByRole("group", { name: m.files.label }),
     ).toBeTruthy();

@@ -191,14 +191,10 @@ export function App({
             <Dialog open={open} onOpenChange={onOpenChange}>
               <DialogContent
                 layout="stack"
-                // The report grows into a two-column grid on wide screens; the thread and the
-                // list stay narrow. The editor needs room (px, not rem: the host owns the
-                // root font size) and takes the whole screen on a phone.
-                size={showing === "report" && !editing ? "lg" : "md"}
+                // The editor needs room and takes the whole screen on a phone.
+                size={editing ? "xl" : "md"}
                 mobilePresentation={editing ? "fullscreen" : undefined}
-                className={
-                  editing ? "outline-none max-w-[1200px]" : "outline-none"
-                }
+                className="outline-none"
                 onCloseAutoFocus={(event) => {
                   // A hidden or missing opener (launcher off or hidden) cannot take focus:
                   // let Radix's default run.

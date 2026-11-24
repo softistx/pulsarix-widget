@@ -4,6 +4,7 @@ import {
   TextareaFormField,
   TextFormField,
 } from "@softistx/material/embed";
+import type { ComponentProps, ReactNode } from "react";
 import { type Control, Controller } from "react-hook-form";
 import type { Messages } from "../../../core/messages";
 import {
@@ -23,14 +24,10 @@ interface FieldsProps {
 /** Single-choice and optional: chips on a full row, pressing the chosen one clears it. */
 function ChoiceChips({
   name,
-  labels,
   messages,
   control,
-}: FieldsProps & {
-  name: "type" | "impact";
-  /** The chip labels by value, in display order. */
-  labels: Record<string, string>;
-}) {
+}: FieldsProps & { name: "type" | "impact" }) {
+  const labels: Record<string, string> = messages.choices[name];
   return (
     <Controller
       control={control}
@@ -52,20 +49,55 @@ function ChoiceChips({
   );
 }
 
+/** A titled group of the form; the rule above it separates it from the group before. */
+export function FormGroup({
+  title,
+  hint,
+  titleId,
+  flush,
+  children,
+  ...rest
+}: {
+  title?: string;
+  hint?: string;
+  titleId?: string;
+  /** The first group of the form: no rule above it. */
+  flush?: boolean;
+  children: ReactNode;
+} & Omit<ComponentProps<"section">, "title" | "children">) {
+  return (
+    <section
+      {...rest}
+      aria-labelledby={title ? titleId : undefined}
+      className={`grid gap-3 ${flush ? "" : "border-border border-t pt-6"}`}
+    >
+      {title ? (
+        <div className="grid gap-0.5">
+          <h3 id={titleId} className="font-semibold text-foreground text-sm">
+            {title}
+          </h3>
+          {hint ? (
+            <p className="text-muted-foreground text-sm">{hint}</p>
+          ) : null}
+        </div>
+      ) : null}
+      {children}
+    </section>
+  );
+}
+
 /** The whole report, in the order it is told: title, description, type, impact, then the e-mail. */
 export function ReportFields({
   messages,
   control,
   anonymous,
-  privacyUrl,
 }: FieldsProps & {
   /** No identity: the reporter may leave an e-mail to get the link to follow the report. */
   anonymous: boolean;
-  privacyUrl?: string | null;
 }) {
   return (
     <>
-      <div className="lg:col-span-2">
+      <FormGroup flush>
         <TextFormField
           control={control}
           name="title"
@@ -75,8 +107,6 @@ export function ReportFields({
           autoComplete="off"
           required
         />
-      </div>
-      <div className="lg:col-span-2">
         <TextareaFormField
           control={control}
           name="description"
@@ -87,21 +117,7 @@ export function ReportFields({
           maxLength={DESCRIPTION_MAX}
           required
         />
-      </div>
-      <ChoiceChips
-        name="type"
-        labels={messages.choices.type}
-        messages={messages}
-        control={control}
-      />
-      <ChoiceChips
-        name="impact"
-        labels={messages.choices.impact}
-        messages={messages}
-        control={control}
-      />
-      {anonymous ? (
-        <div>
+        {anonymous ? (
           <EmailFormField
             control={control}
             name="email"
@@ -111,26 +127,40 @@ export function ReportFields({
             maxLength={EMAIL_MAX}
             autoComplete="email"
           />
-        </div>
-      ) : null}
-      {anonymous ? (
-        <p className="-mt-2 text-muted-foreground text-sm lg:mt-0 lg:pt-7">
-          {messages.privacy}
-          {privacyUrl ? (
-            <>
-              {" "}
-              <a
-                href={privacyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-text underline"
-              >
-                {messages.privacyLink}
-              </a>
-            </>
-          ) : null}
-        </p>
-      ) : null}
+        ) : null}
+      </FormGroup>
+      <FormGroup>
+        <ChoiceChips name="type" messages={messages} control={control} />
+        <ChoiceChips name="impact" messages={messages} control={control} />
+      </FormGroup>
     </>
+  );
+}
+
+/** What is sent with a report, and the link to the integrator's privacy page. */
+export function PrivacyNote({
+  messages,
+  privacyUrl,
+}: {
+  messages: Messages;
+  privacyUrl?: string | null;
+}) {
+  return (
+    <p className="border-border border-t pt-6 text-muted-foreground text-sm">
+      {messages.privacy}
+      {privacyUrl ? (
+        <>
+          {" "}
+          <a
+            href={privacyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-text underline"
+          >
+            {messages.privacyLink}
+          </a>
+        </>
+      ) : null}
+    </p>
   );
 }

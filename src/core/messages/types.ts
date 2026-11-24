@@ -11,8 +11,11 @@ export interface Messages {
   /** The report dialog's Cancel. */
   cancel: string;
   screenshot: {
-    /** The one attachments button, which offers the capture and the upload. */
+    /** The "Add" of the reporter's thread composer. */
     attach: string;
+    /** The capture section's title and its one line. */
+    sectionTitle: string;
+    sectionHint: string;
     add: string;
     upload: string;
     maskText: string;
@@ -36,6 +39,8 @@ export interface Messages {
   };
   files: {
     label: string;
+    /** The attachments section's one line. */
+    sectionHint: string;
     hint: string;
     dropTitle: string;
     screenshot: string;
@@ -68,6 +73,7 @@ export interface Messages {
     type: { bug: string; question: string; suggestion: string };
     impact: { blocking: string; annoying: string; minor: string };
   };
+  /** What is sent with a report (shown to an anonymous reporter). */
   privacy: string;
   /** The link text to the integrator's privacy page. */
   privacyLink: string;

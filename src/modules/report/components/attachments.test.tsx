@@ -10,7 +10,7 @@ afterEach(cleanup);
 const png = (name: string) =>
   new File([new Uint8Array(10)], name, { type: "image/png" });
 
-function show(items: Entry[]) {
+function show(items: Entry[], canCapture = true) {
   render(
     <AttachmentsControl
       messages={MESSAGES.en}
@@ -19,7 +19,7 @@ function show(items: Entry[]) {
       items={items}
       locked={false}
       overTotal={false}
-      canCapture
+      canCapture={canCapture}
       busy={false}
       notice={null}
       maskText={false}
@@ -55,5 +55,30 @@ describe("the names of the edit buttons", () => {
     ]);
     expect(screen.getByText("Captured on https://a.test/x")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Edit/ })).toBeNull();
+  });
+});
+
+describe("the two sections", () => {
+  test("captures sit under Screenshot and uploads under Attachments", () => {
+    show([
+      { id: "a", file: png("one.png"), pageUrl: "https://a.test/x" },
+      { id: "b", file: png("photo.png") },
+    ]);
+    const shot = screen
+      .getByText(MESSAGES.en.screenshot.sectionTitle)
+      .closest("section");
+    const files = screen.getByRole("group", { name: MESSAGES.en.files.label });
+    expect(shot?.textContent).toContain("Captured on https://a.test/x");
+    expect(shot?.textContent).not.toContain("photo.png");
+    expect(files.textContent).toContain("photo.png");
+    expect(files.textContent).not.toContain("one.png");
+  });
+
+  test("without capture support and no capture, only Attachments is shown", () => {
+    show([], false);
+    expect(screen.queryByText(MESSAGES.en.screenshot.sectionTitle)).toBeNull();
+    expect(
+      screen.getByRole("group", { name: MESSAGES.en.files.label }),
+    ).toBeTruthy();
   });
 });

@@ -10,25 +10,14 @@ import {
   filterFiles,
 } from "@softistx/material/files/drop";
 import { I18nProvider } from "@softistx/material/i18n";
-import { type Ref, useEffect, useId, useRef, useState } from "react";
+import { type Ref, useId, useRef } from "react";
 import type { Locale } from "../../../config";
 import type { Messages } from "../../../core/messages";
 import type { Entry } from "../../files/hooks/use-attachments";
 import { ACCEPTED_TYPES, MAX_FILE_BYTES } from "../../files/model/rules";
 import { PaneStatus } from "../../screenshot/components/editor-host";
-
-/** "Edit capture 2" for a capture (its place among the captures), the file's name otherwise. */
-function editName(
-  item: Entry,
-  items: Entry[],
-  t: Messages["screenshot"],
-): string {
-  if (item.pageUrl === undefined) return `${t.edit} ${item.file.name}`;
-  const n = items.filter((i) => i.pageUrl !== undefined).indexOf(item) + 1;
-  return t.editCapture(n);
-}
-
-const canEdit = (e: Entry) => !e.refusal && e.file.type.startsWith("image/");
+import { EditRows } from "./edit-rows";
+import { FormGroup } from "./fields";
 
 export interface AttachmentsControlProps {
   messages: Messages;
@@ -55,10 +44,11 @@ export interface AttachmentsControlProps {
 }
 
 /**
- * The report's attachments, one control: "Add" offers "Capture this page" (annotated in the
- * editor) and "Upload a file", both feeding one list of removable thumbnails. Files can
- * also be dropped on it (`@softistx/material/files/drop`; the i18n provider gives the overlay
- * the widget's locale, `initialLanguage` keeps it from reading the host's `localStorage`).
+ * The report's attachments, in two titled sections: "Screenshot" (the capture, its mask switch
+ * and its kept pictures) and "Attachments" (the drop zone of `@softistx/material/files/drop` and
+ * the uploaded files). Files can also be dropped on the attachments section (the i18n provider
+ * gives the overlay the widget's locale, `initialLanguage` keeps it from reading the host's
+ * `localStorage`).
  */
 export function AttachmentsControl({
   messages,
@@ -78,123 +68,80 @@ export function AttachmentsControl({
   onEdit,
 }: AttachmentsControlProps) {
   const t = messages.screenshot;
-  const label = useId();
-  const menuId = useId();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuHost = useRef<HTMLDivElement>(null);
-  // Closing hands the focus back to the "Add" button, so a cancelled picker or a dismissed menu
-  // never leaves it on a hidden control.
-  const closeMenu = () => {
-    setMenuOpen(false);
-    menuHost.current?.querySelector("button")?.focus();
-  };
-  useEffect(() => {
-    if (busy) setMenuOpen(false);
-  }, [busy]);
+  const captureTitle = useId();
+  const filesTitle = useId();
   const input = useRef<HTMLInputElement>(null);
+  const captures = items.filter((i) => i.pageUrl !== undefined);
+  const uploads = items.filter((i) => i.pageUrl === undefined);
+  const remove = locked ? undefined : onRemove;
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a fieldset cannot take programmatic focus after the editor closes without browser-specific layout quirks
     <div
       ref={region}
       tabIndex={-1}
       data-testid="attachments"
-      role="group"
-      aria-labelledby={label}
-      className="grid gap-3 outline-none"
+      className="grid gap-6 outline-none"
     >
-      <p id={label} className="font-medium text-foreground text-sm">
-        {messages.files.label}
-      </p>
-      <I18nProvider
-        key={locale}
-        initialLanguage={locale}
-        supportedLanguages={["en", "fr"]}
-        defaultLanguage={locale}
-      >
-        <DropOverlay
-          disabled={locked}
-          accept={ACCEPTED_TYPES}
-          maxSize={MAX_FILE_BYTES}
-          title={messages.files.dropTitle}
-          description={messages.files.hint}
-          onDrop={onDrop}
-          className="grid gap-3"
+      {canCapture || captures.length > 0 ? (
+        <FormGroup
+          title={t.sectionTitle}
+          hint={t.sectionHint}
+          titleId={captureTitle}
+          data-testid="capture-section"
         >
-          <div className="grid gap-2">
-            {canCapture ? (
-              // Temporary, until material#5616 (a Menu in @softistx/material/embed): one "Add"
-              // button discloses its two choices, "Capture this page" and "Upload a file",
-              // and the capture's own setting (mask the page's text).
-              // biome-ignore lint/a11y/noStaticElementInteractions: Escape from any control of the disclosure closes it; the keys belong to the buttons inside.
-              <div
-                ref={menuHost}
-                className="grid gap-2"
-                onKeyDown={(event) => {
-                  if (event.key === "Escape" && menuOpen) {
-                    event.stopPropagation();
-                    closeMenu();
-                  }
-                }}
-              >
-                <Button
-                  type="button"
-                  variant="tonal"
-                  className="justify-self-start"
-                  aria-expanded={menuOpen}
-                  aria-controls={menuId}
-                  disabled={locked || busy}
-                  onClick={() => setMenuOpen((open) => !open)}
-                >
-                  {t.attach}
-                </Button>
-                <div id={menuId} hidden={!menuOpen} className="grid gap-2">
-                  <div className="grid gap-2">
-                    <Button
-                      type="button"
-                      variant="tonal"
-                      disabled={locked || busy}
-                      onClick={() => {
-                        closeMenu();
-                        onCapture();
-                      }}
-                    >
-                      {t.add}
-                    </Button>
-                    <SwitchField
-                      variant="plain"
-                      checked={maskText}
-                      disabled={busy || locked}
-                      onCheckedChange={(checked) =>
-                        onMaskText(checked === true)
-                      }
-                      label={t.maskText}
-                      helperText={t.maskTextHint}
-                    />
-                    <Button
-                      type="button"
-                      variant="tonal"
-                      disabled={locked || busy}
-                      onClick={() => {
-                        closeMenu();
-                        input.current?.click();
-                      }}
-                    >
-                      {t.upload}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="tonal"
-                className="justify-self-start"
-                disabled={locked || busy}
-                onClick={() => input.current?.click()}
-              >
-                {t.upload}
-              </Button>
-            )}
+          <div className="grid justify-items-start gap-3">
+            <Button
+              type="button"
+              variant="tonal"
+              disabled={locked || busy}
+              onClick={onCapture}
+            >
+              {t.add}
+            </Button>
+            <SwitchField
+              variant="plain"
+              checked={maskText}
+              disabled={busy || locked}
+              onCheckedChange={(checked) => onMaskText(checked === true)}
+              label={t.maskText}
+              helperText={t.maskTextHint}
+            />
+          </div>
+          <PaneStatus messages={messages} busy={busy} notice={notice} />
+          <AttachmentList items={captures} onRemove={remove} />
+          <EditRows
+            messages={messages}
+            items={captures}
+            all={items}
+            disabled={locked || busy}
+            onEdit={onEdit}
+          />
+        </FormGroup>
+      ) : null}
+      <FormGroup
+        title={messages.files.label}
+        hint={messages.files.sectionHint}
+        titleId={filesTitle}
+        role="group"
+      >
+        <I18nProvider
+          key={locale}
+          initialLanguage={locale}
+          supportedLanguages={["en", "fr"]}
+          defaultLanguage={locale}
+        >
+          <DropOverlay
+            disabled={locked}
+            accept={ACCEPTED_TYPES}
+            maxSize={MAX_FILE_BYTES}
+            title={messages.files.dropTitle}
+            description={messages.files.hint}
+            onDrop={onDrop}
+            zone
+            zoneLayout="inline"
+            zoneTitle={messages.files.dropTitle}
+            browseLabel={t.upload}
+            className="grid gap-3"
+          >
             <input
               ref={input}
               type="file"
@@ -215,52 +162,26 @@ export function AttachmentsControl({
                 }
               }}
             />
-          </div>
-          <p className="text-muted-foreground text-sm">{messages.files.hint}</p>
-          <PaneStatus
-            messages={messages}
-            busy={busy}
-            notice={notice}
-            onUpload={() => input.current?.click()}
-          />
-          <AttachmentList
-            items={items}
-            onRemove={locked ? undefined : onRemove}
-          />
-          {/* Temporary, until material#5573 (per-row actions and a caption in AttachmentList):
-              the caption and the Edit button sit under the list meanwhile. */}
-          {items
-            .filter((i) => i.pageUrl !== undefined || canEdit(i))
-            .map((item) => (
-              <div
-                key={item.id}
-                className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 ps-1"
-              >
-                <p className="min-w-0 truncate text-muted-foreground text-sm">
-                  {item.pageUrl ? t.capturedOn(item.pageUrl) : item.file.name}
-                </p>
-                {canEdit(item) ? (
-                  <Button
-                    type="button"
-                    variant="tonal"
-                    size="sm"
-                    aria-label={editName(item, items, t)}
-                    disabled={locked || busy}
-                    onClick={() => onEdit(item.id)}
-                  >
-                    {t.edit}
-                  </Button>
-                ) : null}
-              </div>
-            ))}
-          {overTotal ? (
-            <Alert
-              variant="warning"
-              description={messages.files.totalBlocked}
+            {!canCapture ? (
+              <PaneStatus messages={messages} busy={busy} notice={notice} />
+            ) : null}
+            <AttachmentList items={uploads} onRemove={remove} />
+            <EditRows
+              messages={messages}
+              items={uploads}
+              all={items}
+              disabled={locked || busy}
+              onEdit={onEdit}
             />
-          ) : null}
-        </DropOverlay>
-      </I18nProvider>
+            {overTotal ? (
+              <Alert
+                variant="warning"
+                description={messages.files.totalBlocked}
+              />
+            ) : null}
+          </DropOverlay>
+        </I18nProvider>
+      </FormGroup>
     </div>
   );
 }

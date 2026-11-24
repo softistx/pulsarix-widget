@@ -1,10 +1,10 @@
 /**
  * The screenshot slice's acceptance (W2b), run in Chromium with fake display media:
- *   - "Capture this page" (under "Add") hides the widget host while the frame is grabbed, restores it, and
+ *   - "Capture this page" hides the widget host while the frame is grabbed, restores it, and
  *     leaves no media track live and no object URL behind;
  *   - the editor (a lazy chunk) annotates; the exported pixels under a "Redact" box are one
  *     uniform colour, and the export is at most 2560 px on its longest side;
- *   - "Upload a file" (beside "Capture this page", under one "Add" control) works, refuses what it cannot take
+ *   - "Upload a file" (beside "Capture this page") works, refuses what it cannot take
  *     and is the only choice on a phone;
  *   - a refused capture falls back to the upload; a thumbnail's remove button drops the image;
  *   - an identified reporter reaches the same form through the FAB's menu, with no tabs.
@@ -17,12 +17,6 @@ import {
   type Page,
 } from "playwright-core";
 import { serveFixture } from "./serve-fixture";
-
-/** Opens the "Add" disclosure of the attachments control when it is closed. */
-async function openAdd(page: Page) {
-  const add = page.getByRole("button", { name: "Add", exact: true });
-  if ((await add.getAttribute("aria-expanded")) !== "true") await add.click();
-}
 
 const failures: string[] = [];
 const check = (ok: boolean, message: string) => {
@@ -244,7 +238,6 @@ try {
         }
       ).__kept = true;
     });
-    await openAdd(page);
     await page.getByRole("button", { name: "Capture this page" }).click();
     await tool(page, "Redact").waitFor();
     await page.waitForTimeout(500);
@@ -328,7 +321,6 @@ try {
       "the attachment shows the page it was captured on",
     );
     // A second capture is a second attachment (no Retake: remove one, add another).
-    await openAdd(page);
     await page.getByRole("button", { name: "Capture this page" }).click();
     await tool(page, "Redact").waitFor();
     await page.getByRole("button", { name: "Cancel" }).click();
@@ -406,21 +398,20 @@ try {
   // 3. A refused capture falls back to the upload.
   {
     const { page, context } = await open(browser, { init: REFUSE }, base);
-    await openAdd(page);
     await page.getByRole("button", { name: "Capture this page" }).click();
     await page.getByText("The capture was refused.").waitFor();
     check(
       await page
         .getByRole("status")
         .filter({ hasText: "The capture was refused." })
-        .getByRole("button", { name: "Upload a file" })
-        .isEnabled(),
-      "after a refusal the alert itself offers the upload",
+        .isVisible(),
+      "after a refusal the alert says so",
     );
     check(
-      await openAdd(page).then(() =>
-        page.getByRole("button", { name: "Upload a file" }).first().isEnabled(),
-      ),
+      await page
+        .getByRole("button", { name: "Upload a file" })
+        .first()
+        .isEnabled(),
       "after a refusal the upload is still offered",
     );
     await context.close();
@@ -442,7 +433,9 @@ try {
       `identified, ${width}px: the dialog has no tabs`,
     );
     check(
-      await page.getByRole("button", { name: "Add", exact: true }).isVisible(),
+      await page
+        .getByRole("button", { name: "Upload a file", exact: true })
+        .isVisible(),
       `identified, ${width}px: the attachments control is in the form`,
     );
     const box = await page.getByRole("dialog").boundingBox();
@@ -451,7 +444,7 @@ try {
       `identified, ${width}px: the dialog fits the window`,
     );
     const upload = await page
-      .getByRole("button", { name: "Add", exact: true })
+      .getByRole("button", { name: "Upload a file", exact: true })
       .boundingBox();
     // (On a phone the body scrolls: only the wide layout is checked.)
     check(
@@ -470,8 +463,9 @@ try {
     await page.getByRole("menuitem", { name: /My requests/ }).click();
     await page.getByText("The pay button does nothing").waitFor();
     check(
-      (await page.getByRole("button", { name: "Add", exact: true }).count()) ===
-        0,
+      (await page
+        .getByRole("button", { name: "Upload a file", exact: true })
+        .count()) === 0,
       `identified, ${width}px: My requests drops the attachments control`,
     );
     await context.close();
