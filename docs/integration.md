@@ -238,6 +238,11 @@ Content-Security-Policy:
   (fetched on the first capture) and the markdown renderer of the team's replies (`chat-markdown-*.js`,
   about 740 KB, 221 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
   every file of the widget's folder beside the entry, with the bundle's cache headers.
+- The icons of the type and impact cards come from the pulsarix host too:
+  `https://<pulsarix-host>/assets/icons/sprites/duotone.svg`, fetched once with CORS (no credentials)
+  and inlined into the widget's shadow root. It is the same origin as the loader and the API, so
+  `connect-src` and `img-src` need no extra entry. A sheet that fails to load leaves those icons
+  blank; the form still works.
 - The widget's styles are adopted into its shadow root: no `style-src 'unsafe-inline'`. The requests
   thread injects one `<style>` element; under a strict `style-src` give your page a nonce, which the
   widget reads from a `nonce` attribute on a `style` or `script` element or from this tag:
