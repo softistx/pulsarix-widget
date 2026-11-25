@@ -35,7 +35,7 @@ jobs:
           git merge-base --is-ancestor "$GITHUB_SHA" origin/develop || { echo "::error::$GITHUB_SHA is not on develop"; exit 1; }
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.4
+          bun-version: 1.4.5
       # Restore only: the post-step cache save hung the v0.3.1 and v0.3.2 publish runs for ~20 min.
       - uses: actions/cache/restore@v4
         with:
