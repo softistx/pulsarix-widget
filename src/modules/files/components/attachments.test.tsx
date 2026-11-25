@@ -215,8 +215,8 @@ describe("attached files", () => {
     ]);
     await screen.findAllByRole("list", { name: "Attachments" });
     const list = screen.getByTestId("files-section");
-    expect(within(list).getAllByText("trace.png").length).toBeGreaterThan(0);
-    expect(within(list).getAllByText("invoice.pdf").length).toBeGreaterThan(0);
+    expect(within(list).getAllByTitle("trace.png").length).toBeGreaterThan(0);
+    expect(within(list).getAllByTitle("invoice.pdf").length).toBeGreaterThan(0);
     await fillAndSend(user);
     await screen.findByText(en.done.attached(2));
     expect(declared).toEqual([
