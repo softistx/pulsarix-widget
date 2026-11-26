@@ -94,7 +94,7 @@ useEffect(() => {
 }, [projectKey, apiBase]);
 ```
 
-In the snippets of this guide, names such as `projectKey`, `apiBase`, `user`, `requireUser`, `getUser`,
+In the snippets of this guide, names such as `projectKey`, `apiBase`, `token`, `analytics`, `resolvedMode`, `orgId`, `plan`, `user`, `requireUser`, `getUser`,
 `locale` and `Route.LoaderArgs` stand for your own values and types: the snippets are schematic. The
 page gets the public key (it is not secret) from your own build-time or loader config, never from the
 server-only `PULSARIX_*` variables.
@@ -270,7 +270,7 @@ Content-Security-Policy:
   (uploading an image works without it).
 - Lazy chunks come from the same pulsarix host, so no extra `script-src` entry: the screenshot editor
   (fetched on the first capture) and the markdown renderer of the team's replies (`chat-markdown-*.js`,
-  about 740 KB, 221 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
+  about 750 KB, 223 KB gzipped, fetched when a thread opens; plain text shows until it arrives). Serve
   every file of the widget's folder beside the entry, with the bundle's cache headers.
 - The icons (the type and impact cards, the camera button) come from a small sheet at
   `<apiBase>/widget/v1/icons/duotone.svg`, where `apiBase` is the loader's origin unless you set
@@ -291,24 +291,24 @@ Content-Security-Policy:
 
 Script-tag attributes and `init` / `mount` options (all optional except the key):
 
-| Attribute / option                         | Effect                                                            |
-| ------------------------------------------ | ----------------------------------------------------------------- |
-| `data-project-key` / `projectKey`          | the public key (required)                                         |
-| `data-api-base` / `apiBase`                | the pulsarix origin; required on the npm route                    |
-| `data-locale` / `locale`                   | `en` (default) or `fr`                                            |
-| `data-theme` / `theme`                     | `light`, `dark` or `auto` (default)                               |
-| `data-launcher-side` / `launcher.side`     | `right` (default) or `left` (section 11)                          |
-| `data-launcher-offset` / `launcher.offset` | a fraction from 0 (top) to 1 (bottom), `0.5` default (section 11) |
-| `data-accent-color` / `accentColor`        | a hex seed for the theme                                          |
-| `data-inherit-theme="false"` / `inheritTheme: false` | keep the widget's own look (section 9)               |
-| `target` (`mount()` only)                  | the element to append the widget to; `document.body` by default   |
-| `data-launcher` / `launcher`               | `false` for none; any other value gives the edge tab (section 11) |
-| `data-attachments="false"`                 | no screenshot and no file controls                                |
-| `data-mask-text="true"`                    | "Mask the text on the page" starts on                             |
-| `data-privacy-url` / `privacyUrl`          | an http(s) link to your privacy page                              |
-| `data-prefill-email`, `data-prefill-title` | starting values of the form                                       |
-| `data-identity` / `identity`               | the signed token (section 3)                                      |
-| `data-metadata` / `metadata`               | a JSON object of strings stored with each report                  |
+| Attribute / option                                   | Effect                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| `data-project-key` / `projectKey`                    | the public key (required)                                         |
+| `data-api-base` / `apiBase`                          | the pulsarix origin; required on the npm route                    |
+| `data-locale` / `locale`                             | `en` (default) or `fr`                                            |
+| `data-theme` / `theme`                               | `light`, `dark` or `auto` (default)                               |
+| `data-launcher-side` / `launcher.side`               | `right` (default) or `left` (section 11)                          |
+| `data-launcher-offset` / `launcher.offset`           | a fraction from 0 (top) to 1 (bottom), `0.5` default (section 11) |
+| `data-accent-color` / `accentColor`                  | a hex seed for the theme                                          |
+| `data-inherit-theme="false"` / `inheritTheme: false` | keep the widget's own look (section 9)                            |
+| `target` (`mount()` only)                            | the element to append the widget to; `document.body` by default   |
+| `data-launcher` / `launcher`                         | `false` for none; any other value gives the edge tab (section 11) |
+| `data-attachments="false"`                           | no screenshot and no file controls                                |
+| `data-mask-text="true"`                              | "Mask the text on the page" starts on                             |
+| `data-privacy-url` / `privacyUrl`                    | an http(s) link to your privacy page                              |
+| `data-prefill-email`, `data-prefill-title`           | starting values of the form                                       |
+| `data-identity` / `identity`                         | the signed token (section 3)                                      |
+| `data-metadata` / `metadata`                         | a JSON object of strings stored with each report                  |
 
 `metadata` carries facts about the session that help triage: at most 20 entries, keys of 64 characters,
 values of 512, 2 KB in all; the rest is dropped. The keys `capture-N-page` are reserved: the widget
@@ -322,7 +322,7 @@ and drops the host's last entries first when the whole would pass these limits.
         data-metadata='{"plan":"pro","build":"2026.11.3"}'></script>
 ```
 
-```ts
+```js
 PulsarixWidget.init({
   projectKey: "pk_live_xxx",
   metadata: { plan: "pro", build: "2026.11.3" },
@@ -347,7 +347,7 @@ Heard on the element and with `on(name, callback)`, which returns the function t
 | `pulsarix:erase`  | `{ requests }`        | the reporter erased their data                                                 |
 | `pulsarix:error`  | `{ code }`            | a failure; the API's `intake.errors.*`, `network`, `config` or `http-<status>` |
 
-```ts
+```js
 const off = PulsarixWidget.on("pulsarix:submit", (e) =>
   analytics.track("report", e.detail.reportId),
 );
@@ -389,7 +389,7 @@ never sits on the production key.
 | `intake.errors.attachments-disabled` (403)                                                                                                                                   | the key's "Screenshots and files" switch is off                                                                                                                                                                                                  | switch it on, or set `data-attachments="false"`                                                                                                                                                 |
 | `config`                                                                                                                                                                     | no project key, or no `apiBase` on the npm route                                                                                                                                                                                                 | give both                                                                                                                                                                                       |
 | `intake.errors.unavailable` (503)                                                                                                                                            | the service cannot check its limits                                                                                                                                                                                                              | retry shortly                                                                                                                                                                                   |
-| `signPulsarixIdentity: the token is N characters ...`, `now must return milliseconds`, `... must be ...`                                                                                                                                      | an option the API would refuse                                                                                                                                                                                                                   | fix the named option; the message says which                                                                                                                                                    |
+| `signPulsarixIdentity: the token is N characters ...`, `now must return milliseconds`, `... must be ...`                                                                     | an option the API would refuse                                                                                                                                                                                                                   | fix the named option; the message says which                                                                                                                                                    |
 | Blocked by CSP in the console                                                                                                                                                | the pulsarix host is missing from `script-src` or `connect-src`, or a strict `style-src` has no nonce                                                                                                                                            | section 4                                                                                                                                                                                       |
 | `identify()` seems ignored                                                                                                                                                   | the token is malformed (anything that is not `<payload>.<signature>` is dropped)                                                                                                                                                                 | pass the string `signPulsarixIdentity` returned, unchanged                                                                                                                                      |
 
@@ -403,7 +403,11 @@ when the user changes theme. Nothing to configure: `inheritTheme` is `true` by d
 mount({ projectKey: "pk_live_xxx", apiBase: "https://pulsarix.example.com" });
 // the host's theme picker, dark mode and primary now apply to the dialog
 
-mount({ projectKey: "pk_live_xxx", apiBase: "https://pulsarix.example.com", inheritTheme: false }); // the widget's own look, as before
+mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://pulsarix.example.com",
+  inheritTheme: false,
+}); // the widget's own look, as before
 ```
 
 Script tag: `data-inherit-theme="false"`. Element attribute: `inherit-theme="false"`.
@@ -457,7 +461,12 @@ reporter may have a dialog open. Never remount the widget for that (a remount dr
 use the setters on the mount handle or on the script-tag global.
 
 ```ts
-const widget = mount({ projectKey, apiBase, theme: "light", locale: "en" });
+const widget = mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://pulsarix.example.com",
+  theme: "light",
+  locale: "en",
+});
 
 // the app's mode changed (resolve "Système" yourself, from the app's own state)
 widget.setTheme(resolvedMode); // "light" | "dark" | "auto"
@@ -572,7 +581,10 @@ types are replaced by `LauncherSide` and `LauncherPlacement`.
 Hides or shows the launcher only, for a screen where the button is in the way:
 
 ```ts
-const widget = mount({ projectKey: "pk_live_xxx", apiBase: "https://pulsarix.example.com" });
+const widget = mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://pulsarix.example.com",
+});
 widget.setLauncherVisible(false); // on the checkout step
 widget.setLauncherVisible(true);
 ```
@@ -612,7 +624,11 @@ attribute or the browser's language: pass the language your app uses, and keep i
 the user changes it.
 
 ```ts
-const widget = mount({ projectKey, apiBase, locale: "fr" });
+const widget = mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://pulsarix.example.com",
+  locale: "fr",
+});
 
 // your app's language switch
 widget.setLocale("en");
@@ -639,7 +655,11 @@ By default the widget wears the host's `@softistx/material` theme (section 9) an
 `lavande` theme. When the host is not on material, or should show one brand colour, give a hex seed:
 
 ```ts
-mount({ projectKey, apiBase, accentColor: "#0b6bcb" });
+mount({
+  projectKey: "pk_live_xxx",
+  apiBase: "https://pulsarix.example.com",
+  accentColor: "#0b6bcb",
+});
 ```
 
 ```html
