@@ -355,7 +355,7 @@ export default function App() {
 ```
 
 In a strict-TypeScript host, the script tag's global is not typed: declare it once
-(`declare global { interface Window { PulsarixWidget?: { identify(token: string | null): void } } }`)
+(`declare global { interface Window { PulsarixWidget?: { identify(token: string | null): void; holdLauncher(): () => void; setLocale(locale: "en" | "fr"): void; setTheme(theme: "light" | "dark" | "auto"): void } } }`, adding the methods you call)
 or use the npm route.
 
 With the npm route, call `widget.identify(token)` on the handle `mount()` returned. See

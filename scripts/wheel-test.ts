@@ -40,7 +40,8 @@ try {
     });
   const before = await probe();
   const box = await page.getByRole("dialog").boundingBox();
-  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  if (!box) throw new Error("the dialog has no bounding box");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, 400);
   await page.waitForTimeout(400);
   const after = await probe();
